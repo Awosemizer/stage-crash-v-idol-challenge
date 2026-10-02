@@ -50,6 +50,8 @@ const STAND_SIZE := Vector2(14, 28)
 const STAND_OFFSET := Vector2(0, -2)
 const SLIDE_SIZE := Vector2(22, 14)
 const SLIDE_OFFSET := Vector2(0, 5)
+const FRAME := 64
+const VISUAL_SCALE := 0.5
 
 const WEAPON_BUSTER := "buster"
 const WEAPON_SABER := "saber"
@@ -695,7 +697,7 @@ func _load_character_sprites() -> void:
 		if _tex_idle:
 			visual.texture = _tex_idle
 			visual.region_enabled = true
-			visual.region_rect = Rect2(0, 0, 32, 32)
+			visual.region_rect = Rect2(0, 0, FRAME, FRAME)
 		visual.modulate = Color.WHITE
 	_ensure_armor_overlays()
 	if _charge_rings.is_empty():
@@ -1383,7 +1385,7 @@ func _apply_stand_shape() -> void:
 	collision.position = STAND_OFFSET
 	if visual:
 		visual.position = Vector2(0, -2)
-		visual.scale = Vector2.ONE
+		visual.scale = Vector2(VISUAL_SCALE, VISUAL_SCALE)
 
 
 func _apply_slide_shape() -> void:
@@ -1394,8 +1396,8 @@ func _apply_slide_shape() -> void:
 	shape.size = SLIDE_SIZE
 	collision.position = SLIDE_OFFSET
 	if visual:
-		visual.position = Vector2(0, 4)
-		visual.scale = Vector2.ONE
+		visual.position = Vector2(0, -2)
+		visual.scale = Vector2(VISUAL_SCALE, VISUAL_SCALE)
 
 
 func _update_visual() -> void:
@@ -1415,26 +1417,26 @@ func _update_visual() -> void:
 	elif _is_sliding and _tex_slide:
 		visual.region_enabled = false
 		visual.texture = _tex_slide
-		visual.position = Vector2(0, 4)
+		visual.position = Vector2(0, -2)
 	elif not is_on_floor() and _tex_jump:
 		visual.texture = _tex_jump
 		visual.region_enabled = true
 		var jf := 0 if velocity.y < -40.0 else 1
 		if _is_on_wall_solid() and velocity.y > 0.0:
 			jf = 2
-		visual.region_rect = Rect2(jf * 32, 0, 32, 32)
+		visual.region_rect = Rect2(jf * FRAME, 0, FRAME, FRAME)
 		visual.position = Vector2(0, -2)
 	elif moving and is_on_floor() and _tex_run:
 		visual.texture = _tex_run
 		visual.region_enabled = true
 		_run_frame = int(_anim_time * 12.0) % ArtKit.RUN_FRAMES
-		visual.region_rect = Rect2(_run_frame * 32, 0, 32, 32)
+		visual.region_rect = Rect2(_run_frame * FRAME, 0, FRAME, FRAME)
 		visual.position = Vector2(0, -2)
 	elif _tex_idle:
 		visual.texture = _tex_idle
 		visual.region_enabled = true
 		_idle_frame = int(_anim_time * 2.0) % 2
-		visual.region_rect = Rect2(_idle_frame * 32, 0, 32, 32)
+		visual.region_rect = Rect2(_idle_frame * FRAME, 0, FRAME, FRAME)
 		visual.position = Vector2(0, -2)
 	_sync_armor_overlays()
 
@@ -1818,11 +1820,13 @@ func _sync_armor_overlays() -> void:
 	if _wings:
 		_wings.visible = flight and not _is_sliding
 		_wings.flip_h = facing < 0
-		_wings.position = visual.position + Vector2(0, -4) if visual else Vector2(0, -6)
+		_wings.scale = Vector2(VISUAL_SCALE, VISUAL_SCALE)
+		_wings.position = visual.position if visual else Vector2(0, -2)
 	if _pads:
 		_pads.visible = guard and not _is_sliding
 		_pads.flip_h = facing < 0
-		_pads.position = visual.position + Vector2(0, -6) if visual else Vector2(0, -8)
+		_pads.scale = Vector2(VISUAL_SCALE, VISUAL_SCALE)
+		_pads.position = visual.position if visual else Vector2(0, -2)
 
 
 func _ensure_thruster() -> void:

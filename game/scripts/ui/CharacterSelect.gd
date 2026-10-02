@@ -146,7 +146,7 @@ func _idle_frame(is_teto: bool) -> Texture2D:
 		return ArtKit.char_portrait_tex(is_teto)
 	var atlas := AtlasTexture.new()
 	atlas.atlas = tex
-	atlas.region = Rect2(0, 0, 32, 32)
+	atlas.region = Rect2(0, 0, 64, 64)
 	return atlas
 
 
