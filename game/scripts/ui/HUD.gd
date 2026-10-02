@@ -43,6 +43,7 @@ var _weapon_id := "buster"
 func _ready() -> void:
 	layer = 50
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_apply_portrait_from_state()
 	_build_ui()
 	get_viewport().size_changed.connect(_layout)
 	_layout()
@@ -51,6 +52,18 @@ func _ready() -> void:
 	_refresh_weapon()
 	# Auto-bind if player already in tree
 	call_deferred("_try_auto_bind")
+
+
+func _apply_portrait_from_state() -> void:
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs != null and gs.has_method("get_portrait_color"):
+		portrait_color = gs.get_portrait_color()
+
+
+func set_portrait_color(col: Color) -> void:
+	portrait_color = col
+	if _portrait:
+		_portrait.color = col
 
 
 func bind_player(player: Node) -> void:
@@ -82,6 +95,12 @@ func bind_player(player: Node) -> void:
 			int(w.get("ammo", -1)),
 			int(w.get("max_ammo", -1))
 		)
+	if _player.has_method("get_body_color"):
+		set_portrait_color(_player.get_body_color())
+	else:
+		_apply_portrait_from_state()
+		if _portrait:
+			_portrait.color = portrait_color
 	_refresh_hp_bar()
 
 

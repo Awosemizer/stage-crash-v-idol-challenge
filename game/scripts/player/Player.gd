@@ -4,8 +4,8 @@ extends CharacterBody2D
 ## Touch overlay + joypad press those same actions — do not hardcode keys here.
 ## GDD refs (px/frame @ 60fps, tile 16px): run 1.5, jump 4.5, grav 0.25,
 ## wall-jump H 2.5, slide 12 frames. Wall-jump always available.
-## Buster: tap = Nv1 (1 dmg); hold → Nv2 / Nv3 con aura en ColorRect.
-## Armas: Buster + Beat Blaze (tras vencer a Beatfire Man).
+## Miku: Buster (tap/carga). Teto: Sable melee (sin proyectil por defecto).
+## Ambos: Beat Blaze tras vencer a Beatfire Man. Personaje desde GameState.
 
 # --- Tunables (converted to px/s / px/s²) ---
 const RUN_SPEED := 90.0          # 1.5 px/frame
@@ -42,7 +42,15 @@ const SLIDE_SIZE := Vector2(22, 14)
 const SLIDE_OFFSET := Vector2(0, 5)
 
 const WEAPON_BUSTER := "buster"
+const WEAPON_SABER := "saber"
 const WEAPON_BEAT_BLAZE := "beat_blaze"
+
+const SABER_DURATION := 0.18
+const SABER_DAMAGE := 2
+const SABER_COOLDOWN := 0.22
+const TETO_RUN_MULT := 0.88
+const TETO_JUMP_MULT := 0.94
+const TETO_ACCEL_MULT := 0.85
 
 const BusterShotScene := preload("res://scenes/combat/BusterShot.tscn")
 const BeatBlazeShotScene := preload("res://scenes/combat/BeatBlazeShot.tscn")
@@ -56,6 +64,9 @@ signal weapon_changed(weapon_id: String, display_name: String, ammo: int, max_am
 @onready var wall_ray_l: RayCast2D = $WallRayL
 @onready var wall_ray_r: RayCast2D = $WallRayR
 @onready var camera: Camera2D = $Camera2D
+@onready var saber_hitbox: Area2D = $SaberHitbox
+@onready var saber_shape: CollisionShape2D = $SaberHitbox/CollisionShape2D
+@onready var saber_visual: ColorRect = $SaberHitbox/SlashVisual
 
 var facing := 1  # 1 = right, -1 = left
 var _coyote := 0.0
@@ -79,20 +90,25 @@ var _key2_held := false
 ## Weapon inventory: owned weapons only. ammo -1 = infinite (Buster).
 var _weapons: Array[Dictionary] = []
 var _weapon_index := 0
+var _is_teto := false
+var _saber_timer := 0.0
+var _saber_cd := 0.0
+var _saber_hit_ids: Dictionary = {}  # instance_id -> true this swing
+var _run_speed := RUN_SPEED
+var _jump_vel := JUMP_VELOCITY
+var _accel_ground := ACCEL_GROUND
+var _accel_air := ACCEL_AIR
+var _body_color := Color(0.2, 0.9, 0.95, 1.0)
 
 
 func _ready() -> void:
 	add_to_group("player")
 	_spawn_pos = global_position
 	_apply_stand_shape()
-	# Cyan placeholder = Miku palette; swap later for sprites
-	visual.color = Color(0.2, 0.9, 0.95, 1.0)
+	_apply_character_from_state()
 	if charge_aura:
 		charge_aura.visible = false
-	_weapons = [
-		{"id": WEAPON_BUSTER, "name": "Buster", "ammo": -1, "max_ammo": -1, "cost": 0},
-	]
-	_weapon_index = 0
+	_setup_saber_hitbox()
 	hp_changed.emit(hp, max_hp)
 	_emit_weapon()
 
@@ -141,13 +157,13 @@ func _physics_process(delta: float) -> void:
 	elif _is_sliding:
 		velocity.x = facing * SLIDE_SPEED
 	else:
-		var target := input_x * RUN_SPEED
-		var accel := ACCEL_GROUND if on_floor else ACCEL_AIR
+		var target := input_x * _run_speed
+		var accel := _accel_ground if on_floor else _accel_air
 		if absf(input_x) > 0.01:
 			velocity.x = move_toward(velocity.x, target, accel * delta)
 			facing = 1 if input_x > 0.0 else -1
 		else:
-			var fric := FRICTION_GROUND if on_floor else ACCEL_AIR * 0.35
+			var fric := FRICTION_GROUND if on_floor else _accel_air * 0.35
 			velocity.x = move_toward(velocity.x, 0.0, fric * delta)
 
 	# Jump / wall-jump
@@ -176,7 +192,7 @@ func _handle_weapon_switch() -> void:
 	var k1 := Input.is_physical_key_pressed(KEY_1)
 	var k2 := Input.is_physical_key_pressed(KEY_2)
 	if k1 and not _key1_held:
-		_select_weapon_by_id(WEAPON_BUSTER)
+		_select_weapon_by_id(WEAPON_SABER if _is_teto else WEAPON_BUSTER)
 	if k2 and not _key2_held and _has_weapon(WEAPON_BEAT_BLAZE):
 		_select_weapon_by_id(WEAPON_BEAT_BLAZE)
 	_key1_held = k1
@@ -215,6 +231,8 @@ func _has_weapon(wid: String) -> bool:
 
 func get_current_weapon() -> Dictionary:
 	if _weapons.is_empty():
+		if _is_teto:
+			return {"id": WEAPON_SABER, "name": "Sable", "ammo": -1, "max_ammo": -1, "cost": 0}
 		return {"id": WEAPON_BUSTER, "name": "Buster", "ammo": -1, "max_ammo": -1, "cost": 0}
 	return _weapons[_weapon_index]
 
@@ -259,6 +277,7 @@ func _emit_weapon() -> void:
 
 
 func _handle_attack(delta: float) -> void:
+	_tick_saber(delta)
 	if _is_sliding:
 		if _charging:
 			_charging = false
@@ -268,8 +287,155 @@ func _handle_attack(delta: float) -> void:
 	var wid := get_weapon_id()
 	if wid == WEAPON_BEAT_BLAZE:
 		_handle_beat_blaze()
+	elif wid == WEAPON_SABER:
+		_handle_saber()
 	else:
 		_handle_buster(delta)
+
+
+
+func _apply_character_from_state() -> void:
+	_is_teto = false
+	var gs := _game_state()
+	if gs != null and gs.has_method("is_teto") and gs.is_teto():
+		_is_teto = true
+	if _is_teto:
+		_body_color = Color(0.92, 0.28, 0.35, 1.0)
+		_run_speed = RUN_SPEED * TETO_RUN_MULT
+		_jump_vel = JUMP_VELOCITY * TETO_JUMP_MULT
+		_accel_ground = ACCEL_GROUND * TETO_ACCEL_MULT
+		_accel_air = ACCEL_AIR * TETO_ACCEL_MULT
+		_weapons = [
+			{"id": WEAPON_SABER, "name": "Sable", "ammo": -1, "max_ammo": -1, "cost": 0},
+		]
+	else:
+		_body_color = Color(0.2, 0.9, 0.95, 1.0)
+		_run_speed = RUN_SPEED
+		_jump_vel = JUMP_VELOCITY
+		_accel_ground = ACCEL_GROUND
+		_accel_air = ACCEL_AIR
+		_weapons = [
+			{"id": WEAPON_BUSTER, "name": "Buster", "ammo": -1, "max_ammo": -1, "cost": 0},
+		]
+	_weapon_index = 0
+	if visual:
+		visual.color = _body_color
+
+
+func _game_state() -> Node:
+	var tree := get_tree()
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null("GameState")
+
+
+func is_teto() -> bool:
+	return _is_teto
+
+
+func get_body_color() -> Color:
+	return _body_color
+
+
+func _setup_saber_hitbox() -> void:
+	if saber_hitbox == null:
+		return
+	saber_hitbox.monitoring = false
+	saber_hitbox.monitorable = false
+	if saber_shape:
+		saber_shape.disabled = true
+	if saber_visual:
+		saber_visual.visible = false
+	if not saber_hitbox.body_entered.is_connected(_on_saber_body_entered):
+		saber_hitbox.body_entered.connect(_on_saber_body_entered)
+	if not saber_hitbox.area_entered.is_connected(_on_saber_area_entered):
+		saber_hitbox.area_entered.connect(_on_saber_area_entered)
+
+
+func _handle_saber() -> void:
+	if _charging:
+		_charging = false
+		_charge_time = 0.0
+	if Input.is_action_just_pressed("attack"):
+		_swing_saber()
+
+
+func _swing_saber() -> void:
+	if _saber_cd > 0.0 or _saber_timer > 0.0:
+		return
+	if saber_hitbox == null:
+		return
+	_saber_hit_ids.clear()
+	_saber_timer = SABER_DURATION
+	_saber_cd = SABER_COOLDOWN
+	_position_saber()
+	saber_hitbox.monitoring = true
+	if saber_shape:
+		saber_shape.disabled = false
+	if saber_visual:
+		saber_visual.visible = true
+	# Immediate overlap check (bodies already inside)
+	for a in saber_hitbox.get_overlapping_areas():
+		_saber_try_hit(a)
+	for b in saber_hitbox.get_overlapping_bodies():
+		_saber_try_hit(b)
+
+
+func _tick_saber(delta: float) -> void:
+	_saber_cd = maxf(_saber_cd - delta, 0.0)
+	if _saber_timer > 0.0:
+		_saber_timer -= delta
+		_position_saber()
+		if _saber_timer <= 0.0:
+			_end_saber()
+
+
+func _end_saber() -> void:
+	_saber_timer = 0.0
+	if saber_hitbox:
+		saber_hitbox.monitoring = false
+	if saber_shape:
+		saber_shape.disabled = true
+	if saber_visual:
+		saber_visual.visible = false
+
+
+func _position_saber() -> void:
+	if saber_hitbox == null:
+		return
+	# Flip hitbox offset with facing
+	var ox := 16.0 * float(facing)
+	if saber_shape:
+		saber_shape.position = Vector2(ox, -6.0)
+	if saber_visual:
+		if facing >= 0:
+			saber_visual.position = Vector2(6, -16)
+			saber_visual.size = Vector2(22, 20)
+		else:
+			saber_visual.position = Vector2(-28, -16)
+			saber_visual.size = Vector2(22, 20)
+
+
+func _on_saber_body_entered(body: Node) -> void:
+	_saber_try_hit(body)
+
+
+func _on_saber_area_entered(area: Node) -> void:
+	_saber_try_hit(area)
+
+
+func _saber_try_hit(target: Node) -> void:
+	if target == null or _saber_timer <= 0.0:
+		return
+	if target.is_in_group("player") or target.is_in_group("player_shots"):
+		return
+	var id := target.get_instance_id()
+	if _saber_hit_ids.has(id):
+		return
+	if target.is_in_group("enemies") or target.has_method("take_damage"):
+		_saber_hit_ids[id] = true
+		if target.has_method("take_damage"):
+			target.take_damage(SABER_DAMAGE)
 
 
 func _handle_beat_blaze() -> void:
@@ -370,7 +536,7 @@ func _end_slide() -> void:
 
 
 func _do_jump() -> void:
-	velocity.y = JUMP_VELOCITY
+	velocity.y = _jump_vel
 	_coyote = 0.0
 	_jump_buffer = 0.0
 	if _is_sliding:
@@ -443,11 +609,13 @@ func _update_visual() -> void:
 	else:
 		visual.position.x = -visual.size.x * 0.5
 
-	var base_col := Color(0.2, 0.9, 0.95, 1.0)
+	var base_col := _body_color
 	if not is_on_floor() and _is_on_wall_solid() and velocity.y > 0.0:
-		base_col = Color(0.35, 0.95, 1.0, 1.0)
+		base_col = _body_color.lightened(0.15)
 	elif _is_sliding:
-		base_col = Color(0.15, 0.7, 0.85, 1.0)
+		base_col = _body_color.darkened(0.12)
+	elif _saber_timer > 0.0:
+		base_col = _body_color.lightened(0.2)
 
 	# Aura de carga solo con Buster
 	var lv := 0

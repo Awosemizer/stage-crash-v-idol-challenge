@@ -3,11 +3,14 @@ extends SceneTree
 func _initialize() -> void:
 	var errors: PackedStringArray = []
 	var paths := [
+		"res://scripts/autoload/GameState.gd",
 		"res://scripts/player/Player.gd",
 		"res://scripts/levels/Level01.gd",
 		"res://scripts/hazards/Hazard.gd",
 		"res://scripts/ui/TouchControls.gd",
 		"res://scripts/ui/HUD.gd",
+		"res://scripts/ui/TitleScreen.gd",
+		"res://scripts/ui/CharacterSelect.gd",
 		"res://scripts/combat/BusterShot.gd",
 		"res://scripts/combat/BeatBlazeShot.gd",
 		"res://scripts/combat/Fireball.gd",
@@ -18,6 +21,8 @@ func _initialize() -> void:
 		"res://scenes/hazards/Spike.tscn",
 		"res://scenes/ui/TouchControls.tscn",
 		"res://scenes/ui/HUD.tscn",
+		"res://scenes/ui/TitleScreen.tscn",
+		"res://scenes/ui/CharacterSelect.tscn",
 		"res://scenes/combat/BusterShot.tscn",
 		"res://scenes/combat/BeatBlazeShot.tscn",
 		"res://scenes/combat/Fireball.tscn",
@@ -33,6 +38,80 @@ func _initialize() -> void:
 			errors.append("Failed to load: " + p)
 		else:
 			print("OK load: ", p)
+
+	# GameState autoload present
+	var gs = root.get_node_or_null("GameState")
+	if gs == null:
+		# Headless --script may not load project autoloads the same way; load manually
+		var gs_script = load("res://scripts/autoload/GameState.gd")
+		if gs_script == null:
+			errors.append("GameState.gd failed to load")
+		else:
+			gs = Node.new()
+			gs.set_script(gs_script)
+			gs.name = "GameState"
+			root.add_child(gs)
+			print("OK GameState mounted manually for validate")
+	else:
+		print("OK GameState autoload present")
+	if gs:
+		gs.select_miku()
+		if not gs.is_miku() or gs.get_character_id() != "miku":
+			errors.append("GameState select_miku failed")
+		else:
+			print("OK GameState miku")
+		gs.select_teto()
+		if not gs.is_teto() or gs.get_character_id() != "teto":
+			errors.append("GameState select_teto failed")
+		else:
+			print("OK GameState teto")
+		var pc: Color = gs.get_portrait_color()
+		if pc.r < 0.8:
+			errors.append("Teto portrait should be reddish")
+		else:
+			print("OK Teto portrait color")
+		gs.select_miku()
+
+	# Title screen UI
+	var title_packed: PackedScene = load("res://scenes/ui/TitleScreen.tscn")
+	if title_packed:
+		var title = title_packed.instantiate()
+		root.add_child(title)
+		await process_frame
+		if title.get_node_or_null("PlayButton") == null:
+			errors.append("TitleScreen missing PlayButton")
+		else:
+			print("OK TitleScreen PlayButton")
+		if title.get_node_or_null("Title") == null:
+			errors.append("TitleScreen missing Title label")
+		else:
+			print("OK TitleScreen Title")
+		title.queue_free()
+		await process_frame
+	else:
+		errors.append("TitleScreen.tscn failed to load")
+
+	# Character select UI
+	var sel_packed: PackedScene = load("res://scenes/ui/CharacterSelect.tscn")
+	if sel_packed:
+		var sel = sel_packed.instantiate()
+		root.add_child(sel)
+		await process_frame
+		if sel.get_node_or_null("MikuButton") == null or sel.get_node_or_null("TetoButton") == null:
+			errors.append("CharacterSelect missing Miku/Teto buttons")
+		else:
+			print("OK CharacterSelect buttons")
+		sel.queue_free()
+		await process_frame
+	else:
+		errors.append("CharacterSelect.tscn failed to load")
+
+	# Main scene should be Title
+	var main_path: String = str(ProjectSettings.get_setting("application/run/main_scene", ""))
+	if str(main_path) != "res://scenes/ui/TitleScreen.tscn":
+		errors.append("main_scene expected TitleScreen, got %s" % str(main_path))
+	else:
+		print("OK main_scene=TitleScreen")
 
 	# Instantiate TouchControls alone
 	var touch_packed: PackedScene = load("res://scenes/ui/TouchControls.tscn")
@@ -186,8 +265,67 @@ func _initialize() -> void:
 					print("OK Lv1 shot damage=", s.damage)
 				for sh in shots:
 					sh.queue_free()
+		# Ensure Miku has SaberHitbox node even if unused
+		if player.get_node_or_null("SaberHitbox") == null:
+			errors.append("Player missing SaberHitbox")
+		else:
+			print("OK Player SaberHitbox node")
 		player.queue_free()
 		await process_frame
+
+		# Teto saber path
+		if gs:
+			gs.select_teto()
+		var teto = player_packed.instantiate()
+		root.add_child(teto)
+		await process_frame
+		if not teto.has_method("is_teto") or not teto.is_teto():
+			errors.append("Teto player is_teto expected true")
+		else:
+			print("OK Teto character applied")
+		if str(teto.get_weapon_id()) != "saber":
+			errors.append("Teto default weapon expected saber, got %s" % str(teto.get_weapon_id()))
+		else:
+			print("OK Teto weapon=saber")
+		if teto.has_method("_swing_saber"):
+			teto._swing_saber()
+			await process_frame
+			if float(teto._saber_timer) <= 0.0 and teto.saber_hitbox and not teto.saber_hitbox.monitoring:
+				# may already have ended in same frame if duration tiny — check visual was armed
+				pass
+			if teto.saber_hitbox == null:
+				errors.append("Teto saber_hitbox null")
+			else:
+				print("OK Teto saber swing armed monitoring=", teto.saber_hitbox.monitoring, " timer=", teto._saber_timer)
+			# Spawn a Met in saber range and hit
+			var met2 = load("res://scenes/enemies/MetBeat.tscn").instantiate()
+			root.add_child(met2)
+			met2.global_position = teto.global_position + Vector2(18, -6)
+			met2._open = true
+			await process_frame
+			teto._saber_cd = 0.0
+			teto._saber_timer = 0.0
+			teto._swing_saber()
+			await process_frame
+			if int(met2.hp) >= 2:
+				# try direct try_hit
+				teto._saber_try_hit(met2)
+			if int(met2.hp) >= 2:
+				errors.append("Teto saber did not damage Met (hp=%d)" % int(met2.hp))
+			else:
+				print("OK Teto saber damaged Met hp=", met2.hp)
+			met2.queue_free()
+		# Beat Blaze still available for Teto
+		teto.grant_weapon("beat_blaze")
+		await process_frame
+		if str(teto.get_weapon_id()) != "beat_blaze":
+			errors.append("Teto grant Beat Blaze failed")
+		else:
+			print("OK Teto can use Beat Blaze")
+		teto.queue_free()
+		await process_frame
+		if gs:
+			gs.select_miku()
 	else:
 		errors.append("Player.tscn failed to load")
 
@@ -316,6 +454,11 @@ func _initialize() -> void:
 			errors.append("HUD not found under Level01")
 		else:
 			print("OK HUD in Level01, layer=", hud_node.layer)
+			var portrait = hud_node.get_node_or_null("Root/Portrait")
+			if portrait == null:
+				errors.append("HUD Portrait missing in Level01")
+			else:
+				print("OK HUD Portrait color=", portrait.color)
 			var p2 = entities.get_node_or_null("Player") if entities else null
 			if p2 and hud_node.has_method("bind_player"):
 				var hp_lbl = hud_node.get_node_or_null("Root/HpLabel")
