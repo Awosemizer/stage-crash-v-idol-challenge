@@ -338,6 +338,29 @@ func set_energy_tanks(count: int) -> void:
 	energy_tanks = clampi(count, 0, MAX_ENERGY_TANKS)
 	energy_tanks_changed.emit(energy_tanks)
 
+
+func try_use_energy_tank() -> bool:
+	## Gasta 1 tanque y restaura 28 PV. No gasta si no hay, o si ya estás lleno / muerto.
+	if energy_tanks <= 0:
+		return false
+	var tree := get_tree()
+	if tree == null:
+		return false
+	var nodes := tree.get_nodes_in_group("player")
+	if nodes.is_empty():
+		return false
+	var p: Node = nodes[0]
+	if not p.has_method("heal"):
+		return false
+	var hp_now := int(p.get("hp")) if "hp" in p else 0
+	var hp_max := int(p.get("max_hp")) if "max_hp" in p else 28
+	if hp_now <= 0 or hp_now >= hp_max:
+		return false
+	energy_tanks -= 1
+	energy_tanks_changed.emit(energy_tanks)
+	p.heal(28)
+	return true
+
 func unlock_weapon(weapon_id: String) -> void:
 	_weapons_unlocked[weapon_id] = true
 	print("GameState: arma desbloqueada → %s" % weapon_id)

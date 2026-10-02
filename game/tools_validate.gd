@@ -920,10 +920,10 @@ func _initialize() -> void:
 			errors.append("EchoWind missing enemies/bosses group")
 		else:
 			print("OK EchoWind groups")
-		if not ewb.is_in_group("weak_to_beat_blaze"):
-			errors.append("EchoWind missing weak_to_beat_blaze group")
+		if not ewb.is_in_group("weak_to_neon_arc"):
+			errors.append("EchoWind missing weak_to_neon_arc group")
 		else:
-			print("OK EchoWind weak_to_beat_blaze")
+			print("OK EchoWind weak_to_neon_arc")
 		if int(ewb.hp) != 28:
 			errors.append("EchoWind HP expected 28")
 		else:
@@ -940,21 +940,21 @@ func _initialize() -> void:
 			errors.append("EchoWind HP expected 26 after 2 dmg")
 		else:
 			print("OK EchoWind took dmg hp=", ewb.hp)
-		# Weakness via BeatBlazeShot
+		# Weakness via NeonArcShot (Echo Wind ← Neon Volt)
 		ewb._invuln = 0.0
-		var blaze = load("res://scenes/combat/BeatBlazeShot.tscn").instantiate()
-		root.add_child(blaze)
-		blaze.global_position = ewb.global_position
-		if blaze.has_method("_try_hit"):
-			blaze._try_hit(ewb)
+		var narc_e = load("res://scenes/combat/NeonArcShot.tscn").instantiate()
+		root.add_child(narc_e)
+		narc_e.global_position = ewb.global_position
+		if narc_e.has_method("_try_hit"):
+			narc_e._try_hit(ewb)
 		await process_frame
 		# damage 2 * 3 = 6 → hp 20
 		if int(ewb.hp) != 20:
-			errors.append("Beat Blaze weakness expected hp 20 (26-6), got %d" % int(ewb.hp))
+			errors.append("Neon Arc weakness expected hp 20 (26-6), got %d" % int(ewb.hp))
 		else:
-			print("OK Beat Blaze ×3 vs EchoWind hp=", ewb.hp)
-		if is_instance_valid(blaze):
-			blaze.queue_free()
+			print("OK Neon Arc ×3 vs EchoWind hp=", ewb.hp)
+		if is_instance_valid(narc_e):
+			narc_e.queue_free()
 		ewb.queue_free()
 		await process_frame
 	else:
@@ -1185,33 +1185,30 @@ func _initialize() -> void:
 		var nvb = nv_boss_packed.instantiate()
 		root.add_child(nvb)
 		await process_frame
-		if not nvb.is_in_group("weak_to_echo_gale"):
-			errors.append("NeonVolt missing weak_to_echo_gale group")
+		if not nvb.is_in_group("weak_to_tempo_spike"):
+			errors.append("NeonVolt missing weak_to_tempo_spike group")
 		else:
-			print("OK NeonVolt weak_to_echo_gale")
+			print("OK NeonVolt weak_to_tempo_spike")
 		if int(nvb.hp) != 28:
 			errors.append("NeonVolt HP expected 28, got %d" % int(nvb.hp))
 		else:
 			print("OK NeonVolt HP=28")
 		if nvb.has_method("activate"):
 			nvb.activate()
-		# Echo Gale ×3 weakness: base damage 2 → 6
+		# Tempo Spike ×3: base 3 → 9
 		nvb.hp = 26
-		var gale = load("res://scenes/combat/EchoGaleShot.tscn").instantiate()
-		root.add_child(gale)
-		gale.global_position = nvb.global_position
-		# Echo Gale delays launch; force moving so _try_hit applies
-		if "_moving" in gale:
-			gale._moving = true
-		if gale.has_method("_try_hit"):
-			gale._try_hit(nvb)
+		var tspk = load("res://scenes/combat/TempoSpikeShot.tscn").instantiate()
+		root.add_child(tspk)
+		tspk.global_position = nvb.global_position
+		if tspk.has_method("_try_hit"):
+			tspk._try_hit(nvb)
 		await process_frame
-		if int(nvb.hp) != 20:
-			errors.append("Echo Gale weakness expected hp 20 (26-6), got %d" % int(nvb.hp))
+		if int(nvb.hp) != 17:
+			errors.append("Tempo Spike weakness expected hp 17 (26-9), got %d" % int(nvb.hp))
 		else:
-			print("OK Echo Gale ×3 vs NeonVolt hp=", nvb.hp)
-		if is_instance_valid(gale):
-			gale.queue_free()
+			print("OK Tempo Spike ×3 vs NeonVolt hp=", nvb.hp)
+		if is_instance_valid(tspk):
+			tspk.queue_free()
 		nvb.queue_free()
 		await process_frame
 	else:
@@ -1452,30 +1449,30 @@ func _initialize() -> void:
 		var gib = gi_boss_packed.instantiate()
 		root.add_child(gib)
 		await process_frame
-		if not gib.is_in_group("weak_to_neon_arc"):
-			errors.append("GlitchIce missing weak_to_neon_arc group")
+		if not gib.is_in_group("weak_to_quake_drop"):
+			errors.append("GlitchIce missing weak_to_quake_drop group")
 		else:
-			print("OK GlitchIce weak_to_neon_arc")
+			print("OK GlitchIce weak_to_quake_drop")
 		if int(gib.hp) != 28:
 			errors.append("GlitchIce HP expected 28, got %d" % int(gib.hp))
 		else:
 			print("OK GlitchIce HP=28")
 		if gib.has_method("activate"):
 			gib.activate()
-		# Neon Arc ×3: base 2 → 6
+		# Quake Drop ×3: base 3 → 9
 		gib.hp = 26
-		var narc = load("res://scenes/combat/NeonArcShot.tscn").instantiate()
-		root.add_child(narc)
-		narc.global_position = gib.global_position
-		if narc.has_method("_try_hit"):
-			narc._try_hit(gib)
+		var qdi = load("res://scenes/combat/QuakeDropShot.tscn").instantiate()
+		root.add_child(qdi)
+		qdi.global_position = gib.global_position
+		if qdi.has_method("_try_hit"):
+			qdi._try_hit(gib)
 		await process_frame
-		if int(gib.hp) != 20:
-			errors.append("Neon Arc weakness expected hp 20 (26-6), got %d" % int(gib.hp))
+		if int(gib.hp) != 17:
+			errors.append("Quake Drop weakness expected hp 17 (26-9), got %d" % int(gib.hp))
 		else:
-			print("OK Neon Arc ×3 vs GlitchIce hp=", gib.hp)
-		if is_instance_valid(narc):
-			narc.queue_free()
+			print("OK Quake Drop ×3 vs GlitchIce hp=", gib.hp)
+		if is_instance_valid(qdi):
+			qdi.queue_free()
 		gib.queue_free()
 		await process_frame
 	else:
@@ -1515,8 +1512,8 @@ func _initialize() -> void:
 			else:
 				print("OK FreezeSampleShot spawned count=", fs_shots.size())
 				fsw = fsp.get_current_weapon()
-				if int(fsw.get("ammo", 28)) != 27:
-					errors.append("Freeze Sample ammo not consumed")
+				if int(fsw.get("ammo", 28)) != 26:
+					errors.append("Freeze Sample ammo not consumed (cost 2)")
 				else:
 					print("OK Freeze Sample ammo consumed=", fsw.get("ammo"))
 				for sh in fs_shots:
@@ -1712,30 +1709,30 @@ func _initialize() -> void:
 		var cbb = cb_boss_packed.instantiate()
 		root.add_child(cbb)
 		await process_frame
-		if not cbb.is_in_group("weak_to_freeze_sample"):
-			errors.append("ChorusBloom missing weak_to_freeze_sample group")
+		if not cbb.is_in_group("weak_to_static_veil"):
+			errors.append("ChorusBloom missing weak_to_static_veil group")
 		else:
-			print("OK ChorusBloom weak_to_freeze_sample")
+			print("OK ChorusBloom weak_to_static_veil")
 		if int(cbb.hp) != 28:
 			errors.append("ChorusBloom HP expected 28, got %d" % int(cbb.hp))
 		else:
 			print("OK ChorusBloom HP=28")
 		if cbb.has_method("activate"):
 			cbb.activate()
-		# Freeze Sample ×3: base 2 → 6
+		# Static Veil ×3: base 3 → 9, one application
 		cbb.hp = 26
-		var fsc = load("res://scenes/combat/FreezeSampleShot.tscn").instantiate()
-		root.add_child(fsc)
-		fsc.global_position = cbb.global_position
-		if fsc.has_method("_try_hit"):
-			fsc._try_hit(cbb)
+		var svc = load("res://scenes/combat/StaticVeilShot.tscn").instantiate()
+		root.add_child(svc)
+		svc.global_position = cbb.global_position
+		if svc.has_method("_try_hit"):
+			svc._try_hit(cbb, false)
 		await process_frame
-		if int(cbb.hp) != 20:
-			errors.append("Freeze Sample weakness vs ChorusBloom expected hp 20 (26-6), got %d" % int(cbb.hp))
+		if int(cbb.hp) != 17:
+			errors.append("Static Veil weakness vs ChorusBloom expected hp 17 (26-9), got %d" % int(cbb.hp))
 		else:
-			print("OK Freeze Sample ×3 vs ChorusBloom hp=", cbb.hp)
-		if is_instance_valid(fsc):
-			fsc.queue_free()
+			print("OK Static Veil ×3 vs ChorusBloom hp=", cbb.hp)
+		if is_instance_valid(svc):
+			svc.queue_free()
 		cbb.queue_free()
 		await process_frame
 	else:
@@ -1988,30 +1985,32 @@ func _initialize() -> void:
 		var bqb = bq_boss_packed.instantiate()
 		root.add_child(bqb)
 		await process_frame
-		if not bqb.is_in_group("weak_to_freeze_sample"):
-			errors.append("Bassquake missing weak_to_freeze_sample group")
+		if not bqb.is_in_group("weak_to_echo_gale"):
+			errors.append("Bassquake missing weak_to_echo_gale group")
 		else:
-			print("OK Bassquake weak_to_freeze_sample")
+			print("OK Bassquake weak_to_echo_gale")
 		if int(bqb.hp) != 28:
 			errors.append("Bassquake HP expected 28, got %d" % int(bqb.hp))
 		else:
 			print("OK Bassquake HP=28")
 		if bqb.has_method("activate"):
 			bqb.activate()
-		# Freeze Sample ×3: base 2 → 6
+		# Echo Gale ×3: base 2 → 6 (needs _moving)
 		bqb.hp = 26
-		var fsb = load("res://scenes/combat/FreezeSampleShot.tscn").instantiate()
-		root.add_child(fsb)
-		fsb.global_position = bqb.global_position
-		if fsb.has_method("_try_hit"):
-			fsb._try_hit(bqb)
+		var egb = load("res://scenes/combat/EchoGaleShot.tscn").instantiate()
+		root.add_child(egb)
+		egb.global_position = bqb.global_position
+		if "_moving" in egb:
+			egb._moving = true
+		if egb.has_method("_try_hit"):
+			egb._try_hit(bqb)
 		await process_frame
 		if int(bqb.hp) != 20:
-			errors.append("Freeze Sample weakness vs Bassquake expected hp 20 (26-6), got %d" % int(bqb.hp))
+			errors.append("Echo Gale weakness vs Bassquake expected hp 20 (26-6), got %d" % int(bqb.hp))
 		else:
-			print("OK Freeze Sample ×3 vs Bassquake hp=", bqb.hp)
-		if is_instance_valid(fsb):
-			fsb.queue_free()
+			print("OK Echo Gale ×3 vs Bassquake hp=", bqb.hp)
+		if is_instance_valid(egb):
+			egb.queue_free()
 		bqb.queue_free()
 		await process_frame
 	else:
@@ -2275,30 +2274,30 @@ func _initialize() -> void:
 		var mnb = mn_boss_packed.instantiate()
 		root.add_child(mnb)
 		await process_frame
-		if not mnb.is_in_group("weak_to_neon_arc"):
-			errors.append("Metronome missing weak_to_neon_arc group")
+		if not mnb.is_in_group("weak_to_petal_chorus"):
+			errors.append("Metronome missing weak_to_petal_chorus group")
 		else:
-			print("OK Metronome weak_to_neon_arc")
+			print("OK Metronome weak_to_petal_chorus")
 		if int(mnb.hp) != 28:
 			errors.append("Metronome HP expected 28, got %d" % int(mnb.hp))
 		else:
 			print("OK Metronome HP=28")
 		if mnb.has_method("activate"):
 			mnb.activate()
-		# Neon Arc ×3: base 2 → 6
+		# Petal Chorus ×3: base 1 → 3
 		mnb.hp = 26
-		var nas = load("res://scenes/combat/NeonArcShot.tscn").instantiate()
-		root.add_child(nas)
-		nas.global_position = mnb.global_position
-		if nas.has_method("_try_hit"):
-			nas._try_hit(mnb)
+		var pcm = load("res://scenes/combat/PetalChorusShot.tscn").instantiate()
+		root.add_child(pcm)
+		pcm.global_position = mnb.global_position
+		if pcm.has_method("_try_hit"):
+			pcm._try_hit(mnb)
 		await process_frame
-		if int(mnb.hp) != 20:
-			errors.append("Neon Arc weakness vs Metronome expected hp 20 (26-6), got %d" % int(mnb.hp))
+		if int(mnb.hp) != 23:
+			errors.append("Petal Chorus weakness vs Metronome expected hp 23 (26-3), got %d" % int(mnb.hp))
 		else:
-			print("OK Neon Arc ×3 vs Metronome hp=", mnb.hp)
-		if is_instance_valid(nas):
-			nas.queue_free()
+			print("OK Petal Chorus ×3 vs Metronome hp=", mnb.hp)
+		if is_instance_valid(pcm):
+			pcm.queue_free()
 		mnb.queue_free()
 		await process_frame
 	else:
@@ -2545,31 +2544,30 @@ func _initialize() -> void:
 		var ssb = ss_boss_packed.instantiate()
 		root.add_child(ssb)
 		await process_frame
-		if not ssb.is_in_group("weak_to_petal_chorus"):
-			errors.append("StaticShadow missing weak_to_petal_chorus group")
+		if not ssb.is_in_group("weak_to_beat_blaze"):
+			errors.append("StaticShadow missing weak_to_beat_blaze group")
 		else:
-			print("OK StaticShadow weak_to_petal_chorus")
+			print("OK StaticShadow weak_to_beat_blaze")
 		if int(ssb.hp) != 28:
 			errors.append("StaticShadow HP expected 28, got %d" % int(ssb.hp))
 		else:
 			print("OK StaticShadow HP=28")
 		if ssb.has_method("activate"):
 			ssb.activate()
-		# Petal Chorus ×3: base 1 → 3; start hp 26 after fake chip? use 28-3=25 if one hit of 3
-		# Petal Chorus ×3: base 1 → 3
+		# Beat Blaze ×3: base 2 → 6
 		ssb.hp = 26
-		var pcs = load("res://scenes/combat/PetalChorusShot.tscn").instantiate()
-		root.add_child(pcs)
-		pcs.global_position = ssb.global_position
-		if pcs.has_method("_try_hit"):
-			pcs._try_hit(ssb)
+		var bbs = load("res://scenes/combat/BeatBlazeShot.tscn").instantiate()
+		root.add_child(bbs)
+		bbs.global_position = ssb.global_position
+		if bbs.has_method("_try_hit"):
+			bbs._try_hit(ssb)
 		await process_frame
-		if int(ssb.hp) != 23:
-			errors.append("Petal Chorus weakness vs StaticShadow expected hp 23 (26-3), got %d" % int(ssb.hp))
+		if int(ssb.hp) != 20:
+			errors.append("Beat Blaze weakness vs StaticShadow expected hp 20 (26-6), got %d" % int(ssb.hp))
 		else:
-			print("OK Petal Chorus ×3 vs StaticShadow hp=", ssb.hp)
-		if is_instance_valid(pcs):
-			pcs.queue_free()
+			print("OK Beat Blaze ×3 vs StaticShadow hp=", ssb.hp)
+		if is_instance_valid(bbs):
+			bbs.queue_free()
 		ssb.queue_free()
 		await process_frame
 	else:
@@ -3683,7 +3681,7 @@ func _initialize() -> void:
 
 	# --- v0.20 landscape + Beatfire touch playability ---
 	var proj := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.32.0-proto"' not in proj and 'config/version="0.31.0-proto"' not in proj and 'config/version="0.30.0-proto"' not in proj and 'config/version="0.29.0-proto"' not in proj and 'config/version="0.28.0-proto"' not in proj and 'config/version="0.27.0-proto"' not in proj and 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj:
+	if 'config/version="0.32.0-proto"' not in proj and 'config/version="0.31.0-proto"' not in proj and 'config/version="0.30.0-proto"' not in proj and 'config/version="0.29.0-proto"' not in proj and 'config/version="0.28.0-proto"' not in proj and 'config/version="0.27.0-proto"' not in proj and 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj and 'config/version="0.33.0-proto"' not in proj:
 		errors.append("project.godot version should be 0.28.0-proto+")
 	else:
 		print("OK project version present")
@@ -4104,12 +4102,12 @@ func _initialize() -> void:
 	else:
 		print("OK Level01 checkpoints")
 	var title_27 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.27" not in title_27 and "0.28" not in title_27 and "0.29" not in title_27 and "0.30" not in title_27 and "0.31" not in title_27 and "0.32" not in title_27:
+	if "0.27" not in title_27 and "0.28" not in title_27 and "0.29" not in title_27 and "0.30" not in title_27 and "0.31" not in title_27 and "0.32" not in title_27 and "0.33" not in title_27:
 		errors.append("TitleScreen version should mention 0.27+")
 	else:
 		print("OK TitleScreen 0.27+")
 	var proj_27 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.27.0-proto"' not in proj_27 and 'config/version="0.28.0-proto"' not in proj_27 and 'config/version="0.29.0-proto"' not in proj_27 and 'config/version="0.30.0-proto"' not in proj_27 and 'config/version="0.31.0-proto"' not in proj_27 and 'config/version="0.32.0-proto"' not in proj_27:
+	if 'config/version="0.27.0-proto"' not in proj_27 and 'config/version="0.28.0-proto"' not in proj_27 and 'config/version="0.29.0-proto"' not in proj_27 and 'config/version="0.30.0-proto"' not in proj_27 and 'config/version="0.31.0-proto"' not in proj_27 and 'config/version="0.32.0-proto"' not in proj_27 and 'config/version="0.33.0-proto"' not in proj_27:
 		errors.append("project.godot version should be 0.27+/0.28")
 	else:
 		print("OK project 0.27+")
@@ -4190,12 +4188,12 @@ func _initialize() -> void:
 	else:
 		print("OK TouchControls scaled gaps")
 	var title_28 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.28" not in title_28 and "0.29" not in title_28 and "0.30" not in title_28 and "0.31" not in title_28 and "0.32" not in title_28:
+	if "0.28" not in title_28 and "0.29" not in title_28 and "0.30" not in title_28 and "0.31" not in title_28 and "0.32" not in title_28 and "0.33" not in title_28:
 		errors.append("TitleScreen version should mention 0.28+")
 	else:
 		print("OK TitleScreen 0.28")
 	var proj_28 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.28.0-proto"' not in proj_28 and 'config/version="0.29.0-proto"' not in proj_28 and 'config/version="0.30.0-proto"' not in proj_28 and 'config/version="0.31.0-proto"' not in proj_28 and 'config/version="0.32.0-proto"' not in proj_28:
+	if 'config/version="0.28.0-proto"' not in proj_28 and 'config/version="0.29.0-proto"' not in proj_28 and 'config/version="0.30.0-proto"' not in proj_28 and 'config/version="0.31.0-proto"' not in proj_28 and 'config/version="0.32.0-proto"' not in proj_28 and 'config/version="0.33.0-proto"' not in proj_28:
 		errors.append("project.godot version should be 0.28+/0.29")
 	else:
 		print("OK project 0.28")
@@ -4285,12 +4283,12 @@ func _initialize() -> void:
 	else:
 		print("OK Heart ending button")
 	var title_29 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.29" not in title_29 and "0.30" not in title_29 and "0.31" not in title_29 and "0.32" not in title_29:
+	if "0.29" not in title_29 and "0.30" not in title_29 and "0.31" not in title_29 and "0.32" not in title_29 and "0.33" not in title_29:
 		errors.append("TitleScreen version should mention 0.29+")
 	else:
 		print("OK TitleScreen 0.29+")
 	var proj_29 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.29.0-proto"' not in proj_29 and 'config/version="0.30.0-proto"' not in proj_29 and 'config/version="0.31.0-proto"' not in proj_29 and 'config/version="0.32.0-proto"' not in proj_29:
+	if 'config/version="0.29.0-proto"' not in proj_29 and 'config/version="0.30.0-proto"' not in proj_29 and 'config/version="0.31.0-proto"' not in proj_29 and 'config/version="0.32.0-proto"' not in proj_29 and 'config/version="0.33.0-proto"' not in proj_29:
 		errors.append("project.godot version should be 0.29+/0.30")
 	else:
 		print("OK project 0.29+")
@@ -4470,17 +4468,17 @@ func _initialize() -> void:
 		errors.append("AudioManager could not be mounted for missing-stream test")
 
 	var title_30 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.30" not in title_30 and "0.31" not in title_30 and "0.32" not in title_30:
+	if "0.30" not in title_30 and "0.31" not in title_30 and "0.32" not in title_30 and "0.33" not in title_30:
 		errors.append("TitleScreen version should mention 0.30+")
 	else:
 		print("OK TitleScreen 0.30")
 	var proj_30 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.30.0-proto"' not in proj_30 and 'config/version="0.31.0-proto"' not in proj_30 and 'config/version="0.32.0-proto"' not in proj_30:
+	if 'config/version="0.30.0-proto"' not in proj_30 and 'config/version="0.31.0-proto"' not in proj_30 and 'config/version="0.32.0-proto"' not in proj_30 and 'config/version="0.33.0-proto"' not in proj_30:
 		errors.append("project.godot version should be 0.30+")
 	else:
 		print("OK project 0.30")
 	var readme_30 := FileAccess.get_file_as_string("res://README.md")
-	if "v0.30" not in readme_30 and "0.30" not in readme_30 and "0.31" not in readme_30 and "0.32" not in readme_30:
+	if "v0.30" not in readme_30 and "0.30" not in readme_30 and "0.31" not in readme_30 and "0.32" not in readme_30 and "0.33" not in readme_30:
 		errors.append("README should note 0.30+")
 	else:
 		print("OK README 0.30")
@@ -4517,17 +4515,17 @@ func _initialize() -> void:
 	else:
 		print("OK boss fairness v0.31")
 	var title_31 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.31" not in title_31 and "0.32" not in title_31:
+	if "0.31" not in title_31 and "0.32" not in title_31 and "0.33" not in title_31:
 		errors.append("TitleScreen version should mention 0.31")
 	else:
 		print("OK TitleScreen 0.31")
 	var proj_31 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.31.0-proto"' not in proj_31 and 'config/version="0.32.0-proto"' not in proj_31:
+	if 'config/version="0.31.0-proto"' not in proj_31 and 'config/version="0.32.0-proto"' not in proj_31 and 'config/version="0.33.0-proto"' not in proj_31:
 		errors.append("project.godot version should be 0.31.0-proto")
 	else:
 		print("OK project 0.31")
 	var readme_31 := FileAccess.get_file_as_string("res://README.md")
-	if "0.31" not in readme_31 and "0.32" not in readme_31:
+	if "0.31" not in readme_31 and "0.32" not in readme_31 and "0.33" not in readme_31:
 		errors.append("README should note 0.31")
 	else:
 		print("OK README 0.31")
@@ -4536,17 +4534,17 @@ func _initialize() -> void:
 
 	# --- v0.32 menus / HUD / touch ---
 	var title_32 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.32" not in title_32:
+	if "0.32" not in title_32 and "0.33" not in title_32:
 		errors.append("TitleScreen version should mention 0.32")
 	else:
 		print("OK TitleScreen 0.32")
 	var proj_32 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.32.0-proto"' not in proj_32:
+	if 'config/version="0.32.0-proto"' not in proj_32 and 'config/version="0.33.0-proto"' not in proj_32:
 		errors.append("project.godot version should be 0.32.0-proto")
 	else:
 		print("OK project 0.32")
 	var readme_32 := FileAccess.get_file_as_string("res://README.md")
-	if "0.32" not in readme_32:
+	if "0.32" not in readme_32 and "0.33" not in readme_32:
 		errors.append("README should note 0.32")
 	else:
 		print("OK README 0.32")
@@ -4566,6 +4564,51 @@ func _initialize() -> void:
 	else:
 		print("OK touch clear of pause")
 	print("OK v0.32 menus/HUD")
+
+
+	# --- v0.33 weapon / weakness / ammo ---
+	var buster_33 := FileAccess.get_file_as_string("res://scripts/combat/BusterShot.gd")
+	if "4: 8" not in buster_33:
+		errors.append("Buster Nv4 damage should be 8")
+	else:
+		print("OK buster Nv4 = 8")
+	var player_33 := FileAccess.get_file_as_string("res://scripts/player/Player.gd")
+	var freeze_at := player_33.find("WEAPON_FREEZE_SAMPLE:")
+	if freeze_at < 0 or '"cost": 2' not in player_33.substr(freeze_at, 280):
+		errors.append("Freeze Sample cost should be 2")
+	else:
+		print("OK Freeze Sample cost 2")
+	var gs_33 := FileAccess.get_file_as_string("res://scripts/autoload/GameState.gd")
+	if "func try_use_energy_tank" not in gs_33:
+		errors.append("GameState missing try_use_energy_tank")
+	else:
+		print("OK E-Tank spend API")
+	var hud_33 := FileAccess.get_file_as_string("res://scripts/ui/HUD.gd")
+	if "EtankButton" not in hud_33:
+		errors.append("Pause missing E-Tank button")
+	else:
+		print("OK pause E-Tank button")
+	var veil_33 := FileAccess.get_file_as_string("res://scripts/combat/StaticVeilShot.gd")
+	if "One application per shot" not in veil_33:
+		errors.append("Static Veil should apply damage once")
+	else:
+		print("OK Static Veil single hit")
+	var title_33 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
+	if "0.33" not in title_33:
+		errors.append("TitleScreen version should mention 0.33")
+	else:
+		print("OK TitleScreen 0.33")
+	var proj_33 := FileAccess.get_file_as_string("res://project.godot")
+	if 'config/version="0.33.0-proto"' not in proj_33:
+		errors.append("project.godot version should be 0.33.0-proto")
+	else:
+		print("OK project 0.33")
+	var readme_33 := FileAccess.get_file_as_string("res://README.md")
+	if "0.33" not in readme_33:
+		errors.append("README should note 0.33")
+	else:
+		print("OK README 0.33")
+	print("OK v0.33 weapons/weaknesses")
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

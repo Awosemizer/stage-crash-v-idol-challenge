@@ -3,7 +3,7 @@ extends Node2D
 const CheckpointScript := preload("res://scripts/props/Checkpoint.gd")
 ## Static Shadow (touch-first) — backstage oscuro / ruido blanco. Visión reducida;
 ## casco Stage Flight aclara. Secreto: casco Encore Guard (revela debilidades).
-## Arena: Static Shadow → Static Veil. Debilidad: Petal Chorus ×3.
+## Arena: Static Shadow → Static Veil. Debilidad: Beat Blaze ×3.
 
 const SpikeScene := preload("res://scenes/hazards/Spike.tscn")
 const PlayerScene := preload("res://scenes/player/Player.tscn")

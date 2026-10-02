@@ -1,14 +1,14 @@
 extends Area2D
 ## Petal Chorus — proyectil rosa (daño 1). Arma de Chorus Bloom.
-## Cada 3 impactos exitosos cura +1 PV al jugador (opcional).
-## Debilidad: weak_to_petal_chorus ×3 (futuros jefes).
+## Cada 4 impactos exitosos cura +1 PV (DISENO).
+## Debilidad: Metronome (weak_to_petal_chorus) ×3.
 
 const SPEED := 200.0
 const DAMAGE := 1
 const SIZE := Vector2(10, 7)
 const COLOR := Color(0.95, 0.45, 0.8, 1.0)
 const LIFETIME := 1.85
-const HEAL_EVERY := 3
+const HEAL_EVERY := 4
 
 var damage := DAMAGE
 var direction := 1

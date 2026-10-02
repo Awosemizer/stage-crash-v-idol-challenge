@@ -83,7 +83,7 @@ func _try_hit(target: Node) -> void:
 	if target.is_in_group("enemies") or target.has_method("take_damage"):
 		if target.has_method("take_damage"):
 			var dmg := damage
-			# Debilidad Glitch Ice (weak_to_neon_arc): ×3
+			# Debilidad Echo Wind (weak_to_neon_arc): ×3
 			if target.is_in_group("weak_to_neon_arc"):
 				dmg = damage * 3
 			var result = target.take_damage(dmg)

@@ -1,6 +1,6 @@
 extends CharacterBody2D
 ## Metronome — jefe fábrica de relojes / tempo. HP 28, contacto 4.
-## Ataques a intervalos fijos (tick/tock). Debilidad: Neon Arc ×3 (weak_to_neon_arc).
+## Ataques a intervalos fijos (tick/tock). Debilidad: Petal Chorus ×3 (Chorus Bloom).
 
 signal died
 signal hp_changed(current: int, maximum: int)
@@ -13,7 +13,7 @@ const DASH_H := 112.0
 const BEAT_NORMAL := 0.65  ## intervalo fijo de ataque
 const BEAT_RAGE := 0.56
 const HIT_FLASH := 0.12
-const INVULN_ON_HIT := 0.08
+const INVULN_ON_HIT := 0.45  # weak hits stay ×3 but can't melt the bar in one second
 const TELEGRAPH := 0.58
 
 enum State { IDLE, TELEGRAPH, VOLLEY, DASH, DEAD }
@@ -50,7 +50,7 @@ func _ready() -> void:
 	_sprite_art = ArtKit.skin_boss_visual(visual, "metronome")
 	add_to_group("enemies")
 	add_to_group("bosses")
-	add_to_group("weak_to_neon_arc")
+	add_to_group("weak_to_petal_chorus")
 	visual.color = Color(0.65, 0.7, 0.82, 1.0)
 	_sync_sprite_art(Color(0.65, 0.7, 0.82, 1.0))
 	if trim:

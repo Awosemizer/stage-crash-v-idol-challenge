@@ -2,7 +2,7 @@ extends Area2D
 ## Proyectil del Buster de Miku — niveles 1–3 (+ Nv4 stub con Stage Flight arms).
 
 const SPEED_LV := {1: 280.0, 2: 300.0, 3: 320.0, 4: 340.0}
-const DAMAGE_LV := {1: 1, 2: 2, 3: 3, 4: 4}
+const DAMAGE_LV := {1: 1, 2: 2, 3: 4, 4: 8}  # DISENO: Nv3=4, Nv4 Flight=8
 const SIZE_LV := {
 	1: Vector2(6, 4),
 	2: Vector2(10, 6),

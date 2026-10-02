@@ -1,7 +1,7 @@
 extends CharacterBody2D
 ## Bassquake — jefe subwoofer industrial. HP 28, contacto 4.
 ## Patrones: idle, quake stomp (ondas), salto pesado.
-## Debilidad: Freeze Sample ×3 (grupo weak_to_freeze_sample).
+## Debilidad: Echo Gale ×3 (Echo Wind).
 
 signal died
 signal hp_changed(current: int, maximum: int)
@@ -15,7 +15,7 @@ const STOMP_V := 380.0
 const BEAT_NORMAL := 0.78
 const BEAT_RAGE := 0.64
 const HIT_FLASH := 0.12
-const INVULN_ON_HIT := 0.08
+const INVULN_ON_HIT := 0.45  # weak hits stay ×3 but can't melt the bar in one second
 const TELEGRAPH := 0.70
 
 enum State { IDLE, TELEGRAPH, STOMP, JUMP, DEAD }
@@ -48,7 +48,7 @@ func _ready() -> void:
 	_sprite_art = ArtKit.skin_boss_visual(visual, "bassquake")
 	add_to_group("enemies")
 	add_to_group("bosses")
-	add_to_group("weak_to_freeze_sample")
+	add_to_group("weak_to_echo_gale")
 	visual.color = Color(0.72, 0.48, 0.22, 1.0)
 	_sync_sprite_art(Color(0.72, 0.48, 0.22, 1.0))
 	if trim:

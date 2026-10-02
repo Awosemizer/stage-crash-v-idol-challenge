@@ -1,7 +1,7 @@
 extends CharacterBody2D
 ## Neon Volt — jefe club synth / eléctricos. HP 28, contacto 4.
 ## Patrones: idle, zigzag shots, dash lateral.
-## Debilidad: Echo Gale ×3 (grupo weak_to_echo_gale).
+## Debilidad: Tempo Spike ×3 (Metronome).
 
 signal died
 signal hp_changed(current: int, maximum: int)
@@ -13,7 +13,7 @@ const DASH_H := 170.0
 const BEAT_NORMAL := 0.78
 const BEAT_RAGE := 0.50
 const HIT_FLASH := 0.12
-const INVULN_ON_HIT := 0.08
+const INVULN_ON_HIT := 0.45  # weak hits stay ×3 but can't melt the bar in one second
 
 enum State { IDLE, SHOOT, DASH, DEAD }
 
@@ -43,7 +43,7 @@ func _ready() -> void:
 	_sprite_art = ArtKit.skin_boss_visual(visual, "neon_volt")
 	add_to_group("enemies")
 	add_to_group("bosses")
-	add_to_group("weak_to_echo_gale")
+	add_to_group("weak_to_tempo_spike")
 	visual.color = Color(0.9, 0.85, 0.2, 1.0)
 	_sync_sprite_art(Color(0.9, 0.85, 0.2, 1.0))
 	if trim:

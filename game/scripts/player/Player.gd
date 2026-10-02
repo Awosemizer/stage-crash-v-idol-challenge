@@ -511,7 +511,7 @@ func grant_weapon(weapon_id: String) -> void:
 			"name": "Freeze Sample",
 			"ammo": 28,
 			"max_ammo": 28,
-			"cost": 1,
+			"cost": 2,
 		})
 		_weapon_index = _weapons.size() - 1
 		_charging = false
@@ -1189,8 +1189,8 @@ func _fire_buster(level: int) -> void:
 	ArtKit.spawn_muzzle_flash(parent_node, muzzle_pos, facing)
 	if shot.has_method("setup"):
 		shot.setup(facing, level)
-	# Stage Flight arms: +1 damage stub (weapon+)
-	if _has_flight_arms and "damage" in shot:
+	# Stage Flight arms: +1 on taps/mid charge. Nv4 is already the 8-damage burst.
+	if _has_flight_arms and "damage" in shot and int(shot.get("level")) < 4:
 		shot.damage = int(shot.damage) + 1
 
 

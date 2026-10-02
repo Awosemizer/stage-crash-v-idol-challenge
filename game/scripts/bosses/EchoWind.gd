@@ -1,7 +1,7 @@
 extends CharacterBody2D
 ## Echo Wind — jefe viento/torres. HP 28, contacto 4.
 ## Patrones: flotar, ráfagas de viento, dash aéreo.
-## Debilidad: Beat Blaze ×3 (grupo weak_to_beat_blaze).
+## Debilidad: Neon Arc ×3 (Neon Volt).
 
 signal died
 signal hp_changed(current: int, maximum: int)
@@ -15,7 +15,7 @@ const DASH_H := 160.0
 const BEAT_NORMAL := 0.82
 const BEAT_RAGE := 0.55
 const HIT_FLASH := 0.12
-const INVULN_ON_HIT := 0.08
+const INVULN_ON_HIT := 0.45  # weak hits stay ×3 but can't melt the bar in one second
 
 enum State { IDLE, FLOAT, SHOOT, DASH, DEAD }
 
@@ -47,7 +47,7 @@ func _ready() -> void:
 	_sprite_art = ArtKit.skin_boss_visual(visual, "echo_wind")
 	add_to_group("enemies")
 	add_to_group("bosses")
-	add_to_group("weak_to_beat_blaze")
+	add_to_group("weak_to_neon_arc")
 	visual.color = Color(0.35, 0.85, 0.7, 1.0)
 	_sync_sprite_art(Color(0.35, 0.85, 0.7, 1.0))
 	if scarf:

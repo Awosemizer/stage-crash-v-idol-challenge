@@ -1,6 +1,6 @@
 extends CharacterBody2D
 ## Static Shadow — jefe backstage / ruido blanco. HP 28, contacto 4.
-## Ataques de zona estática. Debilidad: Petal Chorus ×3 (weak_to_petal_chorus).
+## Ataques de zona estática. Debilidad: Beat Blaze ×3 (Beatfire).
 
 signal died
 signal hp_changed(current: int, maximum: int)
@@ -12,7 +12,7 @@ const DASH_H := 104.0
 const BEAT_NORMAL := 0.85
 const BEAT_RAGE := 0.64
 const HIT_FLASH := 0.12
-const INVULN_ON_HIT := 0.08
+const INVULN_ON_HIT := 0.45  # weak hits stay ×3 but can't melt the bar in one second
 const TELEGRAPH := 0.58
 
 enum State { IDLE, TELEGRAPH, ZONE, DASH, BURST, DEAD }
@@ -48,7 +48,7 @@ func _ready() -> void:
 	_sprite_art = ArtKit.skin_boss_visual(visual, "static_shadow")
 	add_to_group("enemies")
 	add_to_group("bosses")
-	add_to_group("weak_to_petal_chorus")
+	add_to_group("weak_to_beat_blaze")
 	visual.color = Color(0.35, 0.3, 0.45, 1.0)
 	_sync_sprite_art(Color(0.35, 0.3, 0.45, 1.0))
 	if trim:

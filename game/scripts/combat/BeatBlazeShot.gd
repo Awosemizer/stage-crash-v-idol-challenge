@@ -69,7 +69,7 @@ func _try_hit(target: Node) -> void:
 	if target.is_in_group("enemies") or target.has_method("take_damage"):
 		if target.has_method("take_damage"):
 			var dmg := damage
-			# Debilidad Echo Wind (y futuros weak_to_beat_blaze): ×3
+			# Debilidad Static Shadow (weak_to_beat_blaze): ×3
 			if target.is_in_group("weak_to_beat_blaze"):
 				dmg = damage * 3
 			var result = target.take_damage(dmg)

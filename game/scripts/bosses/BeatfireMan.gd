@@ -17,7 +17,7 @@ const BEAT_NORMAL := 0.78
 const BEAT_RAGE := 0.58
 const TELEGRAPH := 0.78
 const HIT_FLASH := 0.12
-const INVULN_ON_HIT := 0.08
+const INVULN_ON_HIT := 0.45  # weak hits stay ×3 but can't melt the bar in one second
 
 enum State { IDLE, JUMP, SHOOT, TELEGRAPH, POUND, DEAD }
 

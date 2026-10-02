@@ -106,10 +106,10 @@ func _try_hit(target: Node, free_on_wall: bool) -> void:
 		if not target.has_method("take_damage"):
 			return
 		var id := target.get_instance_id()
-		# One hit per tick window per target
-		if _hit_ids.has(id) and float(_hit_ids[id]) > _life - 0.05:
+		# One application per shot. Ticks are visual; damage is the table value (3 / 9).
+		if _hit_ids.has(id):
 			return
-		_hit_ids[id] = _life
+		_hit_ids[id] = true
 		var dmg := damage
 		if target.is_in_group("weak_to_static_veil"):
 			dmg = damage * 3

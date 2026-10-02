@@ -1,7 +1,7 @@
 extends CharacterBody2D
 ## Glitch Ice — jefe estudio congelado / frame glitch. HP 28, contacto 4.
 ## Patrones: idle, hielo glitch shots, tele-dash (frame skip).
-## Debilidad: Neon Arc ×3 (grupo weak_to_neon_arc).
+## Debilidad: Quake Drop ×3 (Bassquake).
 
 signal died
 signal hp_changed(current: int, maximum: int)
@@ -13,7 +13,7 @@ const TELE_H := 150.0
 const BEAT_NORMAL := 0.75
 const BEAT_RAGE := 0.42
 const HIT_FLASH := 0.12
-const INVULN_ON_HIT := 0.08
+const INVULN_ON_HIT := 0.45  # weak hits stay ×3 but can't melt the bar in one second
 
 enum State { IDLE, SHOOT, TELE, DEAD }
 
@@ -43,7 +43,7 @@ func _ready() -> void:
 	_sprite_art = ArtKit.skin_boss_visual(visual, "glitch_ice")
 	add_to_group("enemies")
 	add_to_group("bosses")
-	add_to_group("weak_to_neon_arc")
+	add_to_group("weak_to_quake_drop")
 	visual.color = Color(0.55, 0.85, 1.0, 1.0)
 	_sync_sprite_art(Color(0.55, 0.85, 1.0, 1.0))
 	if trim:

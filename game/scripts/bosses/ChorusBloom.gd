@@ -1,7 +1,7 @@
 extends CharacterBody2D
 ## Chorus Bloom — jefe invernadero / escenario floral. HP 28, contacto 4.
 ## Patrones: idle, abanico de pétalos, salto floral.
-## Debilidad: Freeze Sample ×3 (grupo weak_to_freeze_sample).
+## Debilidad: Static Veil ×3 (Static Shadow).
 
 signal died
 signal hp_changed(current: int, maximum: int)
@@ -13,7 +13,7 @@ const JUMP_V := -210.0
 const BEAT_NORMAL := 0.80
 const BEAT_RAGE := 0.50
 const HIT_FLASH := 0.12
-const INVULN_ON_HIT := 0.08
+const INVULN_ON_HIT := 0.45  # weak hits stay ×3 but can't melt the bar in one second
 
 enum State { IDLE, FAN, JUMP, DEAD }
 
@@ -42,7 +42,7 @@ func _ready() -> void:
 	_sprite_art = ArtKit.skin_boss_visual(visual, "chorus_bloom")
 	add_to_group("enemies")
 	add_to_group("bosses")
-	add_to_group("weak_to_freeze_sample")
+	add_to_group("weak_to_static_veil")
 	visual.color = Color(0.85, 0.4, 0.7, 1.0)
 	_sync_sprite_art(Color(0.85, 0.4, 0.7, 1.0))
 	if trim:

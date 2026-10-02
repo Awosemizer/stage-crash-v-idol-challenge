@@ -54,6 +54,7 @@ var _weapon_strip_btns: Array = []
 var _ammo_flash := 0.0
 var _ammo_toast: Label
 var _touch_size_btn: Button = null
+var _etank_btn: Button = null
 var _touch_op_btn: Button = null
 var _boss_hp_root: Control = null
 var _boss_hp_bg: ColorRect = null
@@ -362,6 +363,15 @@ func _build_ui() -> void:
 	_quit_btn.pressed.connect(_quit_to_boss_select)
 	_pause_panel.add_child(_quit_btn)
 
+	_etank_btn = Button.new()
+	_etank_btn.name = "EtankButton"
+	_etank_btn.text = "E-Tank"
+	_etank_btn.add_theme_font_size_override("font_size", 11)
+	_etank_btn.process_mode = Node.PROCESS_MODE_ALWAYS
+	_etank_btn.focus_mode = Control.FOCUS_NONE
+	_etank_btn.pressed.connect(_on_etank_pressed)
+	_pause_panel.add_child(_etank_btn)
+
 	_weapon_strip_title = Label.new()
 	_weapon_strip_title.name = "WeaponStripTitle"
 	_weapon_strip_title.text = "Armas"
@@ -509,7 +519,7 @@ func _layout() -> void:
 	var btn_h := maxf(36.0, minf(_SafeArea.PREFERRED_BTN_H, 40.0))
 	var opt_h := maxf(22.0, btn_h * 0.72)
 	var strip_h := 64.0
-	var ph := 28.0 + btn_h * 2.0 + opt_h + 28.0 + strip_h + 16.0
+	var ph := 28.0 + btn_h + 34.0 + opt_h + 28.0 + strip_h + 16.0
 	ph = minf(ph, area.size.y * 0.94)
 	_pause_panel.size = Vector2(pw, ph)
 	_pause_panel.position = Vector2(
@@ -518,12 +528,16 @@ func _layout() -> void:
 	)
 	_pause_title.position = Vector2(0, 6)
 	_pause_title.size = Vector2(pw, 18)
-	var bw := minf(160.0, pw - 24.0)
-	_resume_btn.size = Vector2(bw, btn_h)
-	_resume_btn.position = Vector2((pw - bw) * 0.5, 26)
+	var bw := minf(260.0, pw - 24.0)
+	var gap := 6.0
+	var half := (bw - gap) * 0.5
+	var pair_x := (pw - bw) * 0.5
+	var row_y := 26.0
+	_resume_btn.size = Vector2(half, btn_h)
+	_resume_btn.position = Vector2(pair_x, row_y)
 	if _quit_btn:
-		_quit_btn.size = Vector2(bw, btn_h)
-		_quit_btn.position = Vector2((pw - bw) * 0.5, 26 + btn_h + 6.0)
+		_quit_btn.size = Vector2(half, btn_h)
+		_quit_btn.position = Vector2(pair_x + half + gap, row_y)
 		# Style quit/resume for visibility
 		var rn := StyleBoxFlat.new()
 		rn.bg_color = Color(0.12, 0.35, 0.28, 0.95)
@@ -537,7 +551,13 @@ func _layout() -> void:
 		qn.border_color = Color(0.95, 0.45, 0.5)
 		qn.set_corner_radius_all(4)
 		_quit_btn.add_theme_stylebox_override("normal", qn)
-	var opt_top := 26 + btn_h * 2.0 + 10.0
+	var etank_y := row_y + btn_h + 6.0
+	if _etank_btn:
+		_etank_btn.size = Vector2(bw, 28.0)
+		_etank_btn.position = Vector2(pair_x, etank_y)
+		_refresh_etank_btn()
+		_SafeArea.style_button(_etank_btn, Color(0.1, 0.28, 0.32, 0.95), Color(0.4, 0.95, 1.0, 0.95), 3)
+	var opt_top := etank_y + 36.0
 	var half_w := (bw - 6.0) * 0.5
 	if _touch_size_btn:
 		_touch_size_btn.size = Vector2(half_w, opt_h)
@@ -730,6 +750,42 @@ func _on_pause_btn_gui_input(event: InputEvent) -> void:
 			_toggle_pause()
 			get_viewport().set_input_as_handled()
 
+
+
+func _refresh_etank_btn() -> void:
+	if _etank_btn == null:
+		return
+	var n := 0
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs != null and gs.has_method("get_energy_tanks"):
+		n = int(gs.get_energy_tanks())
+	var full := false
+	if get_tree():
+		var players := get_tree().get_nodes_in_group("player")
+		if not players.is_empty():
+			var p: Node = players[0]
+			var hp_now := int(p.get("hp")) if p.get("hp") != null else 0
+			var hp_max := int(p.get("max_hp")) if p.get("max_hp") != null else 28
+			full = hp_now <= 0 or hp_now >= hp_max
+	_etank_btn.text = "E-Tank ×%d · cura 28" % n
+	_etank_btn.disabled = n <= 0 or full
+
+
+func _on_etank_pressed() -> void:
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	var used := false
+	if gs != null and gs.has_method("try_use_energy_tank"):
+		used = bool(gs.try_use_energy_tank())
+	if used and AudioManager:
+		AudioManager.play_sfx("pickup")
+	elif _ammo_toast:
+		_ammo_toast.visible = true
+		_ammo_flash = 0.8
+		var n := 0
+		if gs != null and gs.has_method("get_energy_tanks"):
+			n = int(gs.get_energy_tanks())
+		_ammo_toast.text = "PV al máximo" if n > 0 else "Sin E-Tank"
+	_refresh_etank_btn()
 
 
 func _quit_to_boss_select() -> void:
