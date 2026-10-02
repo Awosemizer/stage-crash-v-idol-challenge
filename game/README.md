@@ -21,6 +21,8 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 
 Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome / LevelStaticShadow.
 
+**v0.32:** Menús/HUD — botones de título, slots y cartelera más altos, Datos en boss select, check y secreto más legibles, HP de jefe a la derecha, aviso «Sin munición», pausa 36px sin tapar el cambio de arma.
+
 **v0.31:** Feel/balance — wall-cling only while holding in, wall-jump no longer steals a jump when holding away, tighter camera drag, saber active frames + recovery, special-weapon fire cadence, HUD charge pips + ammo bar, fairer Beatfire/Metronome/Static Shadow/Bassquake telegraphs.
 
 **v0.30:** Stability/QA — expanded smoke (Title→Select→BossSelect→all stages), save roundtrip for fortress_segment/tutorials/touch prefs, hitstop/pause time_scale guards, AudioManager missing-stream safety.

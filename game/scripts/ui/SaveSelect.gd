@@ -37,9 +37,9 @@ func _build_ui() -> void:
 
 	var hint := Label.new()
 	hint.name = "Hint"
-	hint.text = "Elige un slot (1–3)" if is_new else "Elige una partida guardada"
+	hint.text = "Si el slot tiene datos, se reemplaza" if is_new else "Elige una partida guardada"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.add_theme_font_size_override("font_size", 8)
+	hint.add_theme_font_size_override("font_size", 10)
 	hint.modulate = Color(0.7, 0.75, 0.85, 0.85)
 	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(hint)
@@ -72,7 +72,7 @@ func _layout() -> void:
 		hint.position = Vector2(area.position.x, area.position.y + 22.0)
 		hint.size = Vector2(area.size.x, 12)
 
-	var btn_h := maxf(_SafeArea.MIN_BTN_H, 32.0)
+	var btn_h := maxf(_SafeArea.MIN_BTN_H, 36.0)
 	var back := get_node_or_null("BackButton") as Button
 	if back:
 		back.size = Vector2(96, btn_h)
@@ -105,12 +105,12 @@ func _layout() -> void:
 			if title:
 				title.position = Vector2(10, 6)
 				title.size = Vector2(_slot_w - 20, 14)
-				title.add_theme_font_size_override("font_size", 10 if _slot_h >= 40.0 else 8)
+				title.add_theme_font_size_override("font_size", 12 if _slot_h >= 40.0 else 10)
 			var detail := btn.get_node_or_null("SlotSummary") as Label
 			if detail:
 				detail.position = Vector2(10, maxf(_slot_h * 0.45, 18.0))
 				detail.size = Vector2(_slot_w - 20, maxf(_slot_h * 0.45, 16.0))
-				detail.add_theme_font_size_override("font_size", 8 if _slot_h >= 40.0 else 6)
+				detail.add_theme_font_size_override("font_size", 10 if _slot_h >= 40.0 else 8)
 
 
 func _make_slot_cell(slot: int, is_new: bool) -> Control:
@@ -157,7 +157,7 @@ func _make_slot_cell(slot: int, is_new: bool) -> Control:
 	var title := Label.new()
 	title.name = "SlotTitle"
 	title.text = "Slot %d" % (slot + 1)
-	title.add_theme_font_size_override("font_size", 9)
+	title.add_theme_font_size_override("font_size", 11)
 	title.modulate = Color(0.95, 0.95, 1.0, 1.0)
 	title.position = Vector2(8, 4)
 	title.size = Vector2(80, 12)
@@ -166,7 +166,7 @@ func _make_slot_cell(slot: int, is_new: bool) -> Control:
 
 	var detail := Label.new()
 	detail.name = "SlotSummary"
-	detail.add_theme_font_size_override("font_size", 7)
+	detail.add_theme_font_size_override("font_size", 9)
 	detail.position = Vector2(8, 18)
 	detail.size = Vector2(204, 20)
 	detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -182,7 +182,7 @@ func _make_slot_cell(slot: int, is_new: bool) -> Control:
 		var diff_tag := "Difícil" if diff_s == "hard" else "Normal"
 		detail.text = "%s · %d/8 · ET %d · %s" % [cname, bosses, tanks, diff_tag]
 		if is_new:
-			detail.text += "  (sobrescribir)"
+			detail.text += " · se reemplaza"
 		detail.modulate = Color(0.85, 0.9, 0.95, 0.95)
 	btn.add_child(detail)
 

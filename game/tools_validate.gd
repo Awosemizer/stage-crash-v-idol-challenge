@@ -3683,7 +3683,7 @@ func _initialize() -> void:
 
 	# --- v0.20 landscape + Beatfire touch playability ---
 	var proj := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.31.0-proto"' not in proj and 'config/version="0.30.0-proto"' not in proj and 'config/version="0.29.0-proto"' not in proj and 'config/version="0.28.0-proto"' not in proj and 'config/version="0.27.0-proto"' not in proj and 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj:
+	if 'config/version="0.32.0-proto"' not in proj and 'config/version="0.31.0-proto"' not in proj and 'config/version="0.30.0-proto"' not in proj and 'config/version="0.29.0-proto"' not in proj and 'config/version="0.28.0-proto"' not in proj and 'config/version="0.27.0-proto"' not in proj and 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj:
 		errors.append("project.godot version should be 0.28.0-proto+")
 	else:
 		print("OK project version present")
@@ -4104,12 +4104,12 @@ func _initialize() -> void:
 	else:
 		print("OK Level01 checkpoints")
 	var title_27 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.27" not in title_27 and "0.28" not in title_27 and "0.29" not in title_27 and "0.30" not in title_27 and "0.31" not in title_27:
+	if "0.27" not in title_27 and "0.28" not in title_27 and "0.29" not in title_27 and "0.30" not in title_27 and "0.31" not in title_27 and "0.32" not in title_27:
 		errors.append("TitleScreen version should mention 0.27+")
 	else:
 		print("OK TitleScreen 0.27+")
 	var proj_27 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.27.0-proto"' not in proj_27 and 'config/version="0.28.0-proto"' not in proj_27 and 'config/version="0.29.0-proto"' not in proj_27 and 'config/version="0.30.0-proto"' not in proj_27 and 'config/version="0.31.0-proto"' not in proj_27:
+	if 'config/version="0.27.0-proto"' not in proj_27 and 'config/version="0.28.0-proto"' not in proj_27 and 'config/version="0.29.0-proto"' not in proj_27 and 'config/version="0.30.0-proto"' not in proj_27 and 'config/version="0.31.0-proto"' not in proj_27 and 'config/version="0.32.0-proto"' not in proj_27:
 		errors.append("project.godot version should be 0.27+/0.28")
 	else:
 		print("OK project 0.27+")
@@ -4190,12 +4190,12 @@ func _initialize() -> void:
 	else:
 		print("OK TouchControls scaled gaps")
 	var title_28 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.28" not in title_28 and "0.29" not in title_28 and "0.30" not in title_28 and "0.31" not in title_28:
+	if "0.28" not in title_28 and "0.29" not in title_28 and "0.30" not in title_28 and "0.31" not in title_28 and "0.32" not in title_28:
 		errors.append("TitleScreen version should mention 0.28+")
 	else:
 		print("OK TitleScreen 0.28")
 	var proj_28 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.28.0-proto"' not in proj_28 and 'config/version="0.29.0-proto"' not in proj_28 and 'config/version="0.30.0-proto"' not in proj_28 and 'config/version="0.31.0-proto"' not in proj_28:
+	if 'config/version="0.28.0-proto"' not in proj_28 and 'config/version="0.29.0-proto"' not in proj_28 and 'config/version="0.30.0-proto"' not in proj_28 and 'config/version="0.31.0-proto"' not in proj_28 and 'config/version="0.32.0-proto"' not in proj_28:
 		errors.append("project.godot version should be 0.28+/0.29")
 	else:
 		print("OK project 0.28")
@@ -4285,12 +4285,12 @@ func _initialize() -> void:
 	else:
 		print("OK Heart ending button")
 	var title_29 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.29" not in title_29 and "0.30" not in title_29 and "0.31" not in title_29:
+	if "0.29" not in title_29 and "0.30" not in title_29 and "0.31" not in title_29 and "0.32" not in title_29:
 		errors.append("TitleScreen version should mention 0.29+")
 	else:
 		print("OK TitleScreen 0.29+")
 	var proj_29 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.29.0-proto"' not in proj_29 and 'config/version="0.30.0-proto"' not in proj_29 and 'config/version="0.31.0-proto"' not in proj_29:
+	if 'config/version="0.29.0-proto"' not in proj_29 and 'config/version="0.30.0-proto"' not in proj_29 and 'config/version="0.31.0-proto"' not in proj_29 and 'config/version="0.32.0-proto"' not in proj_29:
 		errors.append("project.godot version should be 0.29+/0.30")
 	else:
 		print("OK project 0.29+")
@@ -4470,17 +4470,17 @@ func _initialize() -> void:
 		errors.append("AudioManager could not be mounted for missing-stream test")
 
 	var title_30 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.30" not in title_30 and "0.31" not in title_30:
+	if "0.30" not in title_30 and "0.31" not in title_30 and "0.32" not in title_30:
 		errors.append("TitleScreen version should mention 0.30+")
 	else:
 		print("OK TitleScreen 0.30")
 	var proj_30 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.30.0-proto"' not in proj_30 and 'config/version="0.31.0-proto"' not in proj_30:
+	if 'config/version="0.30.0-proto"' not in proj_30 and 'config/version="0.31.0-proto"' not in proj_30 and 'config/version="0.32.0-proto"' not in proj_30:
 		errors.append("project.godot version should be 0.30+")
 	else:
 		print("OK project 0.30")
 	var readme_30 := FileAccess.get_file_as_string("res://README.md")
-	if "v0.30" not in readme_30 and "0.30" not in readme_30 and "0.31" not in readme_30:
+	if "v0.30" not in readme_30 and "0.30" not in readme_30 and "0.31" not in readme_30 and "0.32" not in readme_30:
 		errors.append("README should note 0.30+")
 	else:
 		print("OK README 0.30")
@@ -4517,21 +4517,55 @@ func _initialize() -> void:
 	else:
 		print("OK boss fairness v0.31")
 	var title_31 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.31" not in title_31:
+	if "0.31" not in title_31 and "0.32" not in title_31:
 		errors.append("TitleScreen version should mention 0.31")
 	else:
 		print("OK TitleScreen 0.31")
 	var proj_31 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.31.0-proto"' not in proj_31:
+	if 'config/version="0.31.0-proto"' not in proj_31 and 'config/version="0.32.0-proto"' not in proj_31:
 		errors.append("project.godot version should be 0.31.0-proto")
 	else:
 		print("OK project 0.31")
 	var readme_31 := FileAccess.get_file_as_string("res://README.md")
-	if "0.31" not in readme_31:
+	if "0.31" not in readme_31 and "0.32" not in readme_31:
 		errors.append("README should note 0.31")
 	else:
 		print("OK README 0.31")
 	print("OK v0.31 feel/balance")
+
+
+	# --- v0.32 menus / HUD / touch ---
+	var title_32 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
+	if "0.32" not in title_32:
+		errors.append("TitleScreen version should mention 0.32")
+	else:
+		print("OK TitleScreen 0.32")
+	var proj_32 := FileAccess.get_file_as_string("res://project.godot")
+	if 'config/version="0.32.0-proto"' not in proj_32:
+		errors.append("project.godot version should be 0.32.0-proto")
+	else:
+		print("OK project 0.32")
+	var readme_32 := FileAccess.get_file_as_string("res://README.md")
+	if "0.32" not in readme_32:
+		errors.append("README should note 0.32")
+	else:
+		print("OK README 0.32")
+	var bsel_32 := FileAccess.get_file_as_string("res://scripts/ui/BossSelect.gd")
+	if "DatosButton" not in bsel_32 or "_datos_text" not in bsel_32:
+		errors.append("BossSelect missing Datos button")
+	else:
+		print("OK BossSelect Datos")
+	var hud_32 := FileAccess.get_file_as_string("res://scripts/ui/HUD.gd")
+	if "Sin munición" not in hud_32 or "PAUSE_BTN := 36.0" not in hud_32:
+		errors.append("HUD missing ammo toast or 36px pause")
+	else:
+		print("OK HUD pause/ammo toast")
+	var touch_32 := FileAccess.get_file_as_string("res://scripts/ui/TouchControls.gd")
+	if "WEAPON_TOP_CLEAR := 58.0" not in touch_32 or "CLUSTER_GAP := 20.0" not in touch_32:
+		errors.append("TouchControls should keep 20px gaps and clear the taller pause")
+	else:
+		print("OK touch clear of pause")
+	print("OK v0.32 menus/HUD")
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

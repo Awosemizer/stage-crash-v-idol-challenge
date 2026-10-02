@@ -31,9 +31,9 @@ func _build_ui() -> void:
 
 	var hint := Label.new()
 	hint.name = "Hint"
-	hint.text = "Miku: Buster  ·  Teto: Sable"
+	hint.text = "Miku: Buster y carga    ·    Teto: sable de cerca"
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.add_theme_font_size_override("font_size", 8)
+	hint.add_theme_font_size_override("font_size", 10)
 	hint.modulate = Color(0.7, 0.75, 0.85, 0.8)
 	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(hint)
@@ -72,7 +72,7 @@ func _build_ui() -> void:
 	miku_sub.name = "MikuSub"
 	miku_sub.text = "Buster + carga"
 	miku_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	miku_sub.add_theme_font_size_override("font_size", 8)
+	miku_sub.add_theme_font_size_override("font_size", 10)
 	miku_sub.modulate = Color(0.8, 0.95, 1.0, 0.9)
 	miku_sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	miku_btn.add_child(miku_sub)
@@ -111,14 +111,14 @@ func _build_ui() -> void:
 	teto_sub.name = "TetoSub"
 	teto_sub.text = "Sable melee"
 	teto_sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	teto_sub.add_theme_font_size_override("font_size", 8)
+	teto_sub.add_theme_font_size_override("font_size", 10)
 	teto_sub.modulate = Color(1.0, 0.8, 0.82, 0.9)
 	teto_sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	teto_btn.add_child(teto_sub)
 
 	var diff_btn := Button.new()
 	diff_btn.name = "DiffButton"
-	diff_btn.add_theme_font_size_override("font_size", 10)
+	diff_btn.add_theme_font_size_override("font_size", 11)
 	_SafeArea.style_button(diff_btn, Color(0.16, 0.14, 0.22, 0.95), Color(0.85, 0.55, 1.0, 0.95))
 	diff_btn.pressed.connect(_on_diff_toggle)
 	add_child(diff_btn)
@@ -144,15 +144,22 @@ func _layout() -> void:
 		hint.position = Vector2(area.position.x, area.position.y + 22.0)
 		hint.size = Vector2(area.size.x, 12)
 
-	var footer_h := maxf(_SafeArea.MIN_BTN_H, 32.0)
+	var footer_h := maxf(_SafeArea.MIN_BTN_H, 36.0)
 	var back := get_node_or_null("BackButton") as Button
 	var diff := get_node_or_null("DiffButton") as Button
 	if back:
 		back.size = Vector2(96, footer_h)
 		back.position = Vector2(area.position.x, area.end.y - footer_h)
 	if diff:
-		diff.size = Vector2(160, footer_h)
-		diff.position = Vector2(area.position.x + (area.size.x - 160.0) * 0.5, area.end.y - footer_h)
+		var dw := minf(188.0, area.size.x * 0.46)
+		diff.size = Vector2(dw, footer_h)
+		var dx := area.position.x + (area.size.x - dw) * 0.5
+		if back and dx < back.position.x + back.size.x + 8.0:
+			dx = back.position.x + back.size.x + 8.0
+		if dx + dw > area.end.x:
+			dw = maxf(area.end.x - dx, 96.0)
+			diff.size.x = dw
+		diff.position = Vector2(dx, area.end.y - footer_h)
 
 	var card_top := area.position.y + 38.0
 	var card_bottom := area.end.y - footer_h - 10.0
@@ -220,7 +227,7 @@ func _refresh_diff_label(btn: Button = null) -> void:
 	if b == null:
 		return
 	var hard := GameState.is_hard() if GameState else false
-	b.text = "Dificultad: Difícil" if hard else "Dificultad: Normal"
+	b.text = "Dificultad: DIFÍCIL" if hard else "Dificultad: Normal"
 
 
 func _on_diff_toggle() -> void:

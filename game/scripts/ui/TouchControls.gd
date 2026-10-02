@@ -21,13 +21,13 @@ const KNOB_R := 16.0
 const BTN_JUMP := 34.0
 const BTN_ATTACK := 30.0
 const BTN_SLIDE := 26.0
-const BTN_WEAPON := 22.0
+const BTN_WEAPON := 24.0
 ## Minimum clear gap between face-button hit rects (no overlap on thumbs).
 const CLUSTER_GAP := 20.0
 const SLIDE_GAP := 20.0
 const WEAPON_GAP := 8.0
 ## Keep weapon switch clear of pause (28) + armor row (~15) + margin.
-const WEAPON_TOP_CLEAR := 48.0
+const WEAPON_TOP_CLEAR := 58.0  # pause 36 + armor row
 
 var _root: Control
 var _stick_base: Panel

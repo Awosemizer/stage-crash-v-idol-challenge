@@ -1,6 +1,7 @@
 # Stage Crash: V-Idol Challenge
 
 
+**v0.32:** menús/HUD — botones más altos, panel Datos, jefes y munición más legibles, pausa sin pisar el cambio de arma.
 **v0.31:** feel/balance — movimiento (pared solo si empujas), sable con recovery, cadencia de armas, pips de carga y barra de munición, jefes Beatfire/Metronome/Static Shadow/Bassquake más justos.
 **v0.28:** secrets clearer + Flight helmet map blip, top boss HP bar, wall-jump/slide tutorial toasts, touch S/M/L keeps ATK/DASH gap.
 **v0.27:** checkpoints, feel polish, touch size/opacity.
@@ -17,7 +18,7 @@ Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.31.0-proto`
+- Versión demo: `0.32.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)
@@ -56,7 +57,7 @@ En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
 
 Archivo listo (debug, un solo archivo, ~27 MB):
 
-**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.31 — feel/balance)
+**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.32 — menús/HUD)
 
 1. Descarga el APK desde este repo (botón Raw / Download).
 2. En el teléfono: permite **orígenes desconocidos** / instalar apps desconocidas para el navegador o gestor de archivos.

@@ -89,7 +89,7 @@ func _build_ui() -> void:
 	tag.name = "Tagline"
 	tag.text = "Miku × Teto"
 	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	tag.add_theme_font_size_override("font_size", 9)
+	tag.add_theme_font_size_override("font_size", 10)
 	tag.modulate = Color(0.75, 0.8, 0.9, 0.85)
 	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(tag)
@@ -104,6 +104,7 @@ func _build_ui() -> void:
 	continue_btn.disabled = not has_saves
 	if not has_saves:
 		continue_btn.modulate = Color(0.55, 0.55, 0.6, 1.0)
+		continue_btn.tooltip_text = "Aún no hay partidas"
 	continue_btn.pressed.connect(_on_continue_pressed)
 	add_child(continue_btn)
 
@@ -143,9 +144,9 @@ func _build_ui() -> void:
 
 	var ver := Label.new()
 	ver.name = "Version"
-	ver.text = "v0.31.0-proto · feel/balance"
+	ver.text = "v0.32.0-proto · menús/HUD"
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	ver.add_theme_font_size_override("font_size", 7)
+	ver.add_theme_font_size_override("font_size", 8)
 	ver.modulate = Color(0.55, 0.6, 0.7, 0.75)
 	ver.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(ver)
@@ -157,7 +158,8 @@ func _layout() -> void:
 	var ox := _SafeArea.center_x(DESIGN_W, area)
 	# Compact header when vertical space is tight (short phones / tall safe insets)
 	var tight := area.size.y < 200.0
-	var header_h := 78.0 if tight else 96.0
+	# Leave room for three primary buttons near 40px on the 224px design height.
+	var header_h := 46.0 if tight else 54.0
 
 	var accent := get_node_or_null("AccentBar") as ColorRect
 	if accent:
@@ -214,7 +216,7 @@ func _layout() -> void:
 	# Primary stack: Continuar / Nueva / Logros — prefer 44px; reserve mute+version strip
 	var btn_w := minf(160.0, area.size.x - 24.0)
 	var stack_top := area.position.y + header_h
-	var stack_bottom := area.end.y - 30.0
+	var stack_bottom := area.end.y - 32.0
 	var avail := maxf(stack_bottom - stack_top, 90.0)
 	var btn_h := _SafeArea.btn_h(avail, 3, 6.0, true)
 	var bx := area.position.x + (area.size.x - btn_w) * 0.5
@@ -237,13 +239,14 @@ func _layout() -> void:
 
 	var mute := get_node_or_null("MuteButton") as Button
 	if mute:
-		mute.size = Vector2(96, maxf(_SafeArea.MIN_BTN_H_SECONDARY, 22.0))
+		mute.size = Vector2(108, _SafeArea.MIN_BTN_H)
 		mute.position = Vector2(area.end.x - mute.size.x, area.end.y - mute.size.y)
+		mute.add_theme_font_size_override("font_size", 10)
 
 	var ver := get_node_or_null("Version") as Label
 	if ver:
 		# Keep clear of mute button (left side)
-		ver.position = Vector2(area.position.x, area.end.y - 12.0)
+		ver.position = Vector2(area.position.x, area.end.y - 14.0)
 		ver.size = Vector2(maxf(area.size.x - mute.size.x - 8.0, 60.0), 12)
 		ver.clip_text = true
 

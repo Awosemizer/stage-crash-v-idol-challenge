@@ -14,7 +14,7 @@ const HP_BAR_W := 72.0
 const HP_BAR_H := 8.0
 const TANK_SIZE := 7.0
 const ARMOR_SIZE := 12.0
-const PAUSE_BTN := 28.0
+const PAUSE_BTN := 36.0
 ## Keep HUD cluster above touch stick / buttons (bottom ~90px reserved).
 const TOUCH_RESERVE_BOTTOM := 90.0
 
@@ -52,6 +52,7 @@ var _weapon_strip: HFlowContainer = null
 var _weapon_strip_title: Label = null
 var _weapon_strip_btns: Array = []
 var _ammo_flash := 0.0
+var _ammo_toast: Label
 var _touch_size_btn: Button = null
 var _touch_op_btn: Button = null
 var _boss_hp_root: Control = null
@@ -66,6 +67,8 @@ func _process(delta: float) -> void:
 	if _ammo_flash > 0.0:
 		_ammo_flash = maxf(_ammo_flash - delta, 0.0)
 		_refresh_weapon()
+		if _ammo_flash <= 0.0 and _ammo_toast:
+			_ammo_toast.visible = false
 	_refresh_charge()
 	_boss_poll_t -= delta
 	if _boss_poll_t <= 0.0:
@@ -163,8 +166,11 @@ func set_weapon_ammo(ammo: int, max_ammo: int = -1) -> void:
 
 
 func flash_ammo_empty() -> void:
-	## Red blink when special weapon ammo is empty.
-	_ammo_flash = 0.55
+	## Red blink + short Spanish line when special weapon ammo is empty.
+	_ammo_flash = 0.9
+	if _ammo_toast:
+		_ammo_toast.visible = true
+		_ammo_toast.text = "Sin munición — cambia de arma"
 	_refresh_weapon()
 
 
@@ -264,6 +270,14 @@ func _build_ui() -> void:
 	_ammo_bar_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_ammo_bar_bg.add_child(_ammo_bar_fill)
 
+	_ammo_toast = Label.new()
+	_ammo_toast.name = "AmmoToast"
+	_ammo_toast.visible = false
+	_ammo_toast.add_theme_font_size_override("font_size", 11)
+	_ammo_toast.modulate = Color(1.0, 0.45, 0.4, 1.0)
+	_ammo_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(_ammo_toast)
+
 	_charge_label = Label.new()
 	_charge_label.name = "ChargeLabel"
 	_charge_label.add_theme_font_size_override("font_size", 9)
@@ -273,7 +287,7 @@ func _build_ui() -> void:
 
 	_weakness_label = Label.new()
 	_weakness_label.name = "WeaknessHint"
-	_weakness_label.add_theme_font_size_override("font_size", 7)
+	_weakness_label.add_theme_font_size_override("font_size", 8)
 	_weakness_label.modulate = Color(0.95, 0.7, 0.4, 0.9)
 	_weakness_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_weakness_label.visible = false
@@ -451,8 +465,12 @@ func _layout() -> void:
 		_ammo_bar_bg.size = Vector2(72.0, 4.0)
 		_refresh_weapon()
 	if _charge_label:
-		_charge_label.position = Vector2(left + PORTRAIT_SIZE + HP_BAR_W + 8.0, top)
+		# Beside the HP bar. Boss HP sits top-right, so this stays on the left.
+		_charge_label.position = Vector2(left + PORTRAIT_SIZE + HP_BAR_W + 6.0, top)
 		_charge_label.size = Vector2(52.0, 12.0)
+	if _ammo_toast:
+		_ammo_toast.position = Vector2(left, top + PORTRAIT_SIZE + 32.0)
+		_ammo_toast.size = Vector2(200.0, 14.0)
 
 	if _weakness_label:
 		_weakness_label.position = Vector2(left, top + PORTRAIT_SIZE + 20.0)
@@ -488,9 +506,9 @@ func _layout() -> void:
 
 	# Centered pause panel — large touch targets + weapon strip + touch opts
 	var pw := minf(300.0, area.size.x * 0.94)
-	var btn_h := maxf(_SafeArea.MIN_BTN_H, minf(_SafeArea.PREFERRED_BTN_H, 36.0))
+	var btn_h := maxf(36.0, minf(_SafeArea.PREFERRED_BTN_H, 40.0))
 	var opt_h := maxf(22.0, btn_h * 0.72)
-	var strip_h := 56.0
+	var strip_h := 64.0
 	var ph := 28.0 + btn_h * 2.0 + opt_h + 28.0 + strip_h + 16.0
 	ph = minf(ph, area.size.y * 0.94)
 	_pause_panel.size = Vector2(pw, ph)
@@ -540,9 +558,12 @@ func _layout() -> void:
 
 	# Boss HP — top center of safe area (above playfield, clear of pause)
 	if _boss_hp_root:
-		var bar_w := minf(160.0, area.size.x * 0.42)
+		var bar_w := minf(132.0, area.size.x * 0.36)
 		var bar_h := 8.0
-		_boss_hp_root.position = Vector2(area.position.x + (area.size.x - bar_w) * 0.5, top)
+		# Right of center, clear of the pause button and the left HP/weapon cluster.
+		var boss_x := right - PAUSE_BTN - 8.0 - bar_w
+		boss_x = maxf(boss_x, left + PORTRAIT_SIZE + HP_BAR_W + 28.0)
+		_boss_hp_root.position = Vector2(boss_x, top)
 		_boss_hp_root.size = Vector2(bar_w, 28.0)
 		var title_n := _boss_hp_root.get_node_or_null("BossHpTitle") as Label
 		if title_n:
@@ -797,8 +818,8 @@ func _rebuild_weapon_strip() -> void:
 		var btn := Button.new()
 		btn.name = "Wpn_%s" % wid
 		btn.text = short
-		btn.custom_minimum_size = Vector2(60, 30)
-		btn.add_theme_font_size_override("font_size", 9)
+		btn.custom_minimum_size = Vector2(72, 36)
+		btn.add_theme_font_size_override("font_size", 10)
 		btn.process_mode = Node.PROCESS_MODE_ALWAYS
 		btn.focus_mode = Control.FOCUS_NONE
 		var selected := wid == cur_id

@@ -99,7 +99,7 @@ func _build_ui() -> void:
 	header.name = "Header"
 	header.text = "SYNTHOCORP · CARTELERA"
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header.add_theme_font_size_override("font_size", 9)
+	header.add_theme_font_size_override("font_size", 11)
 	header.modulate = Color(0.45, 0.95, 1.0, 1.0)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(header)
@@ -108,7 +108,7 @@ func _build_ui() -> void:
 	sub.name = "SubHeader"
 	sub.text = "Selecciona un Robot Master"
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub.add_theme_font_size_override("font_size", 7)
+	sub.add_theme_font_size_override("font_size", 9)
 	sub.modulate = Color(0.8, 0.85, 0.95, 0.85)
 	sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(sub)
@@ -130,7 +130,7 @@ func _build_ui() -> void:
 		else "8 Robot Masters · CORE-9 tras vencerlos"
 	)
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	footer.add_theme_font_size_override("font_size", 6)
+	footer.add_theme_font_size_override("font_size", 8)
 	footer.modulate = Color(0.6, 0.65, 0.75, 0.75)
 	footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(footer)
@@ -138,7 +138,7 @@ func _build_ui() -> void:
 	var back := Button.new()
 	back.name = "BackButton"
 	back.text = "Volver"
-	back.add_theme_font_size_override("font_size", 8)
+	back.add_theme_font_size_override("font_size", 11)
 	_SafeArea.style_button(back, Color(0.18, 0.18, 0.26, 0.95), Color(0.55, 0.6, 0.7, 0.85))
 	back.pressed.connect(_on_back)
 	add_child(back)
@@ -146,14 +146,14 @@ func _build_ui() -> void:
 	var ach_btn := Button.new()
 	ach_btn.name = "AchievementsButton"
 	ach_btn.text = "Logros"
-	ach_btn.add_theme_font_size_override("font_size", 8)
+	ach_btn.add_theme_font_size_override("font_size", 11)
 	_SafeArea.style_button(ach_btn, Color(0.22, 0.18, 0.08, 0.95), Color(1.0, 0.85, 0.3, 0.95))
 	ach_btn.pressed.connect(_on_achievements)
 	add_child(ach_btn)
 
 	var diff_btn := Button.new()
 	diff_btn.name = "DiffButton"
-	diff_btn.add_theme_font_size_override("font_size", 8)
+	diff_btn.add_theme_font_size_override("font_size", 11)
 	_SafeArea.style_button(diff_btn, Color(0.16, 0.12, 0.22, 0.95), Color(0.85, 0.55, 1.0, 0.9))
 	diff_btn.pressed.connect(_on_diff_toggle)
 	add_child(diff_btn)
@@ -169,7 +169,42 @@ func _build_ui() -> void:
 	char_lbl.add_theme_font_size_override("font_size", 7)
 	char_lbl.modulate = GameState.get_portrait_color()
 	char_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	char_lbl.visible = false
 	add_child(char_lbl)
+
+	var datos := Button.new()
+	datos.name = "DatosButton"
+	datos.text = "Datos"
+	datos.add_theme_font_size_override("font_size", 11)
+	_SafeArea.style_button(datos, Color(0.1, 0.18, 0.28, 0.95), Color(0.45, 0.9, 1.0, 0.95))
+	datos.pressed.connect(_toggle_datos)
+	add_child(datos)
+
+	var panel := Panel.new()
+	panel.name = "DatosPanel"
+	panel.visible = false
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.06, 0.07, 0.12, 0.96)
+	sb.set_border_width_all(2)
+	sb.border_color = Color(0.45, 0.9, 1.0, 0.9)
+	sb.set_corner_radius_all(4)
+	panel.add_theme_stylebox_override("panel", sb)
+	add_child(panel)
+	var datos_body := Label.new()
+	datos_body.name = "DatosBody"
+	datos_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	datos_body.add_theme_font_size_override("font_size", 11)
+	datos_body.modulate = Color(0.92, 0.95, 1.0, 1.0)
+	datos_body.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(datos_body)
+	var datos_close := Button.new()
+	datos_close.name = "DatosClose"
+	datos_close.text = "Cerrar"
+	datos_close.add_theme_font_size_override("font_size", 12)
+	_SafeArea.style_button(datos_close, Color(0.16, 0.18, 0.26, 0.95), Color(0.7, 0.75, 0.85, 0.9))
+	datos_close.pressed.connect(_toggle_datos)
+	panel.add_child(datos_close)
 
 
 func _layout() -> void:
@@ -217,38 +252,41 @@ func _layout() -> void:
 		sub.size = Vector2(area.size.x, 10)
 
 	# Footer buttons sit at bottom of safe area — scale widths so they never clip
-	var btn_h := maxf(_SafeArea.MIN_BTN_H, minf(_SafeArea.PREFERRED_BTN_H, 30.0))
+	var btn_h := 36.0
 	var footer_y := area.end.y - btn_h
 	var back := get_node_or_null("BackButton") as Button
 	var ach := get_node_or_null("AchievementsButton") as Button
 	var diff := get_node_or_null("DiffButton") as Button
-	var char_lbl := get_node_or_null("CharLabel") as Label
+	var datos := get_node_or_null("DatosButton") as Button
 
-	var gap := 4.0
-	var back_w := 64.0
-	var ach_w := 64.0
-	var diff_w := 72.0
-	var char_min := 48.0
-	var row_need := back_w + ach_w + diff_w + char_min + gap * 3.0
+	var gap := 6.0
+	var back_w := 78.0
+	var ach_w := 78.0
+	var diff_w := 84.0
+	var datos_w := 78.0
+	var row_need := back_w + ach_w + diff_w + datos_w + gap * 3.0
 	if row_need > area.size.x:
 		var scale := area.size.x / row_need
 		back_w = floorf(back_w * scale)
 		ach_w = floorf(ach_w * scale)
 		diff_w = floorf(diff_w * scale)
+		datos_w = floorf(datos_w * scale)
+	var x := area.position.x
 	if back:
-		back.position = Vector2(area.position.x, footer_y)
+		back.position = Vector2(x, footer_y)
 		back.size = Vector2(back_w, btn_h)
+		x += back_w + gap
 	if ach:
-		ach.position = Vector2(area.position.x + back_w + gap, footer_y)
+		ach.position = Vector2(x, footer_y)
 		ach.size = Vector2(ach_w, btn_h)
+		x += ach_w + gap
 	if diff:
-		diff.position = Vector2(area.position.x + back_w + ach_w + gap * 2.0, footer_y)
+		diff.position = Vector2(x, footer_y)
 		diff.size = Vector2(diff_w, btn_h)
-	if char_lbl:
-		var cx := area.position.x + back_w + ach_w + diff_w + gap * 3.0
-		char_lbl.position = Vector2(cx, footer_y + maxf((btn_h - 14.0) * 0.5, 2.0))
-		char_lbl.size = Vector2(maxf(area.end.x - cx, 8.0), 14)
-		char_lbl.clip_text = true
+		x += diff_w + gap
+	if datos:
+		datos.position = Vector2(x, footer_y)
+		datos.size = Vector2(maxf(datos_w, 64.0), btn_h)
 
 	var footer := get_node_or_null("Footer") as Label
 	if footer:
@@ -293,6 +331,7 @@ func _layout() -> void:
 		cell.position = Vector2(col * (_cell_w + CELL_GAP), row * (_cell_h + CELL_GAP))
 		cell.size = Vector2(_cell_w, _cell_h)
 		_relayout_cell(cell, _cell_w, _cell_h)
+	_layout_datos_panel(area)
 
 
 func _relayout_cell(root: Control, cw: float, ch: float) -> void:
@@ -310,19 +349,23 @@ func _relayout_cell(root: Control, cw: float, ch: float) -> void:
 	if name_lbl:
 		name_lbl.position = Vector2(28, 3)
 		name_lbl.size = Vector2(maxf(cw - 32.0, 20.0), maxf(ch * 0.4, 16.0))
-		name_lbl.add_theme_font_size_override("font_size", 7 if ch >= 44.0 else 6)
+		name_lbl.add_theme_font_size_override("font_size", 9 if ch >= 40.0 else 8)
+		# Leave the check badge clear of the name.
+		name_lbl.size = Vector2(maxf(cw - 48.0, 24.0), maxf(ch * 0.46, 16.0))
 	var status := btn.get_node_or_null("StatusLabel") as Label
 	if status:
 		status.position = Vector2(4, ch - 14.0)
-		status.size = Vector2(cw - 8.0, 12)
-		status.add_theme_font_size_override("font_size", 6)
+		status.size = Vector2(maxf(cw - 28.0, 20.0), 12)
+		status.add_theme_font_size_override("font_size", 8)
 	var check := btn.get_node_or_null("Checkmark") as Control
 	if check:
-		check.position = Vector2(cw - 18.0, 2)
-		check.size = Vector2(16, 16)
+		check.position = Vector2(cw - 20.0, 2)
+		check.size = Vector2(18, 18)
 	var secret := btn.get_node_or_null("SecretStub") as Label
 	if secret:
-		secret.position = Vector2(cw - 16.0, ch - 16.0)
+		secret.position = Vector2(cw - 20.0, 22.0)
+		secret.size = Vector2(18, 16)
+		secret.add_theme_font_size_override("font_size", 12)
 	var frame := btn.get_node_or_null("SelectFrame") as Control
 	if frame:
 		frame.size = Vector2(cw, ch)
@@ -427,7 +470,7 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 	var name_lbl := Label.new()
 	name_lbl.name = "NameLabel"
 	name_lbl.text = boss_name
-	name_lbl.add_theme_font_size_override("font_size", 6)
+	name_lbl.add_theme_font_size_override("font_size", 8)
 	name_lbl.position = Vector2(24, 4)
 	name_lbl.size = Vector2(46, 20)
 	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -440,7 +483,7 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 
 	var status := Label.new()
 	status.name = "StatusLabel"
-	status.add_theme_font_size_override("font_size", 5)
+	status.add_theme_font_size_override("font_size", 8)
 	status.position = Vector2(4, 36)
 	status.size = Vector2(64, 12)
 	status.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -484,7 +527,7 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 		check.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		check.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		check.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		check.add_theme_font_size_override("font_size", 11)
+		check.add_theme_font_size_override("font_size", 13)
 		check.modulate = Color(0.85, 1.0, 0.9, 1.0)
 		check.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		check_bg.add_child(check)
@@ -499,7 +542,7 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 		var secret := Label.new()
 		secret.name = "SecretStub"
 		secret.text = "◆"
-		secret.add_theme_font_size_override("font_size", 8)
+		secret.add_theme_font_size_override("font_size", 12)
 		secret.modulate = Color(0.35, 0.95, 1.0, 1.0)
 		secret.position = Vector2(maxf(_cell_w - 16.0, 52.0), maxf(_cell_h - 16.0, 34.0))
 		secret.size = Vector2(14, 14)
@@ -508,6 +551,54 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 		btn.add_child(secret)
 
 	return root
+
+
+func _layout_datos_panel(area: Rect2) -> void:
+	var panel := get_node_or_null("DatosPanel") as Panel
+	if panel == null:
+		return
+	var pw := minf(260.0, area.size.x * 0.72)
+	var ph := minf(132.0, area.size.y * 0.62)
+	panel.size = Vector2(pw, ph)
+	panel.position = Vector2(
+		area.position.x + (area.size.x - pw) * 0.5,
+		area.position.y + (area.size.y - ph) * 0.42
+	)
+	var body := panel.get_node_or_null("DatosBody") as Label
+	if body:
+		body.position = Vector2(10, 8)
+		body.size = Vector2(pw - 20.0, ph - 48.0)
+		body.text = _datos_text()
+	var close := panel.get_node_or_null("DatosClose") as Button
+	if close:
+		close.size = Vector2(minf(120.0, pw - 24.0), 32.0)
+		close.position = Vector2((pw - close.size.x) * 0.5, ph - 38.0)
+
+
+func _datos_text() -> String:
+	var beaten := 0
+	for id in ["beatfire", "glitch_ice", "bassquake", "echo_wind", "neon_volt", "metronome", "chorus_bloom", "static_shadow"]:
+		if GameState.is_boss_defeated(id):
+			beaten += 1
+	var core := "sí" if GameState.is_boss_defeated(GameState.BOSS_CORE9) else "no"
+	var tanks := int(GameState.get_energy_tanks()) if GameState.has_method("get_energy_tanks") else 0
+	var weapons := 0
+	if GameState.has_method("get_unlocked_weapons"):
+		weapons = GameState.get_unlocked_weapons().size()
+	var diff := "Difícil" if GameState.is_hard() else "Normal"
+	var who := GameState.get_character_display_name()
+	return "Personaje: %s\nJefes: %d/8   ·   CORE-9: %s\nTanques: %d   ·   Armas: %d\nDificultad: %s\n◆ = secreto de armadura (casco Flight)" % [who, beaten, core, tanks, weapons, diff]
+
+
+func _toggle_datos() -> void:
+	var panel := get_node_or_null("DatosPanel") as CanvasItem
+	if panel == null:
+		return
+	panel.visible = not panel.visible
+	if panel.visible:
+		_layout()
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
 
 
 func _on_boss_pressed(boss_id: String) -> void:
