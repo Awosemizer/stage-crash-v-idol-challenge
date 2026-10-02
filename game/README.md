@@ -21,6 +21,8 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 
 Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome / LevelStaticShadow.
 
+**v0.37:** Audio and hit feedback — boss telegraph sting, distinct weakness hit, armor activate cue, BGM pitch 1.08 under half boss HP, pause ducks BGM and always resumes, SFX capped below 0 dB.
+
 **v0.36:** CORE-9 phases — 0.30s amber windup, shots arm 0.22s, phase 3 only strong hits (Nv4 / Sonic Slash / Counter) with a Spanish hint and a slow anti-softlock chip, phase changes pause contact for 0.85s.
 
 **v0.35:** Remaining bosses + armor — 0.28s amber windup on Glitch Ice / Echo Wind / Neon Volt / Chorus Bloom, shots arm 0.22s, hover cooldown 1.5s (1.0s full Flight), parry window 0.28s, Sonic Slash recovery.

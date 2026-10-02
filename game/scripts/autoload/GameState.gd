@@ -748,7 +748,7 @@ func request_hitstop(duration: float = 0.04, scale: float = 0.08) -> void:
 	_hitstop_busy = false
 
 
-func notify_enemy_hit(target: Node, applied: bool = true) -> void:
+func notify_enemy_hit(target: Node, applied: bool = true, weak: bool = false) -> void:
 	## Call after a player attack lands. Bosses get a slightly longer freeze.
 	if not applied or target == null or not is_instance_valid(target):
 		return
@@ -759,6 +759,8 @@ func notify_enemy_hit(target: Node, applied: bool = true) -> void:
 		request_hitstop(0.055, 0.05)
 	else:
 		request_hitstop(0.032, 0.08)
+	if weak and AudioManager:
+		AudioManager.play_sfx("weak_hit", 1.4, -4.0)
 
 
 func get_hurt_invuln_time() -> float:

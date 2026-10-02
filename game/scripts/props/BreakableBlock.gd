@@ -127,6 +127,8 @@ func take_damage(amount: int) -> bool:
 	if not _alive:
 		return false
 	hp = maxi(hp - maxi(amount, 1), 0)
+	if AudioManager and hp > 0:
+		AudioManager.play_sfx("hit", 0.9, -3.0)
 	if crack:
 		crack.visible = true
 		crack.color = Color(1.0, 0.95, 0.6, 0.75)
@@ -143,6 +145,8 @@ func _break() -> void:
 		return
 	_alive = false
 	broken.emit()
+	if AudioManager:
+		AudioManager.play_sfx("explosion", 1.15, -6.0)
 	print("BreakableBlock: roto en ", global_position)
 	if collision:
 		collision.set_deferred("disabled", true)

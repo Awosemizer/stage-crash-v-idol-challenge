@@ -65,7 +65,8 @@ func _collect(player: Node) -> void:
 	_collected = true
 	monitoring = false
 	if AudioManager:
-		AudioManager.play_sfx("pickup")
+		AudioManager.play_sfx("pickup", 1.0, -4.0)
+		AudioManager.play_sfx("charge_full", 0.92, -6.0)
 	var gs := _game_state()
 	if gs != null and gs.has_method("grant_armor_piece"):
 		gs.grant_armor_piece(armor_set, armor_piece, true)

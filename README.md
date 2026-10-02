@@ -1,6 +1,7 @@
 # Stage Crash: V-Idol Challenge
 
 
+**v0.37:** audio — aviso del jefe en el beat, debilidad con un golpe distinto, armadura con sonido de activar, música un poco más rápida bajo 50% de vida, pausa baja el tema y lo devuelve.
 **v0.36:** CORE-9 en tres fases — aviso ámbar 0.30 s, tiros que no hieren al nacer, el núcleo solo recibe Nv4 / Sonic Slash / Counter (un chip lento si no tienes golpe fuerte), transiciones con pausa y texto.
 **v0.35:** jefes restantes y armadura — aviso ámbar 0.28 s antes de atacar (Glitch Ice, Echo Wind, Neon Volt, Chorus Bloom), tiros que no hieren al aparecer, hover con enfriamiento de 1.5 s, parry más legible.
 **v0.34:** enemigos comunes — Met-Beat avisa antes de abrir y disparar, peligros con destello ámbar (~0.28 s), pétalos a 2 de daño, el golpe ya no te lanza al pozo.
@@ -22,7 +23,7 @@ Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.36.0-proto`
+- Versión demo: `0.37.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)

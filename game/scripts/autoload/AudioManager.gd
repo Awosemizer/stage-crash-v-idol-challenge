@@ -6,9 +6,11 @@ const SETTINGS_PATH := "user://audio_settings.cfg"
 const BUS_BGM := "BGM"
 const BUS_SFX := "SFX"
 const SFX_POOL := 6
-const BGM_VOL := -6.0
-const SFX_VOL := -4.0
-const DUCK_DB := -18.0
+const BGM_VOL := -8.0
+const SFX_VOL := -8.0
+const DUCK_DB := -24.0
+const SFX_MAX_DB := -4.0
+const HOT_PITCH := 1.08
 
 const BGM_PATHS := {
 	"title": "res://audio/bgm/title.ogg",
@@ -40,6 +42,7 @@ const SFX_PATHS := {
 	"explosion": "res://audio/sfx/explosion.ogg",
 	"menu_move": "res://audio/sfx/menu_move.ogg",
 	"boss_intro": "res://audio/sfx/boss_intro.ogg",
+	"weak_hit": "res://audio/sfx/hit.ogg",
 }
 
 ## Mapeo etapa → BGM id
@@ -67,6 +70,7 @@ var _streams_sfx: Dictionary = {}
 var _current_bgm := ""
 var _ducked := false
 var _bgm_base_db := BGM_VOL
+var _boss_hot := false
 
 
 func _ready() -> void:
@@ -137,8 +141,15 @@ func play_bgm(id: String, pitch: float = 1.0) -> void:
 	if _bgm == null:
 		push_warning("AudioManager: BGM player not ready (id=%s)" % id)
 		return
+	if id != _current_bgm:
+		_boss_hot = false
+	var out_pitch := pitch
+	if _boss_hot and id != "victory" and is_equal_approx(pitch, 1.0):
+		out_pitch = HOT_PITCH
 	if id == _current_bgm and _bgm.playing:
-		_bgm.pitch_scale = pitch
+		_bgm.pitch_scale = out_pitch
+		_bgm.volume_db = DUCK_DB if _ducked else _bgm_base_db
+		_bgm.stream_paused = false
 		return
 	if not _streams_bgm.has(id):
 		push_warning("AudioManager: BGM missing %s" % id)
@@ -150,8 +161,9 @@ func play_bgm(id: String, pitch: float = 1.0) -> void:
 		return
 	_current_bgm = id
 	_bgm.stream = stream
-	_bgm.pitch_scale = pitch
+	_bgm.pitch_scale = out_pitch
 	_bgm.volume_db = DUCK_DB if _ducked else _bgm_base_db
+	_bgm.stream_paused = false
 	if not muted:
 		_bgm.play()
 
@@ -177,7 +189,7 @@ func play_boss_intro() -> void:
 	play_sfx("boss_intro")
 
 
-func play_sfx(id: String, pitch: float = 1.0) -> void:
+func play_sfx(id: String, pitch: float = 1.0, gain_db: float = 0.0) -> void:
 	if muted:
 		return
 	if id.is_empty():
@@ -199,16 +211,37 @@ func play_sfx(id: String, pitch: float = 1.0) -> void:
 	if p == null or not is_instance_valid(p):
 		return
 	p.stream = stream
-	p.pitch_scale = pitch
-	p.volume_db = SFX_VOL
+	p.pitch_scale = clampf(pitch, 0.5, 1.6)
+	p.volume_db = clampf(SFX_VOL + gain_db, -28.0, SFX_MAX_DB)
 	p.play()
 
 
 func set_paused_duck(paused_now: bool) -> void:
+	## Baja el BGM al pausar y lo devuelve al salir. Nunca deja el stream pausado.
 	_ducked = paused_now
 	if _bgm == null:
 		return
+	_bgm.stream_paused = false
 	_bgm.volume_db = DUCK_DB if _ducked else _bgm_base_db
+	if not _ducked and not muted and _bgm.stream != null and _current_bgm != "" and not _bgm.playing:
+		_bgm.play()
+	if _current_bgm != "victory":
+		_bgm.pitch_scale = HOT_PITCH if _boss_hot else 1.0
+
+
+func set_boss_intensity(hot: bool) -> void:
+	## Jefe bajo 50% HP: un poco más de tempo, sin otro tema.
+	_boss_hot = hot and _current_bgm != "victory"
+	if _bgm == null or _current_bgm == "" or _current_bgm == "victory":
+		if _bgm:
+			_bgm.pitch_scale = 1.0
+		return
+	_bgm.pitch_scale = HOT_PITCH if _boss_hot else 1.0
+
+
+func play_telegraph() -> void:
+	## Aviso corto en el beat del jefe (reusa charge_tick).
+	play_sfx("charge_tick", 1.35, -2.0)
 
 
 func set_muted(value: bool) -> void:

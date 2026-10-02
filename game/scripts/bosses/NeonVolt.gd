@@ -106,6 +106,8 @@ func _physics_process(delta: float) -> void:
 
 
 func _queue_attack(kind: String) -> void:
+	if AudioManager and AudioManager.has_method("play_telegraph"):
+		AudioManager.play_telegraph()
 	_posing = true
 	_queued = kind
 	_windup = WINDUP if hp > HP_MAX / 2 else WINDUP * 0.9

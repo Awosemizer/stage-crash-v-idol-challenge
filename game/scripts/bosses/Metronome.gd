@@ -133,6 +133,8 @@ func _tick_idle(delta: float) -> void:
 
 
 func _start_telegraph() -> void:
+	if AudioManager and AudioManager.has_method("play_telegraph"):
+		AudioManager.play_telegraph()
 	_state = State.TELEGRAPH
 	_next_attack = "volley"
 	_telegraph_t = TELEGRAPH if hp > HP_MAX / 2 else TELEGRAPH * 0.9
@@ -143,6 +145,8 @@ func _start_telegraph() -> void:
 
 
 func _start_dash_tell() -> void:
+	if AudioManager and AudioManager.has_method("play_telegraph"):
+		AudioManager.play_telegraph()
 	_state = State.TELEGRAPH
 	_next_attack = "dash"
 	_telegraph_t = 0.34 if hp > HP_MAX / 2 else 0.28

@@ -28,6 +28,8 @@ func _ready() -> void:
 func take_damage(amount: int) -> bool:
 	if not _alive:
 		return false
+	if AudioManager:
+		AudioManager.play_sfx("hit", 1.1, -3.0)
 	if amount < min_damage:
 		# Accumulate weak hits — prevents softlock if charge unavailable
 		_weak_hits += 1

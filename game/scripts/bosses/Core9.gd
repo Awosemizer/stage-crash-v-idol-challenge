@@ -189,6 +189,8 @@ func _tick_idle(delta: float) -> void:
 
 
 func _queue_attack(kind: String) -> void:
+	if AudioManager and AudioManager.has_method("play_telegraph"):
+		AudioManager.play_telegraph()
 	_queued = kind
 	_posing = true
 	_windup = WINDUP

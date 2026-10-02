@@ -88,7 +88,7 @@ func _try_hit(target: Node) -> void:
 				dmg = damage * 3
 			var result = target.take_damage(dmg)
 			if GameState and GameState.has_method("notify_enemy_hit"):
-				GameState.notify_enemy_hit(target, result != false)
+				GameState.notify_enemy_hit(target, result != false, dmg > damage)
 			if result == false:
 				queue_free()
 				return

@@ -1079,12 +1079,16 @@ func _on_boss_hp_changed(current: int, maximum: int) -> void:
 	_boss_hp_root.set_meta("hp", current)
 	_boss_hp_root.set_meta("max_hp", maximum)
 	_refresh_boss_hp_bar()
+	if AudioManager and AudioManager.has_method("set_boss_intensity") and maximum > 0:
+		AudioManager.set_boss_intensity(current > 0 and float(current) < float(maximum) * 0.5)
 	if current <= 0:
 		# Keep visible briefly at 0 then hide on next poll
 		pass
 
 
 func _on_boss_died() -> void:
+	if AudioManager and AudioManager.has_method("set_boss_intensity"):
+		AudioManager.set_boss_intensity(false)
 	if _boss_hp_root:
 		_boss_hp_root.set_meta("hp", 0)
 		_refresh_boss_hp_bar()

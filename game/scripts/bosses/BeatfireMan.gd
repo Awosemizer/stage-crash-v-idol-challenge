@@ -162,6 +162,8 @@ func _do_shoot() -> void:
 
 
 func _start_telegraph() -> void:
+	if AudioManager and AudioManager.has_method("play_telegraph"):
+		AudioManager.play_telegraph()
 	_state = State.TELEGRAPH
 	_telegraph_t = TELEGRAPH if hp > HP_MAX / 2 else TELEGRAPH * 0.82
 	if telegraph:

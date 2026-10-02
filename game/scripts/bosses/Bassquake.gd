@@ -126,6 +126,8 @@ func _tick_idle(delta: float) -> void:
 
 
 func _start_telegraph() -> void:
+	if AudioManager and AudioManager.has_method("play_telegraph"):
+		AudioManager.play_telegraph()
 	_state = State.TELEGRAPH
 	_telegraph_t = TELEGRAPH if hp > HP_MAX / 2 else 0.62
 	velocity.x = 0.0
