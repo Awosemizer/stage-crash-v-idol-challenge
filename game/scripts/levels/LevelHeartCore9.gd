@@ -30,6 +30,8 @@ var _phase_banner: CanvasLayer = null
 
 
 func _ready() -> void:
+	if AudioManager:
+		AudioManager.play_stage_bgm("core9")
 	bg.color = COL_BG
 	bg.offset_right = LEVEL_RIGHT + 64.0
 	_build_arena()
@@ -87,6 +89,8 @@ func _on_phase_changed(phase: int) -> void:
 
 
 func _on_boss_died() -> void:
+	if AudioManager:
+		AudioManager.play_victory()
 	_boss_defeated = true
 	if GameState.has_method("mark_boss_defeated"):
 		GameState.mark_boss_defeated(GameState.BOSS_CORE9)

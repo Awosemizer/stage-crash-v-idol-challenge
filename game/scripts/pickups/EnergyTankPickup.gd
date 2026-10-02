@@ -62,6 +62,8 @@ func _on_body_entered(body: Node) -> void:
 func _collect(_player: Node) -> void:
 	_collected = true
 	monitoring = false
+	if AudioManager:
+		AudioManager.play_sfx("pickup")
 	var new_count := 0
 	var gs := _game_state()
 	if gs != null and gs.has_method("grant_energy_tank"):

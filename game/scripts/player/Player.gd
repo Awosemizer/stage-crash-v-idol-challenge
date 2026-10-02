@@ -590,6 +590,8 @@ func _swing_saber() -> void:
 		return
 	_saber_hit_ids.clear()
 	_saber_timer = SABER_DURATION
+	if AudioManager:
+		AudioManager.play_sfx("shoot", 0.92)
 	_saber_cd = SABER_COOLDOWN
 	_position_saber()
 	saber_hitbox.monitoring = true
@@ -671,6 +673,8 @@ func _handle_beat_blaze() -> void:
 
 
 func _fire_beat_blaze() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 1))
@@ -701,6 +705,8 @@ func _handle_echo_gale() -> void:
 
 
 func _fire_echo_gale() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 1))
@@ -731,6 +737,8 @@ func _handle_neon_arc() -> void:
 
 
 func _fire_neon_arc() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 1))
@@ -762,6 +770,8 @@ func _handle_freeze_sample() -> void:
 
 
 func _fire_freeze_sample() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 1))
@@ -792,6 +802,8 @@ func _handle_petal_chorus() -> void:
 
 
 func _fire_petal_chorus() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 1))
@@ -822,6 +834,8 @@ func _handle_quake_drop() -> void:
 
 
 func _fire_quake_drop() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 2))
@@ -854,6 +868,8 @@ func _handle_tempo_spike() -> void:
 
 
 func _fire_tempo_spike() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 2))
@@ -884,6 +900,8 @@ func _handle_static_veil() -> void:
 
 
 func _fire_static_veil() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 3))
@@ -942,6 +960,8 @@ func _fire_buster(level: int) -> void:
 	var live := get_tree().get_nodes_in_group("player_shots")
 	if live.size() >= MAX_SHOTS:
 		return
+	if AudioManager:
+		AudioManager.play_sfx("shoot", 1.0 + 0.06 * float(level - 1))
 	var shot: Area2D = BusterShotScene.instantiate()
 	var parent_node := get_parent()
 	if parent_node == null:
@@ -994,6 +1014,8 @@ func _do_jump() -> void:
 	velocity.y = _jump_vel
 	_coyote = 0.0
 	_jump_buffer = 0.0
+	if AudioManager:
+		AudioManager.play_sfx("jump")
 	if _is_sliding:
 		_end_slide()
 
@@ -1016,6 +1038,8 @@ func _do_wall_jump(wall_dir: int) -> void:
 	_wall_lock_dir = push
 	_coyote = 0.0
 	_jump_buffer = 0.0
+	if AudioManager:
+		AudioManager.play_sfx("jump", 1.08)
 	if _is_sliding:
 		_end_slide()
 
@@ -1152,6 +1176,8 @@ func _take_hit(amount: int) -> void:
 		amount = maxi(1, amount - 1)
 	hp = maxi(hp - amount, 0)
 	_invuln = 1.0  # GDD: 1.0 s after hit
+	if AudioManager:
+		AudioManager.play_sfx("hurt")
 	# Cancel charge on hit
 	_charging = false
 	_charge_time = 0.0

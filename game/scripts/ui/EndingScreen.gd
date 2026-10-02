@@ -6,6 +6,8 @@ const CREDITS := "res://scenes/ui/CreditsScreen.tscn"
 
 func _ready() -> void:
 	_build_ui()
+	if AudioManager:
+		AudioManager.play_victory()
 	get_tree().create_timer(5.5).timeout.connect(_go_credits)
 
 
@@ -78,4 +80,6 @@ func _build_ui() -> void:
 
 
 func _go_credits() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
 	get_tree().change_scene_to_file(CREDITS)

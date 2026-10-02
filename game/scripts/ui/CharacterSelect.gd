@@ -164,14 +164,20 @@ func _style_char_button(btn: Button, bg: Color, border: Color) -> void:
 
 
 func _on_miku() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
 	GameState.select_miku()
 	get_tree().change_scene_to_file(BOSS_SELECT_SCENE)
 
 
 func _on_teto() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
 	GameState.select_teto()
 	get_tree().change_scene_to_file(BOSS_SELECT_SCENE)
 
 
 func _on_back() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
 	get_tree().change_scene_to_file("res://scenes/ui/TitleScreen.tscn")

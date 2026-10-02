@@ -438,6 +438,10 @@ func _toggle_pause() -> void:
 	if tree:
 		tree.paused = _is_paused
 	print("HUD: pausa=%s" % str(_is_paused))
+	if AudioManager:
+		AudioManager.set_paused_duck(_is_paused)
+		if _is_paused:
+			AudioManager.play_sfx("ui_confirm")
 	pause_toggled.emit(_is_paused)
 
 

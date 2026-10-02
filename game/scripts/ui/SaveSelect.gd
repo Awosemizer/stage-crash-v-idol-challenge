@@ -163,6 +163,8 @@ func _style_btn(btn: Button, bg: Color, border: Color) -> void:
 
 
 func _on_slot_pressed(slot: int, is_new: bool, exists: bool) -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
 	if is_new:
 		if exists:
 			GameState.delete_slot(slot)
@@ -178,4 +180,6 @@ func _on_slot_pressed(slot: int, is_new: bool, exists: bool) -> void:
 
 
 func _on_back() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
 	get_tree().change_scene_to_file(TITLE_SCENE)

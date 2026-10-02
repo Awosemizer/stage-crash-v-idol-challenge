@@ -99,6 +99,8 @@ func take_damage(amount: int) -> bool:
 		return false
 	hp = maxi(hp - amount, 0)
 	_flash = HIT_FLASH
+	if AudioManager:
+		AudioManager.play_sfx("hit")
 	_refresh_look()
 	if hp <= 0:
 		_die()

@@ -8,6 +8,8 @@ const SELECT_SCENE := "res://scenes/ui/CharacterSelect.tscn"
 
 func _ready() -> void:
 	_build_ui()
+	if AudioManager:
+		AudioManager.play_bgm("title")
 
 
 func _build_ui() -> void:
@@ -104,14 +106,24 @@ func _build_ui() -> void:
 
 	var ver := Label.new()
 	ver.name = "Version"
-	ver.text = "v0.14.0-proto · Android · 3 saves"
+	ver.text = "v0.15.0-proto · Android · audio"
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ver.add_theme_font_size_override("font_size", 6)
 	ver.modulate = Color(0.55, 0.6, 0.7, 0.7)
 	ver.position = Vector2(0, 200)
-	ver.size = Vector2(256, 10)
+	ver.size = Vector2(170, 10)
 	ver.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(ver)
+
+	var mute_btn := Button.new()
+	mute_btn.name = "MuteButton"
+	mute_btn.add_theme_font_size_override("font_size", 7)
+	mute_btn.position = Vector2(176, 200)
+	mute_btn.size = Vector2(72, 18)
+	_style_button(mute_btn, Color(0.16, 0.16, 0.22, 0.95), Color(0.65, 0.7, 0.8, 0.9))
+	mute_btn.pressed.connect(_on_mute_pressed)
+	add_child(mute_btn)
+	_refresh_mute_label(mute_btn)
 
 
 func _style_button(btn: Button, bg: Color, border: Color) -> void:
@@ -139,11 +151,15 @@ func _style_button(btn: Button, bg: Color, border: Color) -> void:
 
 
 func _on_continue_pressed() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
 	GameState.save_ui_mode = "continue"
 	get_tree().change_scene_to_file(SAVE_SELECT)
 
 
 func _on_new_game_pressed() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
 	GameState.save_ui_mode = "new"
 	get_tree().change_scene_to_file(SAVE_SELECT)
 
@@ -151,3 +167,20 @@ func _on_new_game_pressed() -> void:
 func _on_play_pressed() -> void:
 	## Compat: Jugar = Nueva partida
 	_on_new_game_pressed()
+
+
+func _refresh_mute_label(btn: Button = null) -> void:
+	var b := btn
+	if b == null:
+		b = get_node_or_null("MuteButton") as Button
+	if b == null:
+		return
+	var is_muted := AudioManager.is_muted() if AudioManager else false
+	b.text = "Sonido: OFF" if is_muted else "Sonido: ON"
+
+
+func _on_mute_pressed() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
+		AudioManager.toggle_mute()
+	_refresh_mute_label()

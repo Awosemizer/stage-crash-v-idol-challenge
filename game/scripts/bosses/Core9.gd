@@ -354,6 +354,8 @@ func take_damage(amount: int) -> bool:
 		else:
 			dmg = 1  # weak tick only
 	hp = maxi(hp - dmg, 0)
+	if AudioManager:
+		AudioManager.play_sfx("boss_hit")
 	_flash = HIT_FLASH
 	_invuln = INVULN_ON_HIT
 	_check_phase_transition()

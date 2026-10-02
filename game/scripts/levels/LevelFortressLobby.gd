@@ -41,6 +41,8 @@ var _hud: CanvasLayer = null
 
 
 func _ready() -> void:
+	if AudioManager:
+		AudioManager.play_stage_bgm("fortress")
 	bg.color = COL_BG
 	bg.offset_right = LEVEL_RIGHT + 64.0
 	_build_course()
@@ -167,6 +169,8 @@ func _open_gate() -> void:
 
 
 func _on_boss_died() -> void:
+	if AudioManager:
+		AudioManager.play_victory()
 	_boss_defeated = true
 	_open_gate()
 	_show_win_banner()

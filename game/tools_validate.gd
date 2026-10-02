@@ -4,6 +4,7 @@ func _initialize() -> void:
 	var errors: PackedStringArray = []
 	var paths := [
 		"res://scripts/autoload/GameState.gd",
+		"res://scripts/autoload/AudioManager.gd",
 		"res://scripts/player/Player.gd",
 		"res://scripts/levels/Level01.gd",
 		"res://scripts/hazards/Hazard.gd",
@@ -130,7 +131,26 @@ func _initialize() -> void:
 		"res://scenes/props/VocalSeal.tscn",
 		"res://scenes/ui/EndingScreen.tscn",
 		"res://scenes/ui/CreditsScreen.tscn",
-	]
+		"res://audio/bgm/title.ogg",
+		"res://audio/bgm/boss_select.ogg",
+		"res://audio/bgm/stage_beatfire.ogg",
+		"res://audio/bgm/stage_echo_wind.ogg",
+		"res://audio/bgm/stage_neon_volt.ogg",
+		"res://audio/bgm/stage_glitch_ice.ogg",
+		"res://audio/bgm/stage_chorus_bloom.ogg",
+		"res://audio/bgm/stage_bassquake.ogg",
+		"res://audio/bgm/stage_metronome.ogg",
+		"res://audio/bgm/stage_static_shadow.ogg",
+		"res://audio/bgm/fortress.ogg",
+		"res://audio/bgm/victory.ogg",
+		"res://audio/sfx/jump.ogg",
+		"res://audio/sfx/shoot.ogg",
+		"res://audio/sfx/hit.ogg",
+		"res://audio/sfx/hurt.ogg",
+		"res://audio/sfx/ui_confirm.ogg",
+		"res://audio/sfx/boss_hit.ogg",
+		"res://audio/sfx/pickup.ogg",
+]
 	for p in paths:
 		if not ResourceLoader.exists(p):
 			errors.append("Missing: " + p)
@@ -3046,8 +3066,55 @@ func _initialize() -> void:
 	else:
 		errors.append("Level01.tscn failed to load")
 
+	# --- AudioManager ---
+	var am = root.get_node_or_null("/root/AudioManager")
+	if am == null:
+		am = root.get_node_or_null("AudioManager")
+	if am == null:
+		var am_script = load("res://scripts/autoload/AudioManager.gd")
+		if am_script:
+			am = am_script.new()
+			am.name = "AudioManager"
+			root.add_child(am)
+			await process_frame
+	if am == null:
+		errors.append("AudioManager missing")
+	else:
+		if not am.has_method("play_bgm") or not am.has_method("play_sfx") or not am.has_method("toggle_mute"):
+			errors.append("AudioManager missing play_bgm/play_sfx/toggle_mute")
+		else:
+			print("OK AudioManager API")
+		if am.has_method("play_sfx"):
+			am.play_sfx("ui_confirm")
+			print("OK AudioManager play_sfx")
+		if am.has_method("play_bgm"):
+			am.play_bgm("title")
+			print("OK AudioManager play_bgm title")
+		if am.has_method("set_paused_duck"):
+			am.set_paused_duck(true)
+			am.set_paused_duck(false)
+			print("OK AudioManager duck")
+		if am.has_method("toggle_mute"):
+			am.toggle_mute()
+			am.toggle_mute()
+			print("OK AudioManager mute toggle")
+		var title_ps = load("res://scenes/ui/TitleScreen.tscn")
+		if title_ps:
+			var title = title_ps.instantiate()
+			root.add_child(title)
+			await process_frame
+			var mute_btn = title.get_node_or_null("MuteButton")
+			if mute_btn == null:
+				errors.append("TitleScreen MuteButton missing")
+			else:
+				print("OK TitleScreen MuteButton")
+			title.queue_free()
+			await process_frame
+
 	# --- Save system roundtrip (3 slots, user://save_N.json) ---
 	var gs_save = root.get_node_or_null("/root/GameState")
+	if gs_save == null:
+		gs_save = root.get_node_or_null("GameState")
 	if gs_save == null:
 		errors.append("GameState autoload missing for save tests")
 	else:

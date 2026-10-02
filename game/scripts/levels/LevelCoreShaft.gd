@@ -39,6 +39,8 @@ var _gate_body: StaticBody2D = null
 
 
 func _ready() -> void:
+	if AudioManager:
+		AudioManager.play_stage_bgm("fortress")
 	bg.color = COL_BG
 	bg.offset_right = LEVEL_RIGHT + 64.0
 	bg.offset_bottom = LEVEL_BOTTOM + 64.0
@@ -147,6 +149,8 @@ func _start_boss_fight() -> void:
 
 
 func _on_boss_died() -> void:
+	if AudioManager:
+		AudioManager.play_victory()
 	_boss_defeated = true
 	_show_win_banner()
 	print("LevelCoreShaft: Titan derrotado → Heart CORE-9")

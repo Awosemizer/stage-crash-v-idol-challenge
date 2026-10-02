@@ -182,6 +182,8 @@ func take_damage(amount: int) -> bool:
 	if _invuln > 0.0:
 		return false
 	hp = maxi(hp - amount, 0)
+	if AudioManager:
+		AudioManager.play_sfx("boss_hit")
 	_flash = HIT_FLASH
 	_invuln = INVULN_ON_HIT
 	hp_changed.emit(hp, HP_MAX)

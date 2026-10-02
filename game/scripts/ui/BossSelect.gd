@@ -42,6 +42,8 @@ func _ready() -> void:
 	if GameState.active_slot >= 0:
 		GameState.autosave()
 	_build_ui()
+	if AudioManager:
+		AudioManager.play_bgm("boss_select")
 
 
 func _build_ui() -> void:
@@ -315,6 +317,8 @@ func _style_btn(btn: Button, bg: Color, border: Color) -> void:
 
 
 func _on_boss_pressed(boss_id: String) -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
 	if boss_id == "beatfire":
 		print("BossSelect: entrando etapa Beatfire Man")
 		get_tree().change_scene_to_file(LEVEL_BEATFIRE)
@@ -350,4 +354,6 @@ func _on_boss_pressed(boss_id: String) -> void:
 
 
 func _on_back() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
 	get_tree().change_scene_to_file(CHAR_SELECT)
