@@ -31,6 +31,8 @@ var _phase_banner: CanvasLayer = null
 
 
 func _ready() -> void:
+	if GameState and GameState.has_method("begin_stage"):
+		GameState.begin_stage("heart_core9", true)
 	if AudioManager:
 		AudioManager.play_stage_bgm("core9")
 	bg.color = COL_BG
@@ -107,6 +109,7 @@ func _show_win_then_ending() -> void:
 	add_child(layer)
 	var root := Control.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_STOP
 	layer.add_child(root)
 	var panel := Panel.new()
 	var sb := StyleBoxFlat.new()
@@ -115,29 +118,40 @@ func _show_win_then_ending() -> void:
 	sb.border_color = COL_ACCENT
 	sb.set_corner_radius_all(4)
 	panel.add_theme_stylebox_override("panel", sb)
-	panel.size = Vector2(200, 80)
+	panel.size = Vector2(210, 100)
 	var vp := get_viewport().get_visible_rect().size
-	panel.position = Vector2((vp.x - 200.0) * 0.5, (vp.y - 80.0) * 0.5)
+	panel.position = Vector2((vp.x - 210.0) * 0.5, (vp.y - 100.0) * 0.5)
 	root.add_child(panel)
 	var title := Label.new()
 	title.text = "¡CORE-9 CAÍDO!"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 12)
 	title.modulate = COL_ACCENT
-	title.position = Vector2(0, 12)
-	title.size = Vector2(200, 18)
+	title.position = Vector2(0, 8)
+	title.size = Vector2(210, 18)
 	panel.add_child(title)
 	var sub := Label.new()
 	sub.text = "El escenario se apaga…"
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.add_theme_font_size_override("font_size", 7)
-	sub.position = Vector2(0, 36)
-	sub.size = Vector2(200, 14)
+	sub.position = Vector2(0, 30)
+	sub.size = Vector2(210, 14)
 	panel.add_child(sub)
-	get_tree().create_timer(2.8).timeout.connect(func () -> void:
-		if is_instance_valid(self):
-			get_tree().change_scene_to_file(ENDING_SCENE)
+	var btn := Button.new()
+	btn.text = "Ver ending"
+	btn.add_theme_font_size_override("font_size", 9)
+	btn.position = Vector2(40, 54)
+	btn.size = Vector2(130, 28)
+	btn.pressed.connect(_go_ending)
+	panel.add_child(btn)
+	get_tree().create_timer(3.2).timeout.connect(func () -> void:
+		if is_instance_valid(self) and _boss_defeated:
+			_go_ending()
 	)
+
+
+func _go_ending() -> void:
+	get_tree().change_scene_to_file(ENDING_SCENE)
 
 
 func _show_banner(text: String, color: Color, duration: float) -> void:
@@ -181,6 +195,8 @@ func _spawn_player() -> void:
 	entities.add_child(_player)
 	if _player.has_method("set_spawn_pos"):
 		_player.set_spawn_pos(Vector2(56, FLOOR_Y - 24))
+	if _player.has_method("set_fall_death_y"):
+		_player.set_fall_death_y(280.0)
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.limit_left = 0
 	cam.limit_top = 0

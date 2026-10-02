@@ -54,10 +54,15 @@ func _ready() -> void:
 	_active = false
 
 
+func get_boss_display_name() -> String:
+	return "Refrain Unit"
+
+
 func activate() -> void:
 	if GameState and GameState.has_method("begin_boss_fight_track"):
 		GameState.begin_boss_fight_track()
 	_active = true
+	hp_changed.emit(hp, HP_MAX)
 	if AudioManager and AudioManager.has_method("play_boss_intro"):
 		AudioManager.play_boss_intro()
 	_beat = 0.55

@@ -21,6 +21,10 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 
 Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome / LevelStaticShadow.
 
+**v0.29:** Fortress + ending polish — hub stage list/progress, CORE-9 marked on Boss Select, ending skip + tap-advance, credits scroll, Core Shaft fall-death softlock fix, midboss/CORE-9 HUD HP wire + fairness, fortress checkpoints/seal bypass.
+
+**v0.28:** secrets/boss HP/tutorials/touch gaps.
+
 **v0.27:** Feel/UI polish — mid-stage checkpoint markers (per stage), faster death respawn, ammo-empty HUD flash, jump dust, pause touch size S/M/L + opacity.
 
 **v0.26:** Combat/UI polish — hitstop, clearer charge, pit respawn i-frames, ATK/DASH gap 20px, Met contact 1, E-Tank toast, BossSelect ✓ + HARD banner.

@@ -1,4 +1,5 @@
 extends Node2D
+const CheckpointScript := preload("res://scripts/props/Checkpoint.gd")
 ## Core Shaft — touch-first vertical climb + arena.
 ## Core Shaft — sección vertical (hover ayuda) + Overdub Titan.
 ## Tras victoria → Heart of CORE-9.
@@ -40,6 +41,8 @@ var _gate_body: StaticBody2D = null
 
 
 func _ready() -> void:
+	if GameState and GameState.has_method("begin_stage"):
+		GameState.begin_stage("core_shaft", true)
 	if AudioManager:
 		AudioManager.play_stage_bgm("fortress")
 	bg.color = COL_BG
@@ -49,6 +52,7 @@ func _ready() -> void:
 	_build_course()
 	_spawn_enemies()
 	_build_boss_arena()
+	_add_mid_checkpoints()
 	_spawn_player()
 	_add_hud()
 	_add_touch_controls()
@@ -62,21 +66,27 @@ func _build_course() -> void:
 	_add_rect_platform(LEVEL_RIGHT - 8, 0, 24, LEVEL_BOTTOM + 80, COL_WALL)
 	# Climbing ledges (hover helps big gaps)
 	# Wider footholds + tighter vertical spacing for touch climbs
+	# Touch-first climb — ~40px vertical gaps, wider pads, no mid-air spike softlock
 	var ledges = [
-		[32, 500, 64, 12],
-		[180, 460, 64, 12],
-		[48, 410, 56, 12],
-		[190, 360, 64, 12],
-		[40, 310, 56, 12],
-		[180, 260, 64, 12],
-		[48, 210, 56, 12],
-		[180, 160, 64, 12],
-		[48, 120, 56, 12],
+		[24, 508, 80, 12],
+		[176, 468, 80, 12],
+		[24, 428, 72, 12],
+		[184, 388, 80, 12],
+		[24, 348, 72, 12],
+		[184, 308, 80, 12],
+		[24, 268, 72, 12],
+		[184, 228, 80, 12],
+		[24, 188, 72, 12],
+		[184, 148, 80, 12],
+		[40, 120, 72, 12],
 	]
 	for L in ledges:
 		_add_rect_platform(float(L[0]), float(L[1]), float(L[2]), float(L[3]), COL_LEDGE)
-	_add_spike(120.0, SHAFT_FLOOR_Y + 16.0)
-	_add_spike(200.0, 480.0)
+	# Spikes only on bottom floor (not floating mid-climb)
+	_add_spike(140.0, SHAFT_FLOOR_Y + 16.0)
+	_add_spike(200.0, SHAFT_FLOOR_Y + 16.0)
+	# Safety net floor under climb so falls respawn instead of softlock void
+	_add_rect_platform(0, LEVEL_BOTTOM + 40, LEVEL_RIGHT, 24, COL_WALL)
 
 	var theme := Label.new()
 	theme.text = "CORE SHAFT · ASCENSO"
@@ -140,6 +150,8 @@ func _start_boss_fight() -> void:
 	_boss_started = true
 	if _player and _player.has_method("set_spawn_pos"):
 		_player.set_spawn_pos(Vector2(60, ARENA_FLOOR_Y - 20))
+	if GameState and GameState.has_method("set_stage_checkpoint"):
+		GameState.set_stage_checkpoint(Vector2(60, ARENA_FLOOR_Y - 20), "core_shaft")
 	if _player:
 		var cam: Camera2D = _player.get_node_or_null("Camera2D")
 		if cam:
@@ -159,6 +171,8 @@ func _on_boss_died() -> void:
 	_boss_defeated = true
 	if GameState and GameState.has_method("complete_boss_fight_track"):
 		GameState.complete_boss_fight_track()
+	if GameState and GameState.has_method("advance_fortress_segment"):
+		GameState.advance_fortress_segment(3)
 	_show_win_banner()
 	print("LevelCoreShaft: Titan derrotado → Heart CORE-9")
 
@@ -261,13 +275,27 @@ func _add_spike(x: float, y: float) -> void:
 	hazards.add_child(spike)
 
 
+func _add_mid_checkpoints() -> void:
+	var parent_n: Node = geometry if geometry else self
+	CheckpointScript.place(parent_n, Vector2(80.0, 468.0), "core_shaft", "CK1")
+	CheckpointScript.place(parent_n, Vector2(80.0, 268.0), "core_shaft", "CK2")
+
+
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()
 	_player.name = "Player"
-	_player.position = Vector2(56, SHAFT_FLOOR_Y - 24)
+	var spawn_p := Vector2(56, SHAFT_FLOOR_Y - 24)
+	if GameState and GameState.has_method("get_stage_checkpoint"):
+		var ck: Vector2 = GameState.get_stage_checkpoint("core_shaft")
+		if ck != Vector2.ZERO:
+			spawn_p = ck
+	_player.position = spawn_p
 	entities.add_child(_player)
 	if _player.has_method("set_spawn_pos"):
-		_player.set_spawn_pos(Vector2(56, SHAFT_FLOOR_Y - 24))
+		_player.set_spawn_pos(spawn_p)
+	# CRITICAL: default fall death is y>400; shaft floor is ~560
+	if _player.has_method("set_fall_death_y"):
+		_player.set_fall_death_y(LEVEL_BOTTOM + 60.0)
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.limit_left = 0
 	cam.limit_top = 0

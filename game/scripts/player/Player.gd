@@ -31,7 +31,8 @@ const SLIDE_BUFFER := 0.12       # press slide slightly before landing
 const SLIDE_AIR_GRACE := 0.06    # don't cancel slide on 1–2-frame air blip
 const INVULN_SLIDE := 0.14       # stub i-frames at slide start
 const HURT_FLASH := 0.22         # clear red/white flash on hit
-const RESPAWN_Y := 400.0         # fall death threshold (level-relative)
+const RESPAWN_Y := 400.0         # default fall death threshold (level-relative)
+var fall_death_y: float = RESPAWN_Y  # levels can raise for tall shafts
 const RESPAWN_INVULN := 0.65     # brief i-frames after pit/death respawn (snappy)
 const CHECKPOINT_FLASH := 0.28   # spawn ping when checkpoint updates
 const RESPAWN_FADE := 0.12       # quick blackout on death — less frustration
@@ -1430,7 +1431,7 @@ func apply_touch_camera_feel() -> void:
 
 
 func _check_hazards_and_pits() -> void:
-	if global_position.y > RESPAWN_Y:
+	if global_position.y > fall_death_y:
 		_respawn()
 		return
 	for i in get_slide_collision_count():
@@ -1540,6 +1541,11 @@ func _ensure_death_veil() -> void:
 	_death_veil.color = Color(0, 0, 0, 0.55)
 	_death_veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layer.add_child(_death_veil)
+
+
+func set_fall_death_y(y: float) -> void:
+	## Tall levels (Core Shaft) must raise pit death above default 400.
+	fall_death_y = maxf(y, 80.0)
 
 
 func set_spawn_pos(pos: Vector2) -> void:

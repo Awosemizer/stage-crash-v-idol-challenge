@@ -1,4 +1,5 @@
 extends Node2D
+const CheckpointScript := preload("res://scripts/props/Checkpoint.gd")
 ## Voice Archive — touch-first fortress segment.
 ## Voice Archive — puzzle de sellos vocales (golpe fuerte) + tanque opcional.
 ## Salida → Core Shaft.
@@ -34,6 +35,8 @@ var _exit_opened := false
 
 
 func _ready() -> void:
+	if GameState and GameState.has_method("begin_stage"):
+		GameState.begin_stage("voice_archive", true)
 	if AudioManager:
 		AudioManager.play_stage_bgm("fortress")
 	bg.color = COL_BG
@@ -41,6 +44,7 @@ func _ready() -> void:
 	bg.offset_right = LEVEL_RIGHT + 64.0
 	_build_course()
 	_spawn_enemies()
+	_add_mid_checkpoints()
 	_spawn_player()
 	_add_hud()
 	_add_touch_controls()
@@ -67,6 +71,11 @@ func _build_course() -> void:
 	# Vertical seals blocking the path (need charge/weapon ≥2 dmg)
 	_add_seal(320.0, 176.0)
 	_add_seal(336.0, 176.0)
+	# Softlock bypass: high path over seals (hover or wall-jump)
+	# Seal bypass ledge chain
+	_add_rect_platform(280.0, 96.0, 48.0, 12.0, COL_ACCENT)
+	_add_rect_platform(340.0, 80.0, 64.0, 12.0, COL_ACCENT)
+	_add_rect_platform(420.0, 96.0, 48.0, 12.0, COL_ACCENT)
 
 	# Optional tank alcove above (hover helps)
 	_add_rect_platform(400.0, 112.0, 56.0, 12.0, COL_ACCENT)  # mid pad above touch UI
@@ -137,6 +146,8 @@ func _on_exit(body: Node) -> void:
 	if _exit_opened:
 		return
 	_exit_opened = true
+	if GameState and GameState.has_method("advance_fortress_segment"):
+		GameState.advance_fortress_segment(2)
 	get_tree().change_scene_to_file(NEXT_SCENE)
 
 
@@ -182,13 +193,26 @@ func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) ->
 	geometry.add_child(body)
 
 
+func _add_mid_checkpoints() -> void:
+	var parent_n: Node = geometry if geometry else self
+	CheckpointScript.place(parent_n, Vector2(200.0, 176.0), "voice_archive", "CK1")
+	CheckpointScript.place(parent_n, Vector2(640.0, 176.0), "voice_archive", "CK2")
+
+
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()
 	_player.name = "Player"
-	_player.position = Vector2(56, 148)
+	var spawn_p := Vector2(56, 148)
+	if GameState and GameState.has_method("get_stage_checkpoint"):
+		var ck: Vector2 = GameState.get_stage_checkpoint("voice_archive")
+		if ck != Vector2.ZERO:
+			spawn_p = ck
+	_player.position = spawn_p
 	entities.add_child(_player)
 	if _player.has_method("set_spawn_pos"):
-		_player.set_spawn_pos(Vector2(56, 148))
+		_player.set_spawn_pos(spawn_p)
+	if _player.has_method("set_fall_death_y"):
+		_player.set_fall_death_y(280.0)
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.limit_left = 0
 	cam.limit_top = 0

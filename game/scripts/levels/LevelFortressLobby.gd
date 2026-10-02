@@ -1,4 +1,5 @@
 extends Node2D
+const CheckpointScript := preload("res://scripts/props/Checkpoint.gd")
 ## Fortress Lobby — touch-first geometry for phone landscape.
 ## Lobby Neon — entrada fortaleza + mid-boss Refrain Unit.
 ## Tras victoria → Voice Archive.
@@ -42,6 +43,8 @@ var _hud: CanvasLayer = null
 
 
 func _ready() -> void:
+	if GameState and GameState.has_method("begin_stage"):
+		GameState.begin_stage("fortress_lobby", true)
 	if AudioManager:
 		AudioManager.play_stage_bgm("fortress")
 	bg.color = COL_BG
@@ -50,6 +53,7 @@ func _ready() -> void:
 	_build_course()
 	_spawn_enemies()
 	_build_boss_arena()
+	_add_mid_checkpoints()
 	_spawn_player()
 	_add_hud()
 	_add_touch_controls()
@@ -70,7 +74,8 @@ func _build_course() -> void:
 	]
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
-	# Narrow spike pit between starter and neon ledge
+	# Narrow spike pit — floor under spikes so fall can't softlock out of bounds
+	_add_rect_platform(160.0, 208.0, 48.0, 16.0, COL_WALL)
 	_add_spike(172.0, 200.0)
 	_add_spike(184.0, 200.0)
 	var theme := Label.new()
@@ -137,6 +142,8 @@ func _start_boss_fight() -> void:
 	_close_gate()
 	if _player and _player.has_method("set_spawn_pos"):
 		_player.set_spawn_pos(Vector2(ARENA_LEFT + 40.0, ARENA_FLOOR_Y - 20.0))
+	if GameState and GameState.has_method("set_stage_checkpoint"):
+		GameState.set_stage_checkpoint(Vector2(ARENA_LEFT + 40.0, ARENA_FLOOR_Y - 20.0), "fortress_lobby")
 	if _player:
 		var cam: Camera2D = _player.get_node_or_null("Camera2D")
 		if cam:
@@ -179,6 +186,8 @@ func _on_boss_died() -> void:
 	_boss_defeated = true
 	if GameState and GameState.has_method("complete_boss_fight_track"):
 		GameState.complete_boss_fight_track()
+	if GameState and GameState.has_method("advance_fortress_segment"):
+		GameState.advance_fortress_segment(1)
 	_open_gate()
 	_show_win_banner()
 	print("LevelFortressLobby: Refrain Unit derrotado → Voice Archive")
@@ -286,13 +295,26 @@ func _add_spike(x: float, y: float) -> void:
 	hazards.add_child(spike)
 
 
+func _add_mid_checkpoints() -> void:
+	var parent_n: Node = geometry if geometry else self
+	CheckpointScript.place(parent_n, Vector2(300.0, 176.0), "fortress_lobby", "CK1")
+	CheckpointScript.place(parent_n, Vector2(520.0, 176.0), "fortress_lobby", "CK2")
+
+
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()
 	_player.name = "Player"
-	_player.position = Vector2(56, 148)
+	var spawn_p := Vector2(56, 148)
+	if GameState and GameState.has_method("get_stage_checkpoint"):
+		var ck: Vector2 = GameState.get_stage_checkpoint("fortress_lobby")
+		if ck != Vector2.ZERO:
+			spawn_p = ck
+	_player.position = spawn_p
 	entities.add_child(_player)
 	if _player.has_method("set_spawn_pos"):
-		_player.set_spawn_pos(Vector2(56, 148))
+		_player.set_spawn_pos(spawn_p)
+	if _player.has_method("set_fall_death_y"):
+		_player.set_fall_death_y(280.0)
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.limit_left = 0
 	cam.limit_top = 0

@@ -1,22 +1,35 @@
 extends Control
-## Hub Fortaleza CORE-9 — entrada al asalto lineal.
-## Landscape SafeArea; Enter/Return ≥44px when space allows.
+## Hub Fortaleza CORE-9 — lista de etapas + progreso claro.
+## Landscape SafeArea; Enter/Return tappable.
 
 const _SafeArea := preload("res://scripts/ui/SafeArea.gd")
 const BOSS_SELECT := "res://scenes/ui/BossSelect.tscn"
 const LOBBY := "res://scenes/levels/LevelFortressLobby.tscn"
+const ARCHIVE := "res://scenes/levels/LevelVoiceArchive.tscn"
+const SHAFT := "res://scenes/levels/LevelCoreShaft.tscn"
+const HEART := "res://scenes/levels/LevelHeartCore9.tscn"
+
+## Linear assault stages (id, display, scene).
+const STAGES: Array = [
+	{"id": "lobby", "name": "1 · Lobby Neon", "desc": "Midboss: Refrain Unit", "scene": LOBBY},
+	{"id": "archive", "name": "2 · Voice Archive", "desc": "Sellos vocales", "scene": ARCHIVE},
+	{"id": "shaft", "name": "3 · Core Shaft", "desc": "Midboss: Overdub Titan", "scene": SHAFT},
+	{"id": "heart", "name": "4 · Heart CORE-9", "desc": "Jefe final", "scene": HEART},
+]
 
 
 func _ready() -> void:
 	_build_ui()
 	get_viewport().size_changed.connect(_layout)
 	call_deferred("_layout")
+	if AudioManager:
+		AudioManager.play_stage_bgm("fortress")
 
 
 func _build_ui() -> void:
 	var bg := ColorRect.new()
 	bg.name = "BG"
-	bg.color = Color(0.06, 0.04, 0.1, 1.0)
+	bg.color = Color(0.05, 0.03, 0.09, 1.0)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -29,57 +42,127 @@ func _build_ui() -> void:
 
 	var header := Label.new()
 	header.name = "Header"
-	header.text = "SYNTHOCORP · CORE-9"
+	header.text = "SYNTHOCORP · FORTALEZA CORE-9"
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header.add_theme_font_size_override("font_size", 11)
+	header.add_theme_font_size_override("font_size", 10)
 	header.modulate = Color(0.9, 0.55, 1.0, 1.0)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(header)
 
-	var panel := Panel.new()
-	panel.name = "Panel"
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.1, 0.06, 0.16, 0.95)
-	sb.set_border_width_all(2)
-	sb.border_color = Color(0.85, 0.3, 0.95, 1.0)
-	sb.set_corner_radius_all(4)
-	panel.add_theme_stylebox_override("panel", sb)
-	add_child(panel)
+	var progress := Label.new()
+	progress.name = "ProgressLabel"
+	progress.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	progress.add_theme_font_size_override("font_size", 7)
+	progress.modulate = Color(0.7, 0.85, 1.0, 0.9)
+	progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(progress)
 
-	var title := Label.new()
-	title.name = "Title"
-	title.text = "Fortaleza CORE-9"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 13)
-	title.modulate = Color(0.95, 0.85, 1.0, 1.0)
-	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(title)
+	var list := VBoxContainer.new()
+	list.name = "StageList"
+	list.add_theme_constant_override("separation", 3)
+	add_child(list)
 
-	var sub := Label.new()
-	sub.name = "Subtitle"
-	sub.text = "Lobby Neon → Voice Archive\n→ Core Shaft → Heart of CORE-9"
-	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub.add_theme_font_size_override("font_size", 8)
-	sub.modulate = Color(0.75, 0.7, 0.9, 0.9)
-	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(sub)
+	var cleared := _fortress_cleared_count()
+	var core_done := GameState.is_boss_defeated(GameState.BOSS_CORE9) if GameState else false
+	for i in STAGES.size():
+		var data: Dictionary = STAGES[i]
+		var row := _make_stage_row(data, i, cleared, core_done)
+		list.add_child(row)
 
 	var enter := Button.new()
 	enter.name = "EnterButton"
-	enter.text = "Entrar al asalto"
+	if core_done:
+		enter.text = "Repetir asalto"
+	else:
+		enter.text = "Entrar al asalto"
 	enter.add_theme_font_size_override("font_size", 11)
 	_SafeArea.style_button(enter, Color(0.2, 0.1, 0.28, 0.95), Color(0.85, 0.3, 0.95))
 	enter.pressed.connect(_on_enter)
-	panel.add_child(enter)
+	add_child(enter)
 
 	var back := Button.new()
 	back.name = "ReturnButton"
 	back.text = "Volver al selector"
 	back.add_theme_font_size_override("font_size", 10)
-	_SafeArea.style_button(back, Color(0.16, 0.1, 0.22, 0.95), Color(0.85, 0.3, 0.95))
+	_SafeArea.style_button(back, Color(0.16, 0.1, 0.22, 0.95), Color(0.7, 0.55, 0.9))
 	back.pressed.connect(_on_return)
 	add_child(back)
+
+	_refresh_progress_label()
+
+
+func _fortress_cleared_count() -> int:
+	## Best-effort from GameState flags (session + save).
+	if GameState == null:
+		return 0
+	if GameState.has_method("get_fortress_progress"):
+		return int(GameState.get_fortress_progress())
+	# Fallback: only CORE-9 known
+	if GameState.is_boss_defeated(GameState.BOSS_CORE9):
+		return 4
+	return 0
+
+
+func _refresh_progress_label() -> void:
+	var lbl := get_node_or_null("ProgressLabel") as Label
+	if lbl == null:
+		return
+	var core_done := GameState.is_boss_defeated(GameState.BOSS_CORE9) if GameState else false
+	var n := _fortress_cleared_count()
+	if core_done:
+		lbl.text = "Progreso: COMPLETADO · CORE-9 vencido"
+		lbl.modulate = Color(0.55, 1.0, 0.7, 1.0)
+	else:
+		lbl.text = "Progreso asalto: %d / 4 etapas" % mini(n, 4)
+		lbl.modulate = Color(0.7, 0.85, 1.0, 0.9)
+
+
+func _make_stage_row(data: Dictionary, index: int, cleared: int, core_done: bool) -> Control:
+	var row := Panel.new()
+	row.name = "Stage_%s" % str(data.get("id", index))
+	var sb := StyleBoxFlat.new()
+	var done := core_done or index < cleared
+	var current := (not core_done) and index == cleared
+	if done:
+		sb.bg_color = Color(0.08, 0.18, 0.12, 0.92)
+		sb.border_color = Color(0.4, 0.95, 0.55, 0.95)
+	elif current:
+		sb.bg_color = Color(0.16, 0.08, 0.22, 0.95)
+		sb.border_color = Color(0.95, 0.55, 1.0, 1.0)
+	else:
+		sb.bg_color = Color(0.08, 0.06, 0.12, 0.9)
+		sb.border_color = Color(0.4, 0.35, 0.5, 0.7)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(3)
+	row.add_theme_stylebox_override("panel", sb)
+	row.custom_minimum_size = Vector2(0, 28)
+
+	var title := Label.new()
+	title.name = "Title"
+	title.text = str(data.get("name", "?"))
+	title.add_theme_font_size_override("font_size", 8)
+	title.modulate = Color(0.95, 0.9, 1.0, 1.0) if (done or current) else Color(0.55, 0.55, 0.65, 1.0)
+	title.position = Vector2(8, 2)
+	title.size = Vector2(200, 12)
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(title)
+
+	var desc := Label.new()
+	desc.name = "Desc"
+	var status := "✓ Hecho" if done else ("▶ Siguiente" if current else "Bloqueado")
+	desc.text = "%s · %s" % [str(data.get("desc", "")), status]
+	desc.add_theme_font_size_override("font_size", 6)
+	if done:
+		desc.modulate = Color(0.55, 1.0, 0.7, 0.95)
+	elif current:
+		desc.modulate = Color(1.0, 0.75, 1.0, 0.95)
+	else:
+		desc.modulate = Color(0.5, 0.5, 0.6, 0.8)
+	desc.position = Vector2(8, 14)
+	desc.size = Vector2(260, 12)
+	desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(desc)
+	return row
 
 
 func _layout() -> void:
@@ -88,51 +171,61 @@ func _layout() -> void:
 
 	var accent := get_node_or_null("Accent") as ColorRect
 	if accent:
-		accent.position = Vector2(0, area.position.y + 24.0)
+		accent.position = Vector2(0, area.position.y + 20.0)
 		accent.size = Vector2(vp.x, 2)
 
 	var header := get_node_or_null("Header") as Label
 	if header:
-		header.position = Vector2(area.position.x, area.position.y + 4.0)
-		header.size = Vector2(area.size.x, 16)
+		header.position = Vector2(area.position.x, area.position.y + 2.0)
+		header.size = Vector2(area.size.x, 14)
+
+	var progress := get_node_or_null("ProgressLabel") as Label
+	if progress:
+		progress.position = Vector2(area.position.x, area.position.y + 16.0)
+		progress.size = Vector2(area.size.x, 12)
 
 	var btn_h := maxf(_SafeArea.MIN_BTN_H, minf(_SafeArea.PREFERRED_BTN_H, 36.0))
+	var enter := get_node_or_null("EnterButton") as Button
 	var back := get_node_or_null("ReturnButton") as Button
+	var gap := 4.0
+	var back_y := area.end.y - btn_h
+	var enter_y := back_y - btn_h - gap
+	if enter:
+		enter.size = Vector2(minf(220.0, area.size.x), btn_h)
+		enter.position = Vector2(area.position.x + (area.size.x - enter.size.x) * 0.5, enter_y)
 	if back:
 		back.size = Vector2(minf(200.0, area.size.x), btn_h)
-		back.position = Vector2(area.position.x + (area.size.x - back.size.x) * 0.5, area.end.y - btn_h)
+		back.position = Vector2(area.position.x + (area.size.x - back.size.x) * 0.5, back_y)
 
-	var panel := get_node_or_null("Panel") as Panel
-	if panel == null:
-		return
-	var pw := minf(300.0, area.size.x)
-	var ph := maxf(120.0, minf(150.0, area.size.y - 70.0))
-	panel.size = Vector2(pw, ph)
-	panel.position = Vector2(
-		area.position.x + (area.size.x - pw) * 0.5,
-		area.position.y + 32.0
-	)
-
-	var title := panel.get_node_or_null("Title") as Label
-	if title:
-		title.position = Vector2(0, 10)
-		title.size = Vector2(pw, 18)
-	var sub := panel.get_node_or_null("Subtitle") as Label
-	if sub:
-		sub.position = Vector2(12, 34)
-		sub.size = Vector2(pw - 24.0, 40)
-	var enter := panel.get_node_or_null("EnterButton") as Button
-	if enter:
-		var eh := maxf(_SafeArea.MIN_BTN_H, minf(_SafeArea.PREFERRED_BTN_H, 40.0))
-		enter.size = Vector2(minf(180.0, pw - 40.0), eh)
-		enter.position = Vector2((pw - enter.size.x) * 0.5, ph - eh - 12.0)
-		enter.add_theme_font_size_override("font_size", 11 if eh >= 36.0 else 9)
+	var list := get_node_or_null("StageList") as VBoxContainer
+	if list:
+		var list_top := area.position.y + 30.0
+		var list_bottom := enter_y - 6.0
+		var lw := minf(320.0, area.size.x - 8.0)
+		list.position = Vector2(area.position.x + (area.size.x - lw) * 0.5, list_top)
+		list.size = Vector2(lw, maxf(list_bottom - list_top, 60.0))
+		for child in list.get_children():
+			if child is Control:
+				(child as Control).custom_minimum_size = Vector2(lw, maxf(26.0, (list.size.y - 12.0) / 4.0))
+				var title := child.get_node_or_null("Title") as Label
+				var desc := child.get_node_or_null("Desc") as Label
+				if title:
+					title.size = Vector2(lw - 16.0, 12)
+				if desc:
+					desc.size = Vector2(lw - 16.0, 12)
 
 
 func _on_enter() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
+	# Always start linear assault from Lobby (replay-friendly)
+	if GameState and GameState.has_method("reset_fortress_run"):
+		GameState.reset_fortress_run()
 	print("Fortaleza: entrando Lobby Neon")
 	get_tree().change_scene_to_file(LOBBY)
 
 
 func _on_return() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("menu_move")
 	get_tree().change_scene_to_file(BOSS_SELECT)

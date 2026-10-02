@@ -8,6 +8,7 @@ signal broken
 @export var seal_color := Color(0.55, 0.75, 1.0, 1.0)
 
 var _alive := true
+var _weak_hits := 0
 
 @onready var visual: ColorRect = $Visual
 @onready var hint: Label = $Hint
@@ -28,14 +29,17 @@ func take_damage(amount: int) -> bool:
 	if not _alive:
 		return false
 	if amount < min_damage:
-		# Feedback ping
+		# Accumulate weak hits — prevents softlock if charge unavailable
+		_weak_hits += 1
 		if visual:
 			visual.color = Color(1.0, 1.0, 1.0, 0.9)
 			get_tree().create_timer(0.08).timeout.connect(func () -> void:
 				if is_instance_valid(visual) and _alive:
 					visual.color = seal_color
 			)
-		return false
+		if _weak_hits < 6:
+			return false
+		# 6 weak hits ≈ charge break
 	_break()
 	return true
 

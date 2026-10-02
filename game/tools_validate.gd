@@ -2679,8 +2679,10 @@ func _initialize() -> void:
 		var fs = fs_packed.instantiate()
 		root.add_child(fs)
 		await process_frame
-		var ftitle = fs.get_node_or_null("Panel/Title")
-		if ftitle and "Fortaleza" in ftitle.text:
+		var ftitle = fs.get_node_or_null("Header")
+		if ftitle == null:
+			ftitle = fs.get_node_or_null("Panel/Title")
+		if ftitle and ("CORE-9" in ftitle.text or "Fortaleza" in ftitle.text):
 			print("OK FortressComingSoon title=", ftitle.text)
 		else:
 			errors.append("FortressComingSoon missing title")
@@ -2689,11 +2691,18 @@ func _initialize() -> void:
 			errors.append("FortressComingSoon missing ReturnButton")
 		else:
 			print("OK FortressComingSoon ReturnButton")
-		var fenter = fs.get_node_or_null("Panel/EnterButton")
+		var fenter = fs.get_node_or_null("EnterButton")
+		if fenter == null:
+			fenter = fs.get_node_or_null("Panel/EnterButton")
 		if fenter == null:
 			errors.append("FortressComingSoon missing EnterButton")
 		else:
 			print("OK FortressComingSoon EnterButton")
+		var flist = fs.get_node_or_null("StageList")
+		if flist == null:
+			errors.append("FortressComingSoon missing StageList")
+		else:
+			print("OK FortressComingSoon StageList children=", flist.get_child_count())
 		fs.queue_free()
 		await process_frame
 	else:
@@ -3662,7 +3671,7 @@ func _initialize() -> void:
 	var title_src := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
 	if "PanelChrome" not in title_src and "panel_chrome" not in title_src:
 		errors.append("TitleScreen should use panel chrome")
-	if "0.19" not in title_src and "0.20" not in title_src and "0.22" not in title_src and "0.24" not in title_src and "0.25" not in title_src and "0.26" not in title_src and "0.27" not in title_src and "0.28" not in title_src:
+	if "0.19" not in title_src and "0.20" not in title_src and "0.22" not in title_src and "0.24" not in title_src and "0.25" not in title_src and "0.26" not in title_src and "0.27" not in title_src and "0.28" not in title_src and "0.29" not in title_src:
 		errors.append("TitleScreen version should mention 0.19+ / 0.28")
 	# Boss intro on Beatfire
 	var bf_src := FileAccess.get_file_as_string("res://scripts/bosses/BeatfireMan.gd")
@@ -3674,7 +3683,7 @@ func _initialize() -> void:
 
 	# --- v0.20 landscape + Beatfire touch playability ---
 	var proj := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.28.0-proto"' not in proj and 'config/version="0.27.0-proto"' not in proj and 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj:
+	if 'config/version="0.29.0-proto"' not in proj and 'config/version="0.28.0-proto"' not in proj and 'config/version="0.27.0-proto"' not in proj and 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj:
 		errors.append("project.godot version should be 0.28.0-proto")
 	else:
 		print("OK project version present")
@@ -3952,7 +3961,7 @@ func _initialize() -> void:
 	else:
 		print("OK RefrainUnit fairer contact")
 	var title_25 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "tight" not in title_25 and "0.25" not in title_25 and "0.26" not in title_25 and "0.27" not in title_25 and "0.28" not in title_25:
+	if "tight" not in title_25 and "0.25" not in title_25 and "0.26" not in title_25 and "0.27" not in title_25 and "0.28" not in title_25 and "0.29" not in title_25:
 		errors.append("TitleScreen should handle tight landscape / show 0.25+")
 	else:
 		print("OK TitleScreen tight/version")
@@ -4031,7 +4040,7 @@ func _initialize() -> void:
 	else:
 		print("OK BusterShot hitstop hook")
 	var title_26 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.26" not in title_26 and "0.27" not in title_26 and "0.28" not in title_26:
+	if "0.26" not in title_26 and "0.27" not in title_26 and "0.28" not in title_26 and "0.29" not in title_26:
 		errors.append("TitleScreen version should mention 0.26+")
 	else:
 		print("OK TitleScreen 0.26")
@@ -4095,12 +4104,12 @@ func _initialize() -> void:
 	else:
 		print("OK Level01 checkpoints")
 	var title_27 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.27" not in title_27 and "0.28" not in title_27:
+	if "0.27" not in title_27 and "0.28" not in title_27 and "0.29" not in title_27:
 		errors.append("TitleScreen version should mention 0.27+")
 	else:
 		print("OK TitleScreen 0.27+")
 	var proj_27 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.27.0-proto"' not in proj_27 and 'config/version="0.28.0-proto"' not in proj_27:
+	if 'config/version="0.27.0-proto"' not in proj_27 and 'config/version="0.28.0-proto"' not in proj_27 and 'config/version="0.29.0-proto"' not in proj_27:
 		errors.append("project.godot version should be 0.27+/0.28")
 	else:
 		print("OK project 0.27+")
@@ -4181,13 +4190,13 @@ func _initialize() -> void:
 	else:
 		print("OK TouchControls scaled gaps")
 	var title_28 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.28" not in title_28:
-		errors.append("TitleScreen version should mention 0.28")
+	if "0.28" not in title_28 and "0.29" not in title_28:
+		errors.append("TitleScreen version should mention 0.28+")
 	else:
 		print("OK TitleScreen 0.28")
 	var proj_28 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.28.0-proto"' not in proj_28:
-		errors.append("project.godot version should be 0.28.0-proto")
+	if 'config/version="0.28.0-proto"' not in proj_28 and 'config/version="0.29.0-proto"' not in proj_28:
+		errors.append("project.godot version should be 0.28+/0.29")
 	else:
 		print("OK project 0.28")
 	# Runtime: tutorial flag once + touch L still no-overlap layout exists
@@ -4214,6 +4223,98 @@ func _initialize() -> void:
 	else:
 		errors.append("GameState missing for 0.28 tutorial runtime")
 	print("OK v0.28 secrets/bossHP/tutorials")
+
+	# --- v0.29 fortress hub / ending / softlocks ---
+	var fort_29 := FileAccess.get_file_as_string("res://scripts/ui/FortressComingSoon.gd")
+	if "StageList" not in fort_29 or "get_fortress_progress" not in fort_29 or "STAGES" not in fort_29:
+		errors.append("Fortress hub missing stage list / progress")
+	else:
+		print("OK Fortress hub stage list")
+	var gs_29 := FileAccess.get_file_as_string("res://scripts/autoload/GameState.gd")
+	if "fortress_segment" not in gs_29 or "advance_fortress_segment" not in gs_29 or "reset_fortress_run" not in gs_29:
+		errors.append("GameState missing fortress progress helpers")
+	else:
+		print("OK GameState fortress progress")
+	if '"fortress_segment"' not in gs_29:
+		errors.append("GameState save should persist fortress_segment")
+	else:
+		print("OK fortress_segment save")
+	var end_29 := FileAccess.get_file_as_string("res://scripts/ui/EndingScreen.gd")
+	if "SkipButton" not in end_29 or "_advance" not in end_29 or "Kasane Teto" not in end_29:
+		errors.append("EndingScreen missing skip / tap-advance / character text")
+	else:
+		print("OK Ending skip+advance")
+	var cred_29 := FileAccess.get_file_as_string("res://scripts/ui/CreditsScreen.gd")
+	if "_scroll" not in cred_29 or "Volver al selector" not in cred_29:
+		errors.append("CreditsScreen missing scroll / return")
+	else:
+		print("OK Credits scroll")
+	var bs_29 := FileAccess.get_file_as_string("res://scripts/ui/BossSelect.gd")
+	if "VENCIDO" not in bs_29 or "CORE-9 VENCIDO" not in bs_29:
+		errors.append("BossSelect should show CORE-9 defeated")
+	else:
+		print("OK BossSelect CORE-9 defeated")
+	var pl_29 := FileAccess.get_file_as_string("res://scripts/player/Player.gd")
+	if "set_fall_death_y" not in pl_29 or "fall_death_y" not in pl_29:
+		errors.append("Player missing set_fall_death_y for tall fortress")
+	else:
+		print("OK Player fall_death_y")
+	var shaft_29 := FileAccess.get_file_as_string("res://scripts/levels/LevelCoreShaft.gd")
+	if "set_fall_death_y" not in shaft_29 or "LEVEL_BOTTOM" not in shaft_29:
+		errors.append("Core Shaft must raise fall death Y")
+	else:
+		print("OK Core Shaft fall death")
+	var archive_29 := FileAccess.get_file_as_string("res://scripts/levels/LevelVoiceArchive.gd")
+	if "Seal bypass" not in archive_29:
+		errors.append("Voice Archive missing seal bypass path")
+	else:
+		print("OK Voice Archive bypass")
+	var seal_29 := FileAccess.get_file_as_string("res://scripts/props/VocalSeal.gd")
+	if "_weak_hits" not in seal_29:
+		errors.append("VocalSeal should accumulate weak hits (anti-softlock)")
+	else:
+		print("OK VocalSeal weak hits")
+	var core_29 := FileAccess.get_file_as_string("res://scripts/bosses/Core9.gd")
+	if "hp_changed.emit(hp, HP_MAX)" not in core_29 or "get_boss_display_name" not in core_29:
+		errors.append("CORE-9 should emit hp on activate + display name")
+	else:
+		print("OK CORE-9 HUD wire")
+	var heart_29 := FileAccess.get_file_as_string("res://scripts/levels/LevelHeartCore9.gd")
+	if "_go_ending" not in heart_29 or "Ver ending" not in heart_29:
+		errors.append("Heart CORE-9 win should offer ending button")
+	else:
+		print("OK Heart ending button")
+	var title_29 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
+	if "0.29" not in title_29:
+		errors.append("TitleScreen version should mention 0.29")
+	else:
+		print("OK TitleScreen 0.29")
+	var proj_29 := FileAccess.get_file_as_string("res://project.godot")
+	if 'config/version="0.29.0-proto"' not in proj_29:
+		errors.append("project.godot version should be 0.29.0-proto")
+	else:
+		print("OK project 0.29")
+	# Runtime fortress helpers
+	var gs_rt29 = root.get_node_or_null("GameState")
+	if gs_rt29 == null:
+		gs_rt29 = root.get_node_or_null("/root/GameState")
+	if gs_rt29 and gs_rt29.has_method("advance_fortress_segment"):
+		gs_rt29.fortress_segment = 0
+		gs_rt29.advance_fortress_segment(2)
+		if int(gs_rt29.get_fortress_progress()) < 2:
+			errors.append("get_fortress_progress broken")
+		else:
+			print("OK fortress progress runtime")
+		gs_rt29.fortress_segment = 0
+	else:
+		errors.append("GameState missing fortress runtime")
+	# Touch layout still OK
+	var touch_29 := FileAccess.get_file_as_string("res://scripts/ui/TouchControls.gd")
+	if "gap_cluster" not in touch_29 or "_assert_no_overlap" not in touch_29:
+		errors.append("TouchControls overlap guards missing in 0.29")
+	else:
+		print("OK TouchControls still guarded")
+	print("OK v0.29 fortress/ending")
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

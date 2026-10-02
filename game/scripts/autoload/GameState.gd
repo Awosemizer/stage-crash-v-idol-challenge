@@ -99,6 +99,10 @@ var _boss_fight_took_damage := false
 var active_stage_id: String = ""
 var _stage_checkpoints: Dictionary = {}
 
+## Fortress CORE-9 linear progress (0..4). Session + save.
+## 0=not started, 1=lobby midboss clear, 2=archive clear, 3=shaft clear, 4=CORE-9 clear
+var fortress_segment: int = 0
+
 ## Touch overlay prefs (persist user://touch_settings.cfg)
 const TOUCH_SETTINGS_PATH := "user://touch_settings.cfg"
 var touch_opacity: float = 0.50
@@ -279,6 +283,7 @@ func mark_boss_defeated(boss_id: String) -> void:
 			elif boss_id == BOSS_STATIC_SHADOW:
 				unlock_weapon("static_veil")
 			elif boss_id == BOSS_CORE9:
+				fortress_segment = 4
 				print("GameState: fortaleza CORE-9 completada")
 		boss_defeated.emit(boss_id)
 		print("GameState: jefe derrotado → %s" % boss_id)
@@ -365,6 +370,33 @@ func is_core9_unlocked() -> bool:
 	return defeated_boss_count() >= 8
 
 
+func get_fortress_progress() -> int:
+	## 0..4 etapas del asalto (4 si CORE-9 vencido).
+	if is_boss_defeated(BOSS_CORE9):
+		return 4
+	return clampi(fortress_segment, 0, 3)
+
+
+func advance_fortress_segment(seg: int) -> void:
+	## Marca segmento alcanzado (1 lobby, 2 archive, 3 shaft). CORE-9 usa mark_boss_defeated.
+	fortress_segment = maxi(fortress_segment, clampi(seg, 0, 3))
+	if active_slot >= 0:
+		autosave()
+	print("GameState: fortress_segment → %d" % fortress_segment)
+
+
+func reset_fortress_run() -> void:
+	## Nueva entrada al asalto (no borra CORE-9 defeated).
+	if not is_boss_defeated(BOSS_CORE9):
+		fortress_segment = 0
+	clear_stage_checkpoint("fortress_lobby")
+	clear_stage_checkpoint("voice_archive")
+	clear_stage_checkpoint("core_shaft")
+	clear_stage_checkpoint("heart_core9")
+
+
+
+
 ## --- Saves (3 slots → user://save_N.json) ---
 const SAVE_SLOT_COUNT := 3
 const SAVE_VERSION := 1
@@ -411,6 +443,7 @@ func reset_progress() -> void:
 	_boss_fight_took_damage = false
 	_stage_checkpoints.clear()
 	active_stage_id = ""
+	fortress_segment = 0
 	tutorial_wall_jump_shown = false
 	tutorial_slide_shown = false
 	armor_changed.emit(ARMOR_SET_FLIGHT)
@@ -456,6 +489,7 @@ func to_save_dict() -> Dictionary:
 		"achievements": ach,
 		"tutorial_wall_jump_shown": tutorial_wall_jump_shown,
 		"tutorial_slide_shown": tutorial_slide_shown,
+		"fortress_segment": fortress_segment,
 	}
 
 
@@ -505,6 +539,9 @@ func apply_save_dict(data: Dictionary) -> void:
 				_achievements[str(k)] = true
 	tutorial_wall_jump_shown = bool(data.get("tutorial_wall_jump_shown", false))
 	tutorial_slide_shown = bool(data.get("tutorial_slide_shown", false))
+	fortress_segment = clampi(int(data.get("fortress_segment", 0)), 0, 4)
+	if is_boss_defeated(BOSS_CORE9):
+		fortress_segment = 4
 	armor_changed.emit(ARMOR_SET_FLIGHT)
 
 
@@ -772,6 +809,10 @@ func evaluate_achievements() -> void:
 
 func on_ending_reached() -> void:
 	## Llamar desde EndingScreen — clear Miku/Teto + CORE-9.
+	if not is_boss_defeated(BOSS_CORE9):
+		mark_boss_defeated(BOSS_CORE9)
+	else:
+		fortress_segment = 4
 	unlock_achievement(ACH_DEFEAT_CORE9)
 	if is_teto():
 		unlock_achievement(ACH_CLEAR_TETO)

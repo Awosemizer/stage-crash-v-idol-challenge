@@ -124,7 +124,11 @@ func _build_ui() -> void:
 
 	var footer := Label.new()
 	footer.name = "Footer"
-	footer.text = "8 Robot Masters · CORE-9 tras vencerlos"
+	footer.text = (
+		"CORE-9 VENCIDO · puedes repetir la fortaleza"
+		if GameState.is_boss_defeated(GameState.BOSS_CORE9)
+		else "8 Robot Masters · CORE-9 tras vencerlos"
+	)
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	footer.add_theme_font_size_override("font_size", 6)
 	footer.modulate = Color(0.6, 0.65, 0.75, 0.75)
@@ -335,7 +339,7 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 	var defeated := false
 	if id == "beatfire":
 		defeated = GameState.is_beatfire_defeated()
-	elif id != "core9":
+	else:
 		defeated = GameState.is_boss_defeated(id)
 
 	var locked_core := is_core and not GameState.is_core9_unlocked()
@@ -382,7 +386,7 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 				bg_col = Color(0.18, 0.1, 0.08, 0.95)
 		border_col = accent
 
-	if defeated and not is_core:
+	if defeated:
 		border_col = Color(0.35, 0.95, 0.45, 1.0)
 
 	_SafeArea.style_button(btn, bg_col, border_col, 3)
@@ -441,8 +445,15 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 	status.size = Vector2(64, 12)
 	status.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if is_core:
-		status.text = "BLOQUEADO" if locked_core else "FORTALEZA"
-		status.modulate = Color(0.85, 0.55, 1.0, 0.9) if locked_core else Color(0.6, 1.0, 0.7, 1.0)
+		if defeated:
+			status.text = "VENCIDO ✓"
+			status.modulate = Color(0.55, 1.0, 0.65, 1.0)
+		elif locked_core:
+			status.text = "BLOQUEADO"
+			status.modulate = Color(0.85, 0.55, 1.0, 0.9)
+		else:
+			status.text = "FORTALEZA"
+			status.modulate = Color(0.6, 1.0, 0.7, 1.0)
 	elif defeated:
 		status.text = "VENCIDO ✓"
 		status.modulate = Color(0.55, 1.0, 0.65, 1.0)
@@ -454,7 +465,7 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 		status.modulate = Color(0.6, 0.6, 0.65, 0.85)
 	btn.add_child(status)
 
-	if defeated and not is_core:
+	if defeated:
 		var check_bg := Panel.new()
 		check_bg.name = "Checkmark"
 		var csb := StyleBoxFlat.new()
