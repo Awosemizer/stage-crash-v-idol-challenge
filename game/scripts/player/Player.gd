@@ -1196,6 +1196,7 @@ func _start_slide() -> void:
 	_slide_buffer = 0.0
 	if AudioManager:
 		AudioManager.play_sfx("slide")
+	_maybe_tutorial_slide()
 	# Encore Guard: legs = longer slide i-frames; torso = hyper armor
 	_invuln = INVULN_SLIDE
 	if _has_encore_legs:
@@ -1249,9 +1250,22 @@ func _do_wall_jump(wall_dir: int) -> void:
 	_jump_buffer = 0.0
 	if AudioManager:
 		AudioManager.play_sfx("wall_jump")
+	_maybe_tutorial_wall_jump()
 	if _is_sliding:
 		_end_slide()
 
+
+
+func _maybe_tutorial_wall_jump() -> void:
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs != null and gs.has_method("try_show_tutorial"):
+		gs.try_show_tutorial("wall_jump", "WALL JUMP", "Salta hacia la pared · toca Saltar otra vez")
+
+
+func _maybe_tutorial_slide() -> void:
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs != null and gs.has_method("try_show_tutorial"):
+		gs.try_show_tutorial("slide", "SLIDE / DASH", "DASH bajo obstáculos · i-frames cortos")
 
 func _is_on_wall_solid() -> bool:
 	return wall_ray_l.is_colliding() or wall_ray_r.is_colliding() or is_on_wall()

@@ -478,15 +478,21 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 		check.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		check_bg.add_child(check)
 
-	if playable and GameState.has_pending_armor_secret(id):
+	# Map blip for pending armor secrets — only with Stage Flight helmet (scanner)
+	var flight_helm := false
+	if GameState.has_method("has_flight_head_equipped"):
+		flight_helm = bool(GameState.has_flight_head_equipped())
+	elif GameState.has_method("has_armor_piece"):
+		flight_helm = bool(GameState.has_armor_piece("flight", "head"))
+	if playable and flight_helm and GameState.has_pending_armor_secret(id):
 		var secret := Label.new()
 		secret.name = "SecretStub"
 		secret.text = "◆"
-		secret.add_theme_font_size_override("font_size", 7)
-		secret.modulate = Color(0.4, 0.9, 1.0, 0.95)
-		secret.position = Vector2(56, 34)
-		secret.size = Vector2(12, 12)
-		secret.tooltip_text = "Secreto de armadura pendiente"
+		secret.add_theme_font_size_override("font_size", 8)
+		secret.modulate = Color(0.35, 0.95, 1.0, 1.0)
+		secret.position = Vector2(maxf(_cell_w - 16.0, 52.0), maxf(_cell_h - 16.0, 34.0))
+		secret.size = Vector2(14, 14)
+		secret.tooltip_text = "Secreto detectado (casco Flight)"
 		secret.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		btn.add_child(secret)
 

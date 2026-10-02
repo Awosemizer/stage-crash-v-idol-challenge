@@ -373,12 +373,17 @@ func _initialize() -> void:
 				errors.append("Beatfire playable status unexpected: " + st.text)
 			elif st:
 				print("OK Beatfire status=", st.text)
-			# Secret stub when flight torso missing
+			# Secret stub only with Flight helmet (v0.28 scanner)
 			var secret = beat_cell.get_node_or_null("SelectButton/SecretStub")
-			if secret == null and gs != null and gs.has_pending_armor_secret("beatfire"):
+			var helm = gs != null and gs.has_method("has_flight_head_equipped") and gs.has_flight_head_equipped()
+			if helm and secret == null and gs.has_pending_armor_secret("beatfire"):
 				errors.append("Beatfire missing SecretStub for pending armor")
+			elif (not helm) and secret != null:
+				errors.append("Beatfire SecretStub should require Flight helmet")
 			elif secret:
 				print("OK Beatfire SecretStub present")
+			else:
+				print("OK Beatfire SecretStub gated (no Flight helmet)")
 		if core_cell == null:
 			errors.append("BossSelect missing CORE-9 cell")
 		else:
@@ -403,10 +408,15 @@ func _initialize() -> void:
 			elif est:
 				print("OK Echo Wind status=", est.text)
 			var esecret = echo_cell.get_node_or_null("SelectButton/SecretStub")
-			if esecret == null and gs != null and gs.has_pending_armor_secret("echo_wind"):
+			var ehelm = gs != null and gs.has_method("has_flight_head_equipped") and gs.has_flight_head_equipped()
+			if ehelm and esecret == null and gs.has_pending_armor_secret("echo_wind"):
 				errors.append("Echo Wind missing SecretStub for pending helmet")
+			elif (not ehelm) and esecret != null:
+				errors.append("Echo Wind SecretStub should require Flight helmet")
 			elif esecret:
 				print("OK Echo Wind SecretStub present")
+			else:
+				print("OK Echo Wind SecretStub gated")
 		# Neon Volt playable cell
 		var neon_cell = null
 		if grid:
@@ -423,10 +433,15 @@ func _initialize() -> void:
 			elif nst:
 				print("OK Neon Volt status=", nst.text)
 			var nsecret = neon_cell.get_node_or_null("SelectButton/SecretStub")
-			if nsecret == null and gs != null and gs.has_pending_armor_secret("neon_volt"):
+			var nhelm = gs != null and gs.has_method("has_flight_head_equipped") and gs.has_flight_head_equipped()
+			if nhelm and nsecret == null and gs.has_pending_armor_secret("neon_volt"):
 				errors.append("Neon Volt missing SecretStub for pending arms")
+			elif (not nhelm) and nsecret != null:
+				errors.append("Neon Volt SecretStub should require Flight helmet")
 			elif nsecret:
 				print("OK Neon Volt SecretStub present")
+			else:
+				print("OK Neon Volt SecretStub gated")
 		# Glitch Ice playable cell
 		var ice_cell = null
 		if grid:
@@ -458,10 +473,15 @@ func _initialize() -> void:
 			elif sst:
 				print("OK Static Shadow status=", sst.text)
 			var sssecret = ss_cell.get_node_or_null("SelectButton/SecretStub")
-			if sssecret == null and gs != null and gs.has_pending_armor_secret("static_shadow"):
+			var sshelm = gs != null and gs.has_method("has_flight_head_equipped") and gs.has_flight_head_equipped()
+			if sshelm and sssecret == null and gs.has_pending_armor_secret("static_shadow"):
 				errors.append("Static Shadow missing SecretStub for pending encore helmet")
+			elif (not sshelm) and sssecret != null:
+				errors.append("Static Shadow SecretStub should require Flight helmet")
 			elif sssecret:
 				print("OK Static Shadow SecretStub present")
+			else:
+				print("OK Static Shadow SecretStub gated")
 		# Spanish / GDD names present in scene tree
 		var names_needed = ["Beatfire Man", "Glitch Ice", "Bassquake", "Echo Wind", "Neon Volt", "Metronome", "Chorus Bloom", "Static Shadow", "CORE-9"]
 		var found_names := 0
@@ -3642,8 +3662,8 @@ func _initialize() -> void:
 	var title_src := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
 	if "PanelChrome" not in title_src and "panel_chrome" not in title_src:
 		errors.append("TitleScreen should use panel chrome")
-	if "0.19" not in title_src and "0.20" not in title_src and "0.22" not in title_src and "0.24" not in title_src and "0.25" not in title_src and "0.26" not in title_src and "0.27" not in title_src:
-		errors.append("TitleScreen version should mention 0.19+ / 0.27")
+	if "0.19" not in title_src and "0.20" not in title_src and "0.22" not in title_src and "0.24" not in title_src and "0.25" not in title_src and "0.26" not in title_src and "0.27" not in title_src and "0.28" not in title_src:
+		errors.append("TitleScreen version should mention 0.19+ / 0.28")
 	# Boss intro on Beatfire
 	var bf_src := FileAccess.get_file_as_string("res://scripts/bosses/BeatfireMan.gd")
 	if "play_boss_intro" not in bf_src:
@@ -3654,8 +3674,8 @@ func _initialize() -> void:
 
 	# --- v0.20 landscape + Beatfire touch playability ---
 	var proj := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.27.0-proto"' not in proj and 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj:
-		errors.append("project.godot version should be 0.27.0-proto")
+	if 'config/version="0.28.0-proto"' not in proj and 'config/version="0.27.0-proto"' not in proj and 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj:
+		errors.append("project.godot version should be 0.28.0-proto")
 	else:
 		print("OK project version present")
 	if 'window/stretch/mode="canvas_items"' not in proj:
@@ -3932,7 +3952,7 @@ func _initialize() -> void:
 	else:
 		print("OK RefrainUnit fairer contact")
 	var title_25 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "tight" not in title_25 and "0.25" not in title_25 and "0.26" not in title_25 and "0.27" not in title_25:
+	if "tight" not in title_25 and "0.25" not in title_25 and "0.26" not in title_25 and "0.27" not in title_25 and "0.28" not in title_25:
 		errors.append("TitleScreen should handle tight landscape / show 0.25+")
 	else:
 		print("OK TitleScreen tight/version")
@@ -3977,7 +3997,7 @@ func _initialize() -> void:
 		errors.append("TouchControls ATK/DASH gaps should be 20px in 0.26")
 	else:
 		print("OK TouchControls 20px gaps")
-	if "- 10.0" not in touch_26:
+	if "- 10.0" not in touch_26 and "attack_lift" not in touch_26:
 		errors.append("TouchControls Attack should be raised vs DASH band")
 	else:
 		print("OK TouchControls Attack raised")
@@ -4011,7 +4031,7 @@ func _initialize() -> void:
 	else:
 		print("OK BusterShot hitstop hook")
 	var title_26 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.26" not in title_26 and "0.27" not in title_26:
+	if "0.26" not in title_26 and "0.27" not in title_26 and "0.28" not in title_26:
 		errors.append("TitleScreen version should mention 0.26+")
 	else:
 		print("OK TitleScreen 0.26")
@@ -4075,15 +4095,15 @@ func _initialize() -> void:
 	else:
 		print("OK Level01 checkpoints")
 	var title_27 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.27" not in title_27:
-		errors.append("TitleScreen version should mention 0.27")
+	if "0.27" not in title_27 and "0.28" not in title_27:
+		errors.append("TitleScreen version should mention 0.27+")
 	else:
-		print("OK TitleScreen 0.27")
+		print("OK TitleScreen 0.27+")
 	var proj_27 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.27.0-proto"' not in proj_27:
-		errors.append("project.godot version should be 0.27.0-proto")
+	if 'config/version="0.27.0-proto"' not in proj_27 and 'config/version="0.28.0-proto"' not in proj_27:
+		errors.append("project.godot version should be 0.27+/0.28")
 	else:
-		print("OK project 0.27")
+		print("OK project 0.27+")
 	# Runtime: Checkpoint place + GameState roundtrip
 	var ck_node = load("res://scenes/props/Checkpoint.tscn")
 	if ck_node == null:
@@ -4123,6 +4143,77 @@ func _initialize() -> void:
 	else:
 		errors.append("GameState missing for checkpoint runtime check")
 	print("OK v0.27 checkpoints/feel/touch")
+
+
+	# --- v0.28 secrets / boss HP / tutorials / touch gaps ---
+	var brk_28 := FileAccess.get_file_as_string("res://scripts/props/BreakableBlock.gd")
+	if "SecretBlip" not in brk_28 or "_refresh_flight_blip" not in brk_28:
+		errors.append("BreakableBlock missing Flight secret blip / clear visual")
+	else:
+		print("OK BreakableBlock secret clarity")
+	var gs_28 := FileAccess.get_file_as_string("res://scripts/autoload/GameState.gd")
+	if "try_show_tutorial" not in gs_28 or "tutorial_wall_jump_shown" not in gs_28:
+		errors.append("GameState missing tutorial toast flags")
+	else:
+		print("OK GameState tutorials")
+	if '"tutorial_wall_jump_shown"' not in gs_28 or '"tutorial_slide_shown"' not in gs_28:
+		errors.append("GameState save should persist tutorial flags")
+	else:
+		print("OK GameState tutorial save")
+	var pl_28 := FileAccess.get_file_as_string("res://scripts/player/Player.gd")
+	if "_maybe_tutorial_wall_jump" not in pl_28 or "_maybe_tutorial_slide" not in pl_28:
+		errors.append("Player missing tutorial hooks for wall-jump/slide")
+	else:
+		print("OK Player tutorial hooks")
+	var hud_28 := FileAccess.get_file_as_string("res://scripts/ui/HUD.gd")
+	if "BossHpRoot" not in hud_28 or "_try_bind_boss" not in hud_28:
+		errors.append("HUD missing top-screen boss HP bar")
+	else:
+		print("OK HUD boss HP bar")
+	var bs_28 := FileAccess.get_file_as_string("res://scripts/ui/BossSelect.gd")
+	if "flight_helm" not in bs_28 or "has_flight_head_equipped" not in bs_28:
+		errors.append("BossSelect secret map blip should require Flight helmet")
+	else:
+		print("OK BossSelect Flight helmet blip")
+	var touch_28 := FileAccess.get_file_as_string("res://scripts/ui/TouchControls.gd")
+	if "gap_cluster" not in touch_28 or "size_scale" not in touch_28:
+		errors.append("TouchControls should scale ATK/DASH gaps with S/M/L")
+	else:
+		print("OK TouchControls scaled gaps")
+	var title_28 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
+	if "0.28" not in title_28:
+		errors.append("TitleScreen version should mention 0.28")
+	else:
+		print("OK TitleScreen 0.28")
+	var proj_28 := FileAccess.get_file_as_string("res://project.godot")
+	if 'config/version="0.28.0-proto"' not in proj_28:
+		errors.append("project.godot version should be 0.28.0-proto")
+	else:
+		print("OK project 0.28")
+	# Runtime: tutorial flag once + touch L still no-overlap layout exists
+	var gs_rt28 = root.get_node_or_null("GameState")
+	if gs_rt28 == null:
+		gs_rt28 = root.get_node_or_null("/root/GameState")
+	if gs_rt28 and gs_rt28.has_method("try_show_tutorial"):
+		gs_rt28.tutorial_wall_jump_shown = false
+		var shown1: bool = gs_rt28.try_show_tutorial("wall_jump", "TEST", "body")
+		var shown2: bool = gs_rt28.try_show_tutorial("wall_jump", "TEST", "body")
+		if not shown1 or shown2:
+			errors.append("try_show_tutorial should show once then skip")
+		else:
+			print("OK tutorial once-only")
+		gs_rt28.tutorial_wall_jump_shown = false
+		gs_rt28.tutorial_slide_shown = false
+		# Touch size L still available
+		gs_rt28.set_touch_btn_size("L")
+		if gs_rt28.get_touch_size_scale() < 1.1:
+			errors.append("Touch size L broken in 0.28")
+		else:
+			print("OK touch S/M/L still works")
+		gs_rt28.set_touch_btn_size("M")
+	else:
+		errors.append("GameState missing for 0.28 tutorial runtime")
+	print("OK v0.28 secrets/bossHP/tutorials")
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

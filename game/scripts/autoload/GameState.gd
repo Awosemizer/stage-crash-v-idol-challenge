@@ -105,6 +105,10 @@ var touch_opacity: float = 0.50
 var touch_btn_size: String = "M"  # S / M / L
 signal touch_settings_changed
 
+## Tutorial toasts (once per save) — wall-jump / slide
+var tutorial_wall_jump_shown: bool = false
+var tutorial_slide_shown: bool = false
+
 
 func _ready() -> void:
 	load_touch_settings()
@@ -407,6 +411,8 @@ func reset_progress() -> void:
 	_boss_fight_took_damage = false
 	_stage_checkpoints.clear()
 	active_stage_id = ""
+	tutorial_wall_jump_shown = false
+	tutorial_slide_shown = false
 	armor_changed.emit(ARMOR_SET_FLIGHT)
 	difficulty_changed.emit(false)
 
@@ -448,6 +454,8 @@ func to_save_dict() -> Dictionary:
 		"energy_tanks": energy_tanks,
 		"difficulty": "hard" if is_hard() else "normal",
 		"achievements": ach,
+		"tutorial_wall_jump_shown": tutorial_wall_jump_shown,
+		"tutorial_slide_shown": tutorial_slide_shown,
 	}
 
 
@@ -495,6 +503,8 @@ func apply_save_dict(data: Dictionary) -> void:
 		for k in ach_data.keys():
 			if bool(ach_data[k]):
 				_achievements[str(k)] = true
+	tutorial_wall_jump_shown = bool(data.get("tutorial_wall_jump_shown", false))
+	tutorial_slide_shown = bool(data.get("tutorial_slide_shown", false))
 	armor_changed.emit(ARMOR_SET_FLIGHT)
 
 
@@ -876,6 +886,67 @@ func clear_stage_checkpoint(stage_id: String = "") -> void:
 func clear_all_stage_checkpoints() -> void:
 	_stage_checkpoints.clear()
 	active_stage_id = ""
+
+
+
+## --- Tutorial hints (once) ---
+
+func try_show_tutorial(flag_name: String, title: String, body: String) -> bool:
+	## Shows a one-shot toast. flag_name: "wall_jump" | "slide". Returns true if shown.
+	var already := false
+	if flag_name == "wall_jump":
+		already = tutorial_wall_jump_shown
+	elif flag_name == "slide":
+		already = tutorial_slide_shown
+	else:
+		return false
+	if already:
+		return false
+	if flag_name == "wall_jump":
+		tutorial_wall_jump_shown = true
+	elif flag_name == "slide":
+		tutorial_slide_shown = true
+	_show_tutorial_toast(title, body)
+	if active_slot >= 0:
+		autosave()
+	return true
+
+
+func _show_tutorial_toast(title: String, body: String) -> void:
+	var tree := get_tree()
+	if tree == null:
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 95
+	layer.name = "TutorialToast"
+	tree.root.add_child(layer)
+	var panel := ColorRect.new()
+	panel.color = Color(0.06, 0.1, 0.16, 0.92)
+	panel.position = Vector2(36, 52)
+	panel.size = Vector2(184, 44)
+	layer.add_child(panel)
+	var border := ColorRect.new()
+	border.color = Color(0.45, 0.9, 1.0, 1.0)
+	border.position = Vector2(36, 52)
+	border.size = Vector2(184, 2)
+	layer.add_child(border)
+	var hdr := Label.new()
+	hdr.text = title
+	hdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hdr.add_theme_font_size_override("font_size", 8)
+	hdr.modulate = Color(0.55, 0.95, 1.0, 1.0)
+	hdr.position = Vector2(36, 56)
+	hdr.size = Vector2(184, 14)
+	layer.add_child(hdr)
+	var body_lbl := Label.new()
+	body_lbl.text = body
+	body_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body_lbl.add_theme_font_size_override("font_size", 7)
+	body_lbl.modulate = Color(0.9, 0.95, 1.0, 0.95)
+	body_lbl.position = Vector2(36, 72)
+	body_lbl.size = Vector2(184, 18)
+	layer.add_child(body_lbl)
+	tree.create_timer(3.2).timeout.connect(Callable(layer, "queue_free"))
 
 
 ## --- Touch prefs ---

@@ -274,23 +274,31 @@ func _layout() -> void:
 	var j := BTN_JUMP * 2.0 * size_scale
 	var a := BTN_ATTACK * 2.0 * size_scale
 	var s := BTN_SLIDE * 2.0 * size_scale
+	# Keep Attack/Dash separation at all touch sizes (S/M/L)
+	var gap_cluster := maxf(CLUSTER_GAP, CLUSTER_GAP * size_scale)
+	var gap_slide := maxf(SLIDE_GAP, SLIDE_GAP * size_scale)
+	var attack_lift := 10.0 * size_scale
 	_btn_jump.size = Vector2(j, j)
 	_btn_jump.position = Vector2(right - j, bottom - j)
 
-	# Attack — clearly left of Jump (same vertical band), CLUSTER_GAP between rects
+	# Attack — clearly left of Jump; raised so ATK/DASH don't share thumb band
 	_btn_attack.size = Vector2(a, a)
-	# Raise Attack slightly so ATK/DASH don't share the same thumb band
 	_btn_attack.position = Vector2(
-		_btn_jump.position.x - a - CLUSTER_GAP,
-		_btn_jump.position.y + (j - a) * 0.5 - 10.0
+		_btn_jump.position.x - a - gap_cluster,
+		_btn_jump.position.y + (j - a) * 0.5 - attack_lift
 	)
 
-	# Slide — further left of Attack, bottom-aligned, SLIDE_GAP between rects
+	# Slide — further left of Attack, bottom-aligned
 	_btn_slide.size = Vector2(s, s)
 	_btn_slide.position = Vector2(
-		_btn_attack.position.x - s - SLIDE_GAP,
+		_btn_attack.position.x - s - gap_slide,
 		bottom - s
 	)
+	# Safety: if Attack still intersects Slide vertically+horizontally, shove Attack up
+	var ar := Rect2(_btn_attack.position, _btn_attack.size)
+	var sr := Rect2(_btn_slide.position, _btn_slide.size)
+	if ar.intersects(sr):
+		_btn_attack.position.y = minf(_btn_attack.position.y, _btn_slide.position.y - a - 8.0)
 
 	# Weapon prev/next — upper-right, clear of pause/armor and of face-button cluster
 	var w := BTN_WEAPON * 2.0 * size_scale

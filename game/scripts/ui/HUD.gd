@@ -50,12 +50,22 @@ var _weapon_strip_btns: Array = []
 var _ammo_flash := 0.0
 var _touch_size_btn: Button = null
 var _touch_op_btn: Button = null
+var _boss_hp_root: Control = null
+var _boss_hp_bg: ColorRect = null
+var _boss_hp_fill: ColorRect = null
+var _boss_hp_label: Label = null
+var _boss_bound: Node = null
+var _boss_poll_t := 0.0
 
 
 func _process(delta: float) -> void:
 	if _ammo_flash > 0.0:
 		_ammo_flash = maxf(_ammo_flash - delta, 0.0)
 		_refresh_weapon()
+	_boss_poll_t -= delta
+	if _boss_poll_t <= 0.0:
+		_boss_poll_t = 0.35
+		_try_bind_boss()
 
 
 func _ready() -> void:
@@ -81,6 +91,7 @@ func _ready() -> void:
 	call_deferred("refresh_weakness_hint")
 	# Auto-bind if player already in tree
 	call_deferred("_try_auto_bind")
+	call_deferred("_try_bind_boss")
 
 
 func _apply_portrait_from_state() -> void:
@@ -345,6 +356,38 @@ func _build_ui() -> void:
 	_touch_op_btn.pressed.connect(_on_touch_opacity_pressed)
 	_pause_panel.add_child(_touch_op_btn)
 
+	# --- Boss HP bar (top center, screen-space) ---
+	_boss_hp_root = Control.new()
+	_boss_hp_root.name = "BossHpRoot"
+	_boss_hp_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_hp_root.visible = false
+	_root.add_child(_boss_hp_root)
+	var boss_title := Label.new()
+	boss_title.name = "BossHpTitle"
+	boss_title.text = "JEFE"
+	boss_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	boss_title.add_theme_font_size_override("font_size", 7)
+	boss_title.modulate = Color(1.0, 0.75, 0.45, 0.95)
+	boss_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_hp_root.add_child(boss_title)
+	_boss_hp_bg = ColorRect.new()
+	_boss_hp_bg.name = "BossHpBg"
+	_boss_hp_bg.color = Color(0.08, 0.06, 0.1, 0.9)
+	_boss_hp_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_hp_root.add_child(_boss_hp_bg)
+	_boss_hp_fill = ColorRect.new()
+	_boss_hp_fill.name = "BossHpFill"
+	_boss_hp_fill.color = Color(0.95, 0.4, 0.25, 1.0)
+	_boss_hp_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_hp_bg.add_child(_boss_hp_fill)
+	_boss_hp_label = Label.new()
+	_boss_hp_label.name = "BossHpLabel"
+	_boss_hp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boss_hp_label.add_theme_font_size_override("font_size", 7)
+	_boss_hp_label.modulate = Color(1, 1, 1, 0.9)
+	_boss_hp_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_boss_hp_root.add_child(_boss_hp_label)
+
 
 func _make_panel(col: Color) -> Panel:
 	var p := Panel.new()
@@ -462,6 +505,24 @@ func _layout() -> void:
 	if _weapon_strip:
 		_weapon_strip.position = Vector2(10, strip_top + 16.0)
 		_weapon_strip.size = Vector2(pw - 20.0, maxf(ph - (strip_top + 20.0), 36.0))
+
+	# Boss HP — top center of safe area (above playfield, clear of pause)
+	if _boss_hp_root:
+		var bar_w := minf(160.0, area.size.x * 0.42)
+		var bar_h := 8.0
+		_boss_hp_root.position = Vector2(area.position.x + (area.size.x - bar_w) * 0.5, top)
+		_boss_hp_root.size = Vector2(bar_w, 28.0)
+		var title_n := _boss_hp_root.get_node_or_null("BossHpTitle") as Label
+		if title_n:
+			title_n.position = Vector2(0, 0)
+			title_n.size = Vector2(bar_w, 10)
+		if _boss_hp_bg:
+			_boss_hp_bg.position = Vector2(0, 12)
+			_boss_hp_bg.size = Vector2(bar_w, bar_h)
+		if _boss_hp_label:
+			_boss_hp_label.position = Vector2(0, 12 + bar_h)
+			_boss_hp_label.size = Vector2(bar_w, 10)
+		_refresh_boss_hp_bar()
 
 	_refresh_hp_bar()
 	_refresh_armor()
@@ -784,3 +845,105 @@ func _on_touch_opacity_pressed() -> void:
 	if AudioManager:
 		AudioManager.play_sfx("ui_confirm")
 	_refresh_touch_opt_labels()
+
+func _try_bind_boss() -> void:
+	var tree := get_tree()
+	if tree == null:
+		return
+	var bosses := tree.get_nodes_in_group("bosses")
+	var alive: Node = null
+	for b in bosses:
+		if b == null or not is_instance_valid(b):
+			continue
+		if "hp" in b and int(b.hp) <= 0:
+			continue
+		alive = b
+		break
+	if alive == _boss_bound:
+		return
+	_unbind_boss()
+	if alive == null:
+		if _boss_hp_root:
+			_boss_hp_root.visible = false
+		return
+	_boss_bound = alive
+	if _boss_bound.has_signal("hp_changed"):
+		if not _boss_bound.hp_changed.is_connected(_on_boss_hp_changed):
+			_boss_bound.hp_changed.connect(_on_boss_hp_changed)
+	if _boss_bound.has_signal("died"):
+		if not _boss_bound.died.is_connected(_on_boss_died):
+			_boss_bound.died.connect(_on_boss_died)
+	var title_n := _boss_hp_root.get_node_or_null("BossHpTitle") as Label if _boss_hp_root else null
+	var nm := str(_boss_bound.name)
+	if "display_name" in _boss_bound:
+		nm = str(_boss_bound.display_name)
+	elif _boss_bound.has_method("get_boss_display_name"):
+		nm = str(_boss_bound.get_boss_display_name())
+	else:
+		# Friendly names from node name
+		nm = nm.replace("Man", " Man").replace("Unit", " Unit")
+	if title_n:
+		title_n.text = nm.to_upper()
+	if _boss_hp_root:
+		_boss_hp_root.visible = true
+	var cur := int(_boss_bound.hp) if "hp" in _boss_bound else 28
+	var mx := 28
+	var mx_v = _boss_bound.get("HP_MAX")
+	if mx_v != null:
+		mx = int(mx_v)
+	elif "max_hp" in _boss_bound:
+		mx = int(_boss_bound.max_hp)
+	_on_boss_hp_changed(cur, mx)
+
+
+func _unbind_boss() -> void:
+	if _boss_bound != null and is_instance_valid(_boss_bound):
+		if _boss_bound.has_signal("hp_changed") and _boss_bound.hp_changed.is_connected(_on_boss_hp_changed):
+			_boss_bound.hp_changed.disconnect(_on_boss_hp_changed)
+		if _boss_bound.has_signal("died") and _boss_bound.died.is_connected(_on_boss_died):
+			_boss_bound.died.disconnect(_on_boss_died)
+	_boss_bound = null
+
+
+func _on_boss_hp_changed(current: int, maximum: int) -> void:
+	if _boss_hp_root == null:
+		return
+	_boss_hp_root.visible = maximum > 0 and current >= 0
+	_boss_hp_root.set_meta("hp", current)
+	_boss_hp_root.set_meta("max_hp", maximum)
+	_refresh_boss_hp_bar()
+	if current <= 0:
+		# Keep visible briefly at 0 then hide on next poll
+		pass
+
+
+func _on_boss_died() -> void:
+	if _boss_hp_root:
+		_boss_hp_root.set_meta("hp", 0)
+		_refresh_boss_hp_bar()
+	# Delay hide so player sees empty bar
+	var tree := get_tree()
+	if tree:
+		tree.create_timer(0.8).timeout.connect(func () -> void:
+			_unbind_boss()
+			if _boss_hp_root:
+				_boss_hp_root.visible = false
+		)
+
+
+func _refresh_boss_hp_bar() -> void:
+	if _boss_hp_bg == null or _boss_hp_fill == null:
+		return
+	var cur := int(_boss_hp_root.get_meta("hp", 0)) if _boss_hp_root else 0
+	var mx := int(_boss_hp_root.get_meta("max_hp", 28)) if _boss_hp_root else 28
+	var ratio := 0.0 if mx <= 0 else clampf(float(cur) / float(mx), 0.0, 1.0)
+	_boss_hp_fill.position = Vector2(1, 1)
+	_boss_hp_fill.size = Vector2(maxf((_boss_hp_bg.size.x - 2.0) * ratio, 0.0), maxf(_boss_hp_bg.size.y - 2.0, 1.0))
+	if ratio > 0.5:
+		_boss_hp_fill.color = Color(0.95, 0.45, 0.2, 1.0)
+	elif ratio > 0.25:
+		_boss_hp_fill.color = Color(0.95, 0.75, 0.2, 1.0)
+	else:
+		_boss_hp_fill.color = Color(0.95, 0.25, 0.3, 1.0)
+	if _boss_hp_label:
+		_boss_hp_label.text = "%d/%d" % [cur, mx]
