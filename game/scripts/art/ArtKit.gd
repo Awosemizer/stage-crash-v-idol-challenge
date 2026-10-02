@@ -257,13 +257,30 @@ static func set_boss_pose(sprite: Sprite2D, pose: int = 0) -> void:
 	sprite.position.y = -float(BOSS_FRAME_H) * 0.5
 
 
-static func setup_stage_parallax(parallax_root: Node2D, theme: String, level_width: float) -> void:
-	## Adds far/mid scrolling layers under ParallaxBG. Safe to call once per level.
+static func setup_stage_parallax(parallax_root: Node2D, theme: String, level_width: float, stage_height: float = 224.0) -> void:
+	## Far backdrop under ParallaxBG (z stays below the playfield). Safe to call once per level.
+	## Painted v0.49 sheets replace the v0.44 strips. Strips remain only if a sheet is missing.
 	if parallax_root == null:
 		return
-	if parallax_root.get_node_or_null("ParallaxFar") != null:
+	if parallax_root.get_node_or_null("ParallaxScroller") != null:
 		return
 	var t := theme
+	var scroller := ParallaxScroller.new()
+	scroller.name = "ParallaxScroller"
+	# Above the flat sky ColorRect, still inside ParallaxBG (z -10), so tiles and HUD stay on top.
+	scroller.z_index = 1
+	parallax_root.add_child(scroller)
+	parallax_root.move_child(scroller, 0)
+	scroller.level_width = level_width
+
+	var painted_path := "res://assets/sprites/bg/stage_%s.png" % t
+	var painted := load_tex(painted_path)
+	if painted:
+		var far := _make_painted_bg("ParallaxFar", painted, level_width, stage_height)
+		scroller.add_child(far)
+		scroller.far_layer = far
+		return
+
 	var far_path := "res://assets/sprites/bg/parallax_%s_far.png" % t
 	var mid_path := "res://assets/sprites/bg/parallax_%s_mid.png" % t
 	if not ResourceLoader.exists(far_path):
@@ -271,20 +288,41 @@ static func setup_stage_parallax(parallax_root: Node2D, theme: String, level_wid
 		mid_path = "res://assets/sprites/bg/parallax_default_mid.png"
 	var far_tex := load_tex(far_path)
 	var mid_tex := load_tex(mid_path)
-	var scroller := ParallaxScroller.new()
-	scroller.name = "ParallaxScroller"
-	parallax_root.add_child(scroller)
-	parallax_root.move_child(scroller, 0)
-
 	if far_tex:
-		var far := _make_tiled_bg_layer("ParallaxFar", far_tex, level_width, -8)
-		scroller.add_child(far)
-		scroller.far_layer = far
+		var strip := _make_tiled_bg_layer("ParallaxFar", far_tex, level_width, -8)
+		scroller.add_child(strip)
+		scroller.far_layer = strip
 	if mid_tex:
 		var mid := _make_tiled_bg_layer("ParallaxMid", mid_tex, level_width, -4)
 		scroller.add_child(mid)
 		scroller.mid_layer = mid
-	scroller.level_width = level_width
+
+
+static func _make_painted_bg(layer_name: String, tex: Texture2D, level_width: float, stage_height: float) -> Node2D:
+	## Scale the painting to the stage height (nearest). Repeat on X if the stage is wider.
+	## Does not touch collision; caller keeps this under the playfield.
+	var holder := Node2D.new()
+	holder.name = layer_name
+	holder.z_index = 0
+	var src_h := float(tex.get_height())
+	var src_w := float(tex.get_width())
+	var s := stage_height / src_h if src_h > 0.0 else 1.0
+	var tile_w := src_w * s
+	if tile_w < 1.0:
+		tile_w = 1.0
+	# Parallax shifts the layer left by up to ~15% of the camera x, so pad both sides.
+	var span := level_width * 1.25 + 448.0 + tile_w
+	var tiles := maxi(1, int(ceil(span / tile_w)) + 1)
+	var start_x := -tile_w
+	for i in tiles:
+		var spr := Sprite2D.new()
+		spr.texture = tex
+		spr.centered = false
+		spr.position = Vector2(start_x + float(i) * tile_w, 0.0)
+		spr.scale = Vector2(s, s)
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		holder.add_child(spr)
+	return holder
 
 
 static func _make_tiled_bg_layer(layer_name: String, tex: Texture2D, level_width: float, z: int) -> Node2D:
