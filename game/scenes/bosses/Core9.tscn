@@ -74,10 +74,11 @@ text = "CORE-9"
 horizontal_alignment = 1
 
 [node name="PhaseLabel" type="Label" parent="."]
-offset_left = -28.0
-offset_top = -80.0
-offset_right = 28.0
-offset_bottom = -70.0
-theme_override_font_sizes/font_size = 5
-text = "FASE 1"
+offset_left = -70.0
+offset_top = -96.0
+offset_right = 70.0
+offset_bottom = -68.0
+theme_override_font_sizes/font_size = 6
+autowrap_mode = 3
+text = "FASE 1 · Notas"
 horizontal_alignment = 1

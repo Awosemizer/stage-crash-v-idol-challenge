@@ -18,6 +18,10 @@ const HIT_FLASH := 0.1
 const INVULN_ON_HIT := 0.08
 const PHASE2_HP := 38
 const PHASE3_HP := 18
+const WINDUP := 0.30
+const PHASE_GRACE := 0.85
+const STRONG_HIT := 4  # Nv4 / Sonic Slash / Counter (Nv3=4 no deja el núcleo blando)
+const WEAK_CHIP_EVERY := 6  # anti-softlock: 1 de daño cada 6 golpes débiles
 
 enum State { IDLE, NOTE, TURRET, COPY_A, COPY_B, CORE_PULSE, DEAD }
 
@@ -33,6 +37,11 @@ var _state: State = State.IDLE
 var _beat := 0.0
 var _flash := 0.0
 var _invuln := 0.0
+var _posing := false
+var _windup := 0.0
+var _queued := ""
+var _contact_grace := 0.0
+var _weak_rejects := 0
 var _alive := true
 var _active := false
 var _facing := -1
@@ -126,6 +135,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_flash = maxf(_flash - delta, 0.0)
 	_invuln = maxf(_invuln - delta, 0.0)
+	_contact_grace = maxf(_contact_grace - delta, 0.0)
 	_update_facing()
 	if not is_on_floor():
 		velocity.y = minf(velocity.y + GRAVITY * delta, 320.0)
@@ -151,37 +161,67 @@ func _beat_interval() -> float:
 
 
 func _tick_idle(delta: float) -> void:
-	_beat -= delta
 	velocity.x = move_toward(velocity.x, 0.0, 420.0 * delta)
+	if _posing:
+		_windup -= delta
+		if _windup <= 0.0:
+			_release_pose()
+		return
+	_beat -= delta
 	if _beat > 0.0:
 		return
 	match _phase:
 		1:
-			match _cycle % 2:
-				0:
-					_do_notes()
-				1:
-					_do_turrets()
+			_queue_attack("notes" if _cycle % 2 == 0 else "turrets")
 		2:
-			match _cycle % 2:
-				0:
-					_do_copy(_copy_ids[0] if _copy_ids.size() > 0 else "fire")
-				1:
-					_do_copy(_copy_ids[1] if _copy_ids.size() > 1 else "volt")
+			var which := 0 if _cycle % 2 == 0 else 1
+			var id := "fire"
+			if which == 0 and _copy_ids.size() > 0:
+				id = str(_copy_ids[0])
+			elif which == 1 and _copy_ids.size() > 1:
+				id = str(_copy_ids[1])
+			elif _copy_ids.size() > 0:
+				id = str(_copy_ids[0])
+			_queue_attack("copy:" + id)
 		3:
-			_do_core_pulse()
+			_queue_attack("pulse")
 	_cycle += 1
+
+
+func _queue_attack(kind: String) -> void:
+	_queued = kind
+	_posing = true
+	_windup = WINDUP
+	_contact_grace = WINDUP
+	_update_facing()
+
+
+func _release_pose() -> void:
+	_posing = false
+	var kind := _queued
+	_queued = ""
+	if kind == "notes":
+		_do_notes()
+	elif kind == "turrets":
+		_do_turrets()
+	elif kind.begins_with("copy:"):
+		_do_copy(kind.substr(5))
+	elif kind == "pulse":
+		_do_core_pulse()
+	else:
+		_beat = _beat_interval()
 
 
 func _do_notes() -> void:
 	_state = State.NOTE
 	_update_facing()
 	# Fan of neon notes
-	var n := 3 if hp > PHASE2_HP else 4
+	# Tres notas, no un muro. El hueco queda arriba/abajo.
+	var n := 3
 	for i in n:
-		var ang := deg_to_rad(-18.0 + float(i) * (36.0 / float(maxi(n - 1, 1))))
+		var ang := deg_to_rad(-22.0 + float(i) * 22.0)
 		var dir := Vector2(float(_facing), 0.0).rotated(ang)
-		_spawn_fireball(dir, Color(0.9, 0.55, 1.0, 1.0), 160.0)
+		_spawn_fireball(dir, Color(0.9, 0.55, 1.0, 1.0), 150.0)
 	_state = State.IDLE
 	_beat = _beat_interval()
 
@@ -192,16 +232,16 @@ func _do_turrets() -> void:
 	var parent_node := get_parent()
 	if parent_node == null:
 		parent_node = get_tree().current_scene
-	var player := _get_player()
-	var xs: Array = [global_position.x - 48.0, global_position.x + 48.0]
-	if player:
-		xs.append(player.global_position.x)
+	# Dos focos a los lados, nunca encima del jugador.
+	var xs: Array = [global_position.x - 56.0, global_position.x + 56.0]
 	for x in xs:
 		var fb: Area2D = FireballScene.instantiate()
 		parent_node.add_child(fb)
 		fb.global_position = Vector2(float(x), global_position.y - 72.0)
 		if fb.has_method("setup"):
 			fb.setup(Vector2(0, 1), 120.0)
+		if fb.get("_arm") != null:
+			fb._arm = 0.22
 		if fb.has_node("Visual"):
 			fb.get_node("Visual").color = Color(0.7, 0.4, 1.0, 1.0)
 	_state = State.IDLE
@@ -213,8 +253,7 @@ func _do_copy(atk: String) -> void:
 	_update_facing()
 	match atk:
 		"fire":
-			_spawn_fireball(Vector2(float(_facing), 0), Color(1.0, 0.4, 0.15, 1.0), 150.0)
-			_spawn_fireball(Vector2(float(_facing), -0.2).normalized(), Color(1.0, 0.4, 0.15, 1.0), 150.0)
+			_spawn_fireball(Vector2(float(_facing), 0), Color(1.0, 0.4, 0.15, 1.0), 140.0)
 		"wind":
 			_spawn_wind()
 		"volt":
@@ -222,12 +261,11 @@ func _do_copy(atk: String) -> void:
 		"ice":
 			_spawn_ice()
 		"petal":
-			_spawn_petal()
+			_spawn_fireball(Vector2(float(_facing), -0.15).normalized(), Color(1.0, 0.5, 0.75, 1.0), 120.0)
 		"quake":
 			_spawn_quake()
 		"tempo":
-			_spawn_fireball(Vector2(float(_facing), 0), Color(0.85, 0.85, 0.95, 1.0), 200.0)
-			_spawn_fireball(Vector2(float(-_facing), 0), Color(0.85, 0.85, 0.95, 1.0), 200.0)
+			_spawn_fireball(Vector2(float(_facing), 0), Color(0.85, 0.85, 0.95, 1.0), 170.0)
 		"static":
 			_spawn_static()
 		_:
@@ -240,11 +278,15 @@ func _do_core_pulse() -> void:
 	_state = State.CORE_PULSE
 	if core:
 		core.visible = true
-	# Radial pulses
-	for i in range(5):
-		var ang := float(i) * TAU / 5.0 + float(Time.get_ticks_msec() % 1000) * 0.001
-		var dir := Vector2(cos(ang), sin(ang) * 0.5).normalized()
-		_spawn_fireball(dir, Color(1.0, 0.6, 1.0, 1.0), 130.0)
+	# Tres pulsos con un hueco hacia el jugador (ritmo rápido, no muro).
+	var player := _get_player()
+	var base := 0.0
+	if player:
+		base = (player.global_position - global_position).angle() + PI
+	for i in range(3):
+		var ang := base + deg_to_rad(-28.0 + float(i) * 28.0)
+		var dir := Vector2(cos(ang), sin(ang)).normalized()
+		_spawn_fireball(dir, Color(1.0, 0.6, 1.0, 1.0), 110.0)
 	_state = State.IDLE
 	_beat = _beat_interval()
 
@@ -258,6 +300,8 @@ func _spawn_fireball(dir: Vector2, col: Color, spd: float) -> void:
 	fb.global_position = global_position + Vector2(_facing * 8.0, -20.0)
 	if fb.has_method("setup"):
 		fb.setup(dir, spd)
+	if fb.get("_arm") != null:
+		fb._arm = 0.22
 	if fb.has_node("Visual"):
 		fb.get_node("Visual").color = col
 
@@ -304,12 +348,6 @@ func _spawn_ice() -> void:
 		_spawn_fireball(Vector2(float(_facing), 0), Color(0.5, 0.85, 1.0, 1.0), 140.0)
 
 
-func _spawn_petal() -> void:
-	# PetalHazard may not expose setup — use fireball stand-in
-	_spawn_fireball(Vector2(float(_facing), -0.3).normalized(), Color(1.0, 0.5, 0.75, 1.0), 130.0)
-	_spawn_fireball(Vector2(float(_facing), 0.15).normalized(), Color(1.0, 0.55, 0.8, 1.0), 120.0)
-
-
 func _spawn_quake() -> void:
 	var parent_node := get_parent()
 	if parent_node == null:
@@ -330,7 +368,7 @@ func _spawn_static() -> void:
 	parent_node.add_child(zone)
 	zone.global_position = global_position + Vector2(float(_facing) * 40.0, -8.0)
 	if zone.has_method("setup"):
-		zone.setup(1.6, 3)
+		zone.setup(1.2, 2, 0.28)
 
 
 func _check_phase_transition() -> void:
@@ -346,7 +384,12 @@ func _check_phase_transition() -> void:
 	if _phase != prev:
 		phase_changed.emit(_phase)
 		_refresh_phase_label()
-		_beat = 0.25
+		_posing = false
+		_queued = ""
+		_beat = 0.7
+		_invuln = PHASE_GRACE
+		_contact_grace = PHASE_GRACE
+		_flash = 0.35
 		print("CORE-9: transición a fase ", _phase)
 
 
@@ -357,14 +400,18 @@ func take_damage(amount: int) -> bool:
 		return false
 	var dmg := amount
 	if _phase == 3:
-		# Only strong attacks count well
-		if amount >= 3:
-			# Charge Nv3/Nv4, saber×?, high weapons — ×1.5
-			dmg = int(round(float(amount) * 1.5))
-		elif amount >= 2:
-			dmg = amount  # mid weapons ok
+		# Solo golpe fuerte: Nv4 (8), Sonic Slash (6), Counter (4). Nv3=4 también pasa para no softlockear sin brazos.
+		if amount < STRONG_HIT:
+			_weak_rejects += 1
+			_flash = HIT_FLASH
+			_refresh_phase_label()
+			if _weak_rejects < WEAK_CHIP_EVERY:
+				return false
+			_weak_rejects = 0
+			dmg = 1
 		else:
-			dmg = 1  # weak tick only
+			_weak_rejects = 0
+			dmg = int(round(float(amount) * 1.5))
 	hp = maxi(hp - dmg, 0)
 	if AudioManager:
 		AudioManager.play_sfx("boss_hit")
@@ -422,7 +469,16 @@ func _refresh_hp_bar() -> void:
 func _refresh_phase_label() -> void:
 	if phase_label == null:
 		return
-	phase_label.text = "FASE %d" % _phase
+	match _phase:
+		3:
+			if _weak_rejects > 0 and _weak_rejects < WEAK_CHIP_EVERY:
+				phase_label.text = "¡Débil! Nv4 / Slash / Counter"
+			else:
+				phase_label.text = "NÚCLEO: Nv4 / Slash / Counter"
+		2:
+			phase_label.text = "FASE 2 · Copia"
+		_:
+			phase_label.text = "FASE 1 · Notas"
 
 
 func _refresh_look() -> void:
@@ -433,7 +489,11 @@ func _refresh_look() -> void:
 		base = Color(0.55, 0.18, 0.75, 1.0)
 	elif _phase == 3:
 		base = Color(0.7, 0.15, 0.85, 1.0)
-	if _flash > 0.0:
+	if _posing:
+		var pulse := 0.55 + 0.45 * absf(sin(_windup * 28.0))
+		visual.color = Color(1.0, 0.78, 0.22, pulse)
+		_sync_sprite_art(visual.color)
+	elif _flash > 0.0:
 		visual.color = Color(1, 1, 1, 1)
 		_sync_sprite_art(Color(1, 1, 1, 1))
 	else:
@@ -456,6 +516,8 @@ func _check_contact_overlap() -> void:
 
 
 func _hurt_player(body: Node) -> void:
+	if _posing or _contact_grace > 0.0:
+		return
 	if body == null or not body.is_in_group("player"):
 		return
 	if body.has_method("is_invulnerable") and body.is_invulnerable():

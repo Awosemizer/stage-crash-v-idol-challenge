@@ -2820,11 +2820,11 @@ func _initialize() -> void:
 		c9.hp = 10
 		c9._phase = 3
 		var before = c9.hp
-		c9.take_damage(1)  # weak → 1
-		if c9.hp != before - 1:
-			errors.append("Core9 P3 weak hit should deal 1, hp=%d" % c9.hp)
+		var bounced = c9.take_damage(1)  # weak bounce, no chip yet
+		if c9.hp != before or bounced:
+			errors.append("Core9 P3 weak hit should bounce, hp=%d bounced=%s" % [c9.hp, str(bounced)])
 		else:
-			print("OK Core9 P3 weak tick")
+			print("OK Core9 P3 weak bounce")
 		before = c9.hp
 		c9._invuln = 0.0
 		c9.take_damage(4)  # strong ×1.5 = 6
@@ -3681,7 +3681,7 @@ func _initialize() -> void:
 
 	# --- v0.20 landscape + Beatfire touch playability ---
 	var proj := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.32.0-proto"' not in proj and 'config/version="0.31.0-proto"' not in proj and 'config/version="0.30.0-proto"' not in proj and 'config/version="0.29.0-proto"' not in proj and 'config/version="0.28.0-proto"' not in proj and 'config/version="0.27.0-proto"' not in proj and 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj and 'config/version="0.33.0-proto"' not in proj and 'config/version="0.34.0-proto"' not in proj and 'config/version="0.35.0-proto"' not in proj:
+	if 'config/version="0.32.0-proto"' not in proj and 'config/version="0.31.0-proto"' not in proj and 'config/version="0.30.0-proto"' not in proj and 'config/version="0.29.0-proto"' not in proj and 'config/version="0.28.0-proto"' not in proj and 'config/version="0.27.0-proto"' not in proj and 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj and 'config/version="0.33.0-proto"' not in proj and 'config/version="0.34.0-proto"' not in proj and 'config/version="0.35.0-proto"' not in proj and 'config/version="0.36.0-proto"' not in proj:
 		errors.append("project.godot version should be 0.28.0-proto+")
 	else:
 		print("OK project version present")
@@ -4102,12 +4102,12 @@ func _initialize() -> void:
 	else:
 		print("OK Level01 checkpoints")
 	var title_27 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.27" not in title_27 and "0.28" not in title_27 and "0.29" not in title_27 and "0.30" not in title_27 and "0.31" not in title_27 and "0.32" not in title_27 and "0.33" not in title_27 and "0.34" not in title_27 and "0.35" not in title_27:
+	if "0.27" not in title_27 and "0.28" not in title_27 and "0.29" not in title_27 and "0.30" not in title_27 and "0.31" not in title_27 and "0.32" not in title_27 and "0.33" not in title_27 and "0.34" not in title_27 and "0.35" not in title_27 and "0.36" not in title_27:
 		errors.append("TitleScreen version should mention 0.27+")
 	else:
 		print("OK TitleScreen 0.27+")
 	var proj_27 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.27.0-proto"' not in proj_27 and 'config/version="0.28.0-proto"' not in proj_27 and 'config/version="0.29.0-proto"' not in proj_27 and 'config/version="0.30.0-proto"' not in proj_27 and 'config/version="0.31.0-proto"' not in proj_27 and 'config/version="0.32.0-proto"' not in proj_27 and 'config/version="0.33.0-proto"' not in proj_27 and 'config/version="0.34.0-proto"' not in proj_27 and 'config/version="0.35.0-proto"' not in proj_27:
+	if 'config/version="0.27.0-proto"' not in proj_27 and 'config/version="0.28.0-proto"' not in proj_27 and 'config/version="0.29.0-proto"' not in proj_27 and 'config/version="0.30.0-proto"' not in proj_27 and 'config/version="0.31.0-proto"' not in proj_27 and 'config/version="0.32.0-proto"' not in proj_27 and 'config/version="0.33.0-proto"' not in proj_27 and 'config/version="0.34.0-proto"' not in proj_27 and 'config/version="0.35.0-proto"' not in proj_27 and 'config/version="0.36.0-proto"' not in proj_27:
 		errors.append("project.godot version should be 0.27+/0.28")
 	else:
 		print("OK project 0.27+")
@@ -4188,12 +4188,12 @@ func _initialize() -> void:
 	else:
 		print("OK TouchControls scaled gaps")
 	var title_28 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.28" not in title_28 and "0.29" not in title_28 and "0.30" not in title_28 and "0.31" not in title_28 and "0.32" not in title_28 and "0.33" not in title_28 and "0.34" not in title_28 and "0.35" not in title_28:
+	if "0.28" not in title_28 and "0.29" not in title_28 and "0.30" not in title_28 and "0.31" not in title_28 and "0.32" not in title_28 and "0.33" not in title_28 and "0.34" not in title_28 and "0.35" not in title_28 and "0.36" not in title_28:
 		errors.append("TitleScreen version should mention 0.28+")
 	else:
 		print("OK TitleScreen 0.28")
 	var proj_28 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.28.0-proto"' not in proj_28 and 'config/version="0.29.0-proto"' not in proj_28 and 'config/version="0.30.0-proto"' not in proj_28 and 'config/version="0.31.0-proto"' not in proj_28 and 'config/version="0.32.0-proto"' not in proj_28 and 'config/version="0.33.0-proto"' not in proj_28 and 'config/version="0.34.0-proto"' not in proj_28 and 'config/version="0.35.0-proto"' not in proj_28:
+	if 'config/version="0.28.0-proto"' not in proj_28 and 'config/version="0.29.0-proto"' not in proj_28 and 'config/version="0.30.0-proto"' not in proj_28 and 'config/version="0.31.0-proto"' not in proj_28 and 'config/version="0.32.0-proto"' not in proj_28 and 'config/version="0.33.0-proto"' not in proj_28 and 'config/version="0.34.0-proto"' not in proj_28 and 'config/version="0.35.0-proto"' not in proj_28 and 'config/version="0.36.0-proto"' not in proj_28:
 		errors.append("project.godot version should be 0.28+/0.29")
 	else:
 		print("OK project 0.28")
@@ -4283,12 +4283,12 @@ func _initialize() -> void:
 	else:
 		print("OK Heart ending button")
 	var title_29 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.29" not in title_29 and "0.30" not in title_29 and "0.31" not in title_29 and "0.32" not in title_29 and "0.33" not in title_29 and "0.34" not in title_29 and "0.35" not in title_29:
+	if "0.29" not in title_29 and "0.30" not in title_29 and "0.31" not in title_29 and "0.32" not in title_29 and "0.33" not in title_29 and "0.34" not in title_29 and "0.35" not in title_29 and "0.36" not in title_29:
 		errors.append("TitleScreen version should mention 0.29+")
 	else:
 		print("OK TitleScreen 0.29+")
 	var proj_29 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.29.0-proto"' not in proj_29 and 'config/version="0.30.0-proto"' not in proj_29 and 'config/version="0.31.0-proto"' not in proj_29 and 'config/version="0.32.0-proto"' not in proj_29 and 'config/version="0.33.0-proto"' not in proj_29 and 'config/version="0.34.0-proto"' not in proj_29 and 'config/version="0.35.0-proto"' not in proj_29:
+	if 'config/version="0.29.0-proto"' not in proj_29 and 'config/version="0.30.0-proto"' not in proj_29 and 'config/version="0.31.0-proto"' not in proj_29 and 'config/version="0.32.0-proto"' not in proj_29 and 'config/version="0.33.0-proto"' not in proj_29 and 'config/version="0.34.0-proto"' not in proj_29 and 'config/version="0.35.0-proto"' not in proj_29 and 'config/version="0.36.0-proto"' not in proj_29:
 		errors.append("project.godot version should be 0.29+/0.30")
 	else:
 		print("OK project 0.29+")
@@ -4468,17 +4468,17 @@ func _initialize() -> void:
 		errors.append("AudioManager could not be mounted for missing-stream test")
 
 	var title_30 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.30" not in title_30 and "0.31" not in title_30 and "0.32" not in title_30 and "0.33" not in title_30 and "0.34" not in title_30 and "0.35" not in title_30:
+	if "0.30" not in title_30 and "0.31" not in title_30 and "0.32" not in title_30 and "0.33" not in title_30 and "0.34" not in title_30 and "0.35" not in title_30 and "0.36" not in title_30:
 		errors.append("TitleScreen version should mention 0.30+")
 	else:
 		print("OK TitleScreen 0.30")
 	var proj_30 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.30.0-proto"' not in proj_30 and 'config/version="0.31.0-proto"' not in proj_30 and 'config/version="0.32.0-proto"' not in proj_30 and 'config/version="0.33.0-proto"' not in proj_30 and 'config/version="0.34.0-proto"' not in proj_30 and 'config/version="0.35.0-proto"' not in proj_30:
+	if 'config/version="0.30.0-proto"' not in proj_30 and 'config/version="0.31.0-proto"' not in proj_30 and 'config/version="0.32.0-proto"' not in proj_30 and 'config/version="0.33.0-proto"' not in proj_30 and 'config/version="0.34.0-proto"' not in proj_30 and 'config/version="0.35.0-proto"' not in proj_30 and 'config/version="0.36.0-proto"' not in proj_30:
 		errors.append("project.godot version should be 0.30+")
 	else:
 		print("OK project 0.30")
 	var readme_30 := FileAccess.get_file_as_string("res://README.md")
-	if "v0.30" not in readme_30 and "0.30" not in readme_30 and "0.31" not in readme_30 and "0.32" not in readme_30 and "0.33" not in readme_30 and "0.34" not in readme_30 and "0.35" not in readme_30:
+	if "v0.30" not in readme_30 and "0.30" not in readme_30 and "0.31" not in readme_30 and "0.32" not in readme_30 and "0.33" not in readme_30 and "0.34" not in readme_30 and "0.35" not in readme_30 and "0.36" not in readme_30:
 		errors.append("README should note 0.30+")
 	else:
 		print("OK README 0.30")
@@ -4515,17 +4515,17 @@ func _initialize() -> void:
 	else:
 		print("OK boss fairness v0.31")
 	var title_31 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.31" not in title_31 and "0.32" not in title_31 and "0.33" not in title_31 and "0.34" not in title_31 and "0.35" not in title_31:
+	if "0.31" not in title_31 and "0.32" not in title_31 and "0.33" not in title_31 and "0.34" not in title_31 and "0.35" not in title_31 and "0.36" not in title_31:
 		errors.append("TitleScreen version should mention 0.31")
 	else:
 		print("OK TitleScreen 0.31")
 	var proj_31 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.31.0-proto"' not in proj_31 and 'config/version="0.32.0-proto"' not in proj_31 and 'config/version="0.33.0-proto"' not in proj_31 and 'config/version="0.34.0-proto"' not in proj_31 and 'config/version="0.35.0-proto"' not in proj_31:
+	if 'config/version="0.31.0-proto"' not in proj_31 and 'config/version="0.32.0-proto"' not in proj_31 and 'config/version="0.33.0-proto"' not in proj_31 and 'config/version="0.34.0-proto"' not in proj_31 and 'config/version="0.35.0-proto"' not in proj_31 and 'config/version="0.36.0-proto"' not in proj_31:
 		errors.append("project.godot version should be 0.31.0-proto")
 	else:
 		print("OK project 0.31")
 	var readme_31 := FileAccess.get_file_as_string("res://README.md")
-	if "0.31" not in readme_31 and "0.32" not in readme_31 and "0.33" not in readme_31 and "0.34" not in readme_31 and "0.35" not in readme_31:
+	if "0.31" not in readme_31 and "0.32" not in readme_31 and "0.33" not in readme_31 and "0.34" not in readme_31 and "0.35" not in readme_31 and "0.36" not in readme_31:
 		errors.append("README should note 0.31")
 	else:
 		print("OK README 0.31")
@@ -4534,17 +4534,17 @@ func _initialize() -> void:
 
 	# --- v0.32 menus / HUD / touch ---
 	var title_32 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.32" not in title_32 and "0.33" not in title_32 and "0.34" not in title_32 and "0.35" not in title_32:
+	if "0.32" not in title_32 and "0.33" not in title_32 and "0.34" not in title_32 and "0.35" not in title_32 and "0.36" not in title_32:
 		errors.append("TitleScreen version should mention 0.32")
 	else:
 		print("OK TitleScreen 0.32")
 	var proj_32 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.32.0-proto"' not in proj_32 and 'config/version="0.33.0-proto"' not in proj_32 and 'config/version="0.34.0-proto"' not in proj_32 and 'config/version="0.35.0-proto"' not in proj_32:
+	if 'config/version="0.32.0-proto"' not in proj_32 and 'config/version="0.33.0-proto"' not in proj_32 and 'config/version="0.34.0-proto"' not in proj_32 and 'config/version="0.35.0-proto"' not in proj_32 and 'config/version="0.36.0-proto"' not in proj_32:
 		errors.append("project.godot version should be 0.32.0-proto")
 	else:
 		print("OK project 0.32")
 	var readme_32 := FileAccess.get_file_as_string("res://README.md")
-	if "0.32" not in readme_32 and "0.33" not in readme_32 and "0.34" not in readme_32 and "0.35" not in readme_32:
+	if "0.32" not in readme_32 and "0.33" not in readme_32 and "0.34" not in readme_32 and "0.35" not in readme_32 and "0.36" not in readme_32:
 		errors.append("README should note 0.32")
 	else:
 		print("OK README 0.32")
@@ -4594,17 +4594,17 @@ func _initialize() -> void:
 	else:
 		print("OK Static Veil single hit")
 	var title_33 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.33" not in title_33 and "0.34" not in title_33 and "0.35" not in title_33:
+	if "0.33" not in title_33 and "0.34" not in title_33 and "0.35" not in title_33 and "0.36" not in title_33:
 		errors.append("TitleScreen version should mention 0.33")
 	else:
 		print("OK TitleScreen 0.33")
 	var proj_33 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.33.0-proto"' not in proj_33 and 'config/version="0.34.0-proto"' not in proj_33 and 'config/version="0.35.0-proto"' not in proj_33:
+	if 'config/version="0.33.0-proto"' not in proj_33 and 'config/version="0.34.0-proto"' not in proj_33 and 'config/version="0.35.0-proto"' not in proj_33 and 'config/version="0.36.0-proto"' not in proj_33:
 		errors.append("project.godot version should be 0.33.0-proto")
 	else:
 		print("OK project 0.33")
 	var readme_33 := FileAccess.get_file_as_string("res://README.md")
-	if "0.33" not in readme_33 and "0.34" not in readme_33 and "0.35" not in readme_33:
+	if "0.33" not in readme_33 and "0.34" not in readme_33 and "0.35" not in readme_33 and "0.36" not in readme_33:
 		errors.append("README should note 0.33")
 	else:
 		print("OK README 0.33")
@@ -4641,17 +4641,17 @@ func _initialize() -> void:
 	else:
 		print("OK pit-safe knockback")
 	var title_34 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.34" not in title_34 and "0.35" not in title_34:
+	if "0.34" not in title_34 and "0.35" not in title_34 and "0.36" not in title_34:
 		errors.append("TitleScreen version should mention 0.34")
 	else:
 		print("OK TitleScreen 0.34")
 	var proj_34 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.34.0-proto"' not in proj_34 and 'config/version="0.35.0-proto"' not in proj_34:
+	if 'config/version="0.34.0-proto"' not in proj_34 and 'config/version="0.35.0-proto"' not in proj_34 and 'config/version="0.36.0-proto"' not in proj_34:
 		errors.append("project.godot version should be 0.34.0-proto")
 	else:
 		print("OK project 0.34")
 	var readme_34 := FileAccess.get_file_as_string("res://README.md")
-	if "0.34" not in readme_34 and "0.35" not in readme_34:
+	if "0.34" not in readme_34 and "0.35" not in readme_34 and "0.36" not in readme_34:
 		errors.append("README should note 0.34")
 	else:
 		print("OK README 0.34")
@@ -4682,21 +4682,58 @@ func _initialize() -> void:
 	else:
 		print("OK armor hover/parry")
 	var title_35 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.35" not in title_35:
+	if "0.35" not in title_35 and "0.36" not in title_35:
 		errors.append("TitleScreen version should mention 0.35")
 	else:
 		print("OK TitleScreen 0.35")
 	var proj_35 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.35.0-proto"' not in proj_35:
+	if 'config/version="0.35.0-proto"' not in proj_35 and 'config/version="0.36.0-proto"' not in proj_35:
 		errors.append("project.godot version should be 0.35.0-proto")
 	else:
 		print("OK project 0.35")
 	var readme_35 := FileAccess.get_file_as_string("res://README.md")
-	if "0.35" not in readme_35:
+	if "0.35" not in readme_35 and "0.36" not in readme_35:
 		errors.append("README should note 0.35")
 	else:
 		print("OK README 0.35")
 	print("OK v0.35 bosses/armor")
+
+	# --- v0.36 CORE-9 phases ---
+	var c9_36 := FileAccess.get_file_as_string("res://scripts/bosses/Core9.gd")
+	if "WINDUP := 0.30" not in c9_36 or "STRONG_HIT := 4" not in c9_36 or "PHASE_GRACE" not in c9_36:
+		errors.append("Core9 missing windup / strong-hit / phase grace")
+	else:
+		print("OK Core9 phase rules")
+	if "Nv4 / Slash / Counter" not in c9_36:
+		errors.append("Core9 missing Spanish strong-hit hint")
+	else:
+		print("OK Core9 Spanish hint")
+	if "fb._arm = 0.22" not in c9_36:
+		errors.append("Core9 shots should arm 0.22s")
+	else:
+		print("OK Core9 shot arm")
+	var heart_36 := FileAccess.get_file_as_string("res://scripts/levels/LevelHeartCore9.gd")
+	if "NÚCLEO" not in heart_36:
+		errors.append("Heart CORE-9 banner should name the core rule")
+	else:
+		print("OK Core9 phase banner")
+	var title_36 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
+	if "0.36" not in title_36:
+		errors.append("TitleScreen version should mention 0.36")
+	else:
+		print("OK TitleScreen 0.36")
+	var proj_36 := FileAccess.get_file_as_string("res://project.godot")
+	if 'config/version="0.36.0-proto"' not in proj_36:
+		errors.append("project.godot version should be 0.36.0-proto")
+	else:
+		print("OK project 0.36")
+	var readme_36 := FileAccess.get_file_as_string("res://README.md")
+	if "0.36" not in readme_36:
+		errors.append("README should note 0.36")
+	else:
+		print("OK README 0.36")
+	print("OK v0.36 CORE-9")
+
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

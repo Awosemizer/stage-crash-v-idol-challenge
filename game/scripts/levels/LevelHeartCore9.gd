@@ -86,9 +86,9 @@ func _start_boss_fight() -> void:
 
 func _on_phase_changed(phase: int) -> void:
 	var texts := {
-		1: "FASE 1 — Notas",
-		2: "FASE 2 — Copia Masters",
-		3: "FASE 3 — Núcleo expuesto",
+		1: "FASE 1 — Notas del DJ",
+		2: "FASE 2 — Copia un ataque",
+		3: "NÚCLEO — solo Nv4, Sonic Slash o Counter",
 	}
 	_show_banner(str(texts.get(phase, "FASE %d" % phase)), COL_ACCENT, 1.3)
 
