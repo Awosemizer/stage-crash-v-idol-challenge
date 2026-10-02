@@ -1,0 +1,32 @@
+# Godot 4
+game/.godot/
+**/.godot/
+*.translation
+
+# Import cache duplicates (keep *.import next to assets)
+.import/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+*.tmp
+*.log
+
+# Android signing artifacts (keep the APK)
+*.idsig
+*.keystore
+*.jks
+
+# Local env / secrets
+.env
+.env.*
+*.pem
+
+# Godot mono / C# (not used, ignore if appears)
+.mono/
+data_*/

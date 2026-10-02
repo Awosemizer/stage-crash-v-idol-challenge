@@ -1,0 +1,81 @@
+# Stage Crash: V-Idol Challenge
+
+Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
+
+- Motor: **Godot 4.5**
+- Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
+- Idioma: **español**
+- Paquete: `com.luis.stagecrash.vidol`
+- Versión demo: `0.1.0-proto`
+
+Documento de diseño completo: [DISENO.md](./DISENO.md)  
+Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)
+
+---
+
+## Abrir el proyecto en Godot
+
+1. Instala [Godot 4.5](https://godotengine.org/download/).
+2. Abre Godot → **Import** / **Open**.
+3. Selecciona la carpeta `game/` (el archivo `game/project.godot`).
+4. Ejecuta la escena principal (nivel piloto Beatfire).
+
+### Controles (PC / editor)
+
+| Acción | Teclado | Gamepad |
+|--------|---------|---------|
+| Mover | Flechas / WASD | Stick / D-pad |
+| Saltar | Z / Espacio | A / Cross |
+| Atacar | X | X / Square |
+| Slide | C / Shift | B / Circle |
+| Pausa | Esc / Enter | Start |
+
+En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
+
+---
+
+## Instalar el APK (Android)
+
+Archivo listo (debug, un solo archivo, ~27 MB):
+
+**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)**
+
+1. Descarga el APK desde este repo (botón Raw / Download).
+2. En el teléfono: permite **orígenes desconocidos** / instalar apps desconocidas para el navegador o gestor de archivos.
+3. Abre el APK e instálalo.
+4. Orientación **horizontal** (landscape).
+
+> Build **debug** firmado con keystore de desarrollo. No es una release de Play Store.
+
+### Re-exportar el APK (opcional)
+
+Con Godot 4.5, plantillas Android, JDK y Android SDK configurados:
+
+```bash
+./scripts/export_android_debug.sh
+```
+
+Salida: `build/StageCrash-debug.apk`
+
+---
+
+## Estructura del repo
+
+```
+DISENO.md                 # GDD / diseño
+README.md                 # Este archivo
+docs/ANDROID_EXPORT.md    # Setup export Android
+scripts/export_android_debug.sh
+build/StageCrash-debug.apk
+game/                     # Proyecto Godot 4.5
+  project.godot
+  scenes/  scripts/
+```
+
+---
+
+## Estado actual (prototipo)
+
+Incluye: correr, saltar, wall-jump, slide, HUD de vida, controles táctiles, nivel piloto con púas y meta.
+
+Pendiente: sprites finales estilo densidad X3, 8 jefes, armaduras, audio, menú de título, saves, etc.

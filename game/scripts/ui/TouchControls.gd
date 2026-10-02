@@ -1,0 +1,331 @@
+extends CanvasLayer
+## Touch HUD overlay — virtual 8-dir stick + Jump / Attack / Slide.
+## Presses the same InputMap actions Player.gd already reads
+## (move_left/right/up/down, jump, attack, slide). Also binds joypad.
+## Screen-space UI (anchors); stays readable on the 256×224 viewport.
+
+signal visibility_changed_for_pad(visible_now: bool)
+
+## When true, overlay stays up even if a joypad is connected.
+## Default false; on mobile we set it true in _ready (pad still can hide
+## only when this is false — see _refresh_visibility).
+@export var show_touch_always: bool = false
+@export_range(0.2, 1.0, 0.05) var opacity: float = 0.55
+@export_range(0.15, 0.6, 0.05) var stick_deadzone: float = 0.35
+
+const SAFE := 8.0
+const STICK_R := 36.0
+const KNOB_R := 14.0
+const BTN_JUMP := 28.0
+const BTN_ATTACK := 26.0
+const BTN_SLIDE := 18.0
+
+var _root: Control
+var _stick_base: Panel
+var _stick_knob: Panel
+var _btn_jump: Panel
+var _btn_attack: Panel
+var _btn_slide: Panel
+var _lbl_a: Label
+var _lbl_b: Label
+var _lbl_s: Label
+
+var _stick_touch_idx := -1
+var _stick_center := Vector2.ZERO
+var _move_held := {"move_left": false, "move_right": false, "move_up": false, "move_down": false}
+var _btn_touches: Dictionary = {}  # touch_index -> action name
+
+
+func _ready() -> void:
+	layer = 100
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	if OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios"):
+		show_touch_always = true
+	_setup_joypad_bindings()
+	_build_ui()
+	_apply_opacity()
+	Input.joy_connection_changed.connect(_on_joy_connection_changed)
+	get_viewport().size_changed.connect(_layout)
+	_layout()
+	_refresh_visibility()
+
+
+func _exit_tree() -> void:
+	_release_all_touch_actions()
+
+
+func _setup_joypad_bindings() -> void:
+	# GDD: A=jump · B/X=attack · LB/RB=slide · stick/D-pad=move
+	_add_joy_button("jump", JOY_BUTTON_A)
+	_add_joy_button("attack", JOY_BUTTON_B)
+	_add_joy_button("attack", JOY_BUTTON_X)
+	_add_joy_button("slide", JOY_BUTTON_LEFT_SHOULDER)
+	_add_joy_button("slide", JOY_BUTTON_RIGHT_SHOULDER)
+	_add_joy_button("move_up", JOY_BUTTON_DPAD_UP)
+	_add_joy_button("move_down", JOY_BUTTON_DPAD_DOWN)
+	_add_joy_button("move_left", JOY_BUTTON_DPAD_LEFT)
+	_add_joy_button("move_right", JOY_BUTTON_DPAD_RIGHT)
+	_add_joy_axis("move_left", JOY_AXIS_LEFT_X, -1.0)
+	_add_joy_axis("move_right", JOY_AXIS_LEFT_X, 1.0)
+	_add_joy_axis("move_up", JOY_AXIS_LEFT_Y, -1.0)
+	_add_joy_axis("move_down", JOY_AXIS_LEFT_Y, 1.0)
+	# Soft triggers as slide (LT / RT)
+	_add_joy_axis("slide", JOY_AXIS_TRIGGER_LEFT, 1.0)
+	_add_joy_axis("slide", JOY_AXIS_TRIGGER_RIGHT, 1.0)
+
+
+func _add_joy_button(action: StringName, button: int) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	for e in InputMap.action_get_events(action):
+		if e is InputEventJoypadButton and (e as InputEventJoypadButton).button_index == button:
+			return
+	var ev := InputEventJoypadButton.new()
+	ev.button_index = button
+	InputMap.action_add_event(action, ev)
+
+
+func _add_joy_axis(action: StringName, axis: int, axis_value: float) -> void:
+	if not InputMap.has_action(action):
+		InputMap.add_action(action)
+	for e in InputMap.action_get_events(action):
+		if e is InputEventJoypadMotion:
+			var m := e as InputEventJoypadMotion
+			if m.axis == axis and is_equal_approx(m.axis_value, axis_value):
+				return
+	var ev := InputEventJoypadMotion.new()
+	ev.axis = axis
+	ev.axis_value = axis_value
+	InputMap.action_add_event(action, ev)
+
+
+func _build_ui() -> void:
+	_root = Control.new()
+	_root.name = "Root"
+	_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_root)
+
+	_stick_base = _make_round_panel(Color(0.15, 0.2, 0.28, 1.0))
+	_stick_base.name = "StickBase"
+	_stick_base.mouse_filter = Control.MOUSE_FILTER_STOP
+	_root.add_child(_stick_base)
+
+	_stick_knob = _make_round_panel(Color(0.35, 0.85, 0.95, 1.0))
+	_stick_knob.name = "StickKnob"
+	_stick_knob.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_stick_base.add_child(_stick_knob)
+
+	_btn_jump = _make_round_panel(Color(0.2, 0.75, 0.45, 1.0))
+	_btn_jump.name = "JumpBtn"
+	_btn_jump.mouse_filter = Control.MOUSE_FILTER_STOP
+	_root.add_child(_btn_jump)
+	_lbl_a = _make_btn_label(_btn_jump, "A")
+
+	_btn_attack = _make_round_panel(Color(0.9, 0.35, 0.4, 1.0))
+	_btn_attack.name = "AttackBtn"
+	_btn_attack.mouse_filter = Control.MOUSE_FILTER_STOP
+	_root.add_child(_btn_attack)
+	_lbl_b = _make_btn_label(_btn_attack, "B")
+
+	_btn_slide = _make_round_panel(Color(0.55, 0.45, 0.85, 1.0))
+	_btn_slide.name = "SlideBtn"
+	_btn_slide.mouse_filter = Control.MOUSE_FILTER_STOP
+	_root.add_child(_btn_slide)
+	_lbl_s = _make_btn_label(_btn_slide, "SL")
+
+	_stick_base.gui_input.connect(_on_stick_gui_input)
+	_btn_jump.gui_input.connect(_on_button_gui_input.bind("jump", _btn_jump))
+	_btn_attack.gui_input.connect(_on_button_gui_input.bind("attack", _btn_attack))
+	_btn_slide.gui_input.connect(_on_button_gui_input.bind("slide", _btn_slide))
+
+
+func _make_round_panel(col: Color) -> Panel:
+	var p := Panel.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = col
+	sb.corner_radius_top_left = 64
+	sb.corner_radius_top_right = 64
+	sb.corner_radius_bottom_left = 64
+	sb.corner_radius_bottom_right = 64
+	sb.set_border_width_all(1)
+	sb.border_color = Color(1, 1, 1, 0.35)
+	p.add_theme_stylebox_override("panel", sb)
+	return p
+
+
+func _make_btn_label(parent: Panel, text: String) -> Label:
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	lbl.add_theme_font_size_override("font_size", 8)
+	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	lbl.modulate = Color(1, 1, 1, 0.95)
+	parent.add_child(lbl)
+	return lbl
+
+
+func _apply_opacity() -> void:
+	if _root:
+		_root.modulate = Color(1, 1, 1, opacity)
+
+
+func _layout() -> void:
+	if _root == null:
+		return
+	var vp := get_viewport().get_visible_rect().size
+	# Stick — bottom-left safe area
+	var stick_d := STICK_R * 2.0
+	_stick_base.size = Vector2(stick_d, stick_d)
+	_stick_base.position = Vector2(SAFE, vp.y - stick_d - SAFE)
+	_stick_center = _stick_base.position + Vector2(STICK_R, STICK_R)
+	_stick_knob.size = Vector2(KNOB_R * 2.0, KNOB_R * 2.0)
+	_reset_knob()
+
+	# Buttons — bottom-right cluster (Jump primary, Attack left of it, Slide below)
+	var j := BTN_JUMP * 2.0
+	var a := BTN_ATTACK * 2.0
+	var s := BTN_SLIDE * 2.0
+	_btn_jump.size = Vector2(j, j)
+	_btn_jump.position = Vector2(vp.x - j - SAFE, vp.y - j - SAFE)
+
+	_btn_attack.size = Vector2(a, a)
+	_btn_attack.position = Vector2(
+		_btn_jump.position.x - a - 6.0,
+		_btn_jump.position.y + (j - a) * 0.35
+	)
+
+	_btn_slide.size = Vector2(s, s)
+	_btn_slide.position = Vector2(
+		_btn_attack.position.x + (a - s) * 0.5,
+		_btn_jump.position.y + j - s + 2.0
+	)
+
+
+func _reset_knob() -> void:
+	_stick_knob.position = Vector2(STICK_R - KNOB_R, STICK_R - KNOB_R)
+
+
+func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
+	_refresh_visibility()
+
+
+func _refresh_visibility() -> void:
+	var has_pad := Input.get_connected_joypads().size() > 0
+	var show_now := show_touch_always or not has_pad
+	visible = show_now
+	if not show_now:
+		_release_all_touch_actions()
+	visibility_changed_for_pad.emit(show_now)
+
+
+func set_show_touch_always(value: bool) -> void:
+	show_touch_always = value
+	_refresh_visibility()
+
+
+func _release_all_touch_actions() -> void:
+	for action in _btn_touches.values():
+		Input.action_release(str(action))
+	_btn_touches.clear()
+	_stick_touch_idx = -1
+	_reset_knob()
+	for a in _move_held.keys():
+		if _move_held[a]:
+			Input.action_release(a)
+			_move_held[a] = false
+
+
+func _on_stick_gui_input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		var st := event as InputEventScreenTouch
+		if st.pressed:
+			_stick_touch_idx = st.index
+			_update_stick_from_local(st.position)
+		elif st.index == _stick_touch_idx:
+			_stick_touch_idx = -1
+			_set_move_actions(Vector2.ZERO)
+			_reset_knob()
+	elif event is InputEventScreenDrag:
+		var sd := event as InputEventScreenDrag
+		if sd.index == _stick_touch_idx:
+			_update_stick_from_local(sd.position)
+	# Mouse fallback (desktop playtest)
+	elif event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		var mb := event as InputEventMouseButton
+		if mb.pressed:
+			_stick_touch_idx = 0
+			_update_stick_from_local(mb.position)
+		elif _stick_touch_idx == 0:
+			_stick_touch_idx = -1
+			_set_move_actions(Vector2.ZERO)
+			_reset_knob()
+	elif event is InputEventMouseMotion and _stick_touch_idx == 0 and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		_update_stick_from_local((event as InputEventMouseMotion).position)
+
+
+func _update_stick_from_local(local_pos: Vector2) -> void:
+	var delta := local_pos - Vector2(STICK_R, STICK_R)
+	var max_len := STICK_R - 4.0
+	if delta.length() > max_len:
+		delta = delta.normalized() * max_len
+	_stick_knob.position = Vector2(STICK_R - KNOB_R, STICK_R - KNOB_R) + delta
+	var strength := delta / max_len
+	_set_move_actions(strength)
+
+
+func _set_move_actions(v: Vector2) -> void:
+	# 8-dir digital after deadzone (Mega Man–style)
+	var want := {"move_left": false, "move_right": false, "move_up": false, "move_down": false}
+	if v.length() >= stick_deadzone:
+		var angle := snappedf(v.angle() / (PI * 0.25), 1.0) * (PI * 0.25)
+		var dir := Vector2.from_angle(angle)
+		if dir.x < -0.4:
+			want["move_left"] = true
+		elif dir.x > 0.4:
+			want["move_right"] = true
+		if dir.y < -0.4:
+			want["move_up"] = true
+		elif dir.y > 0.4:
+			want["move_down"] = true
+
+	for action in want.keys():
+		var on: bool = want[action]
+		if on and not _move_held[action]:
+			Input.action_press(action)
+			_move_held[action] = true
+		elif not on and _move_held[action]:
+			Input.action_release(action)
+			_move_held[action] = false
+
+
+func _on_button_gui_input(event: InputEvent, action: StringName, panel: Panel) -> void:
+	if event is InputEventScreenTouch:
+		var st := event as InputEventScreenTouch
+		if st.pressed:
+			_btn_touches[st.index] = action
+			Input.action_press(action)
+			_flash_button(panel, true)
+		else:
+			if _btn_touches.get(st.index, "") == action or _btn_touches.has(st.index):
+				_btn_touches.erase(st.index)
+			Input.action_release(action)
+			_flash_button(panel, false)
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		var mb := event as InputEventMouseButton
+		if mb.pressed:
+			_btn_touches[-1] = action
+			Input.action_press(action)
+			_flash_button(panel, true)
+		else:
+			_btn_touches.erase(-1)
+			Input.action_release(action)
+			_flash_button(panel, false)
+		get_viewport().set_input_as_handled()
+
+
+func _flash_button(panel: Panel, down: bool) -> void:
+	panel.modulate = Color(1.3, 1.3, 1.3, 1.0) if down else Color(1, 1, 1, 1)
