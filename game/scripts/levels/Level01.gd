@@ -1,11 +1,12 @@
 extends Node2D
-## Beatfire-style vertical slice — teaches run, jump, wall-jump, slide.
+## Beatfire-style vertical slice — teaches run, jump, wall-jump, slide, buster.
 ## Placeholder geometry (ColorRects). Stadium-on-fire palette.
 
 const SpikeScene := preload("res://scenes/hazards/Spike.tscn")
 const PlayerScene := preload("res://scenes/player/Player.tscn")
 const TouchControlsScene := preload("res://scenes/ui/TouchControls.tscn")
 const HUDScene := preload("res://scenes/ui/HUD.tscn")
+const MetBeatScene := preload("res://scenes/enemies/MetBeat.tscn")
 
 const COL_FLOOR := Color(0.55, 0.25, 0.22, 1.0)
 const COL_WALL := Color(0.35, 0.15, 0.18, 1.0)
@@ -21,6 +22,7 @@ const COL_BG := Color(0.12, 0.06, 0.1, 1.0)
 func _ready() -> void:
 	bg.color = COL_BG
 	_build_course()
+	_spawn_enemies()
 	_spawn_player()
 	_add_hud()
 	_add_touch_controls()
@@ -64,11 +66,27 @@ func _build_course() -> void:
 	geometry.add_child(goal)
 
 	var label := Label.new()
-	label.text = "GOAL"
+	label.text = "META"
 	label.position = Vector2(1080, 72)
 	label.add_theme_font_size_override("font_size", 8)
 	label.modulate = Color(0.5, 1.0, 0.6)
 	geometry.add_child(label)
+
+
+func _spawn_enemies() -> void:
+	# Suelo de cada plataforma (y = top del sólido). Met anclado por la base.
+	# 1) Primer tramo — enseña buster vs caparazón
+	_add_met(120.0, 176.0)
+	# 2) Plataforma media antes de púas
+	_add_met(200.0, 160.0)
+	# 3) Tramo final antes del túnel de slide
+	_add_met(840.0, 176.0)
+
+
+func _add_met(x: float, floor_y: float) -> void:
+	var met: Area2D = MetBeatScene.instantiate()
+	met.position = Vector2(x, floor_y)
+	entities.add_child(met)
 
 
 func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) -> void:

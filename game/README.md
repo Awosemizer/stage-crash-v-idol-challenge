@@ -29,7 +29,7 @@ Main scene: `scenes/levels/Level01.tscn`.
 |--------|------|
 | Move | Arrow keys or WASD |
 | Jump | **Z** or Space |
-| Attack (stub flash) | **X** |
+| Attack / charge Buster | **X** (hold to charge) |
 | Slide | **C** |
 
 **Wall-jump:** press Jump while sliding down / touching a wall (always available).
@@ -42,7 +42,7 @@ CanvasLayer (layer 100) over the **256×224** viewport — screen-space anchors,
 |------|---------|-------------------|
 | Left | Virtual stick (8-dir, deadzone) | `move_left` / `move_right` / `move_up` / `move_down` |
 | Right | **A** (large, green) | `jump` |
-| Right | **B** (red; hold for future charge) | `attack` |
+| Right | **B** (red; hold = charge) | `attack` |
 | Right | **SL** (smaller, purple) | `slide` |
 
 - Semi-transparent (~55% opacity); large hit targets; ~8px safe margins.
@@ -78,10 +78,12 @@ Bound at runtime by TouchControls (same actions):
 
 ## What’s in this slice
 
-- `Player.gd` — acceleration, jump cut, coyote, jump buffer, wall slide + wall jump, short slide with stub i-frames; `hp` / `max_hp` (28), `take_damage`, `hp_changed`
+- `Player.gd` — movement + **Buster charge** (tap Nv1 / hold Nv2–3 + ChargeAura); `hp` / `max_hp` (28)
+- `BusterShot` — proyectil Area2D niveles 1–3
+- `MetBeat` — enemigo caparazón a ritmo (HP 2, contacto 2)
 - `TouchControls` — mobile overlay + joypad InputMap wiring (CanvasLayer 100)
 - `HUD` — life bar, portrait, weapon label, energy tanks, armor stubs, pause (CanvasLayer 50; Spanish strings)
-- `Level01` — platforms, wall-jump corridor, spike pits, slide tunnel, goal marker
+- `Level01` — platforms, wall-jump, spikes, slide tunnel, **3 Met-Beat**, META
 - Viewport **256×224**, integer stretch, pixel snap, physics 60 Hz
 - Placeholder ColorRect / Polygon2D art (Miku cyan player; no Capcom assets)
 
@@ -92,13 +94,16 @@ game/
   project.godot
   icon.svg
   scripts/player/Player.gd
+  scripts/combat/BusterShot.gd
+  scripts/enemies/MetBeat.gd
   scripts/levels/Level01.gd
   scripts/hazards/Hazard.gd
   scripts/ui/TouchControls.gd
   scripts/ui/HUD.gd
   scenes/player/Player.tscn
+  scenes/combat/BusterShot.tscn
+  scenes/enemies/MetBeat.tscn
   scenes/levels/Level01.tscn
-  scenes/levels/Platform.tscn
   scenes/hazards/Spike.tscn
   scenes/ui/TouchControls.tscn
   scenes/ui/HUD.tscn
@@ -114,7 +119,7 @@ Expect `VALIDATE_PASS`.
 
 ## Next recommended step
 
-Attack stub → real Miku buster / Teto saber (B hold = charge), then weapon ammo on HUD.
+Más enemigos / jefe piloto Beatfire, munición en HUD, Teto saber.
 
 ## Android debug APK
 

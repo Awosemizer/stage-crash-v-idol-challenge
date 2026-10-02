@@ -1,0 +1,39 @@
+[gd_scene load_steps=3 format=3 uid="uid://bmetbeat01scvic"]
+
+[ext_resource type="Script" path="res://scripts/enemies/MetBeat.gd" id="1_met"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_met"]
+size = Vector2(14, 14)
+
+[node name="MetBeat" type="Area2D"]
+collision_layer = 8
+collision_mask = 2
+monitoring = true
+monitorable = true
+script = ExtResource("1_met")
+
+[node name="Visual" type="ColorRect" parent="."]
+offset_left = -8.0
+offset_top = -14.0
+offset_right = 8.0
+offset_bottom = 0.0
+color = Color(0.45, 0.5, 0.58, 1)
+
+[node name="ShellHint" type="ColorRect" parent="."]
+offset_left = -6.0
+offset_top = -12.0
+offset_right = 6.0
+offset_bottom = -2.0
+color = Color(0.65, 0.7, 0.78, 1)
+
+[node name="Eye" type="ColorRect" parent="."]
+visible = false
+offset_left = -3.0
+offset_top = -11.0
+offset_right = 3.0
+offset_bottom = -6.0
+color = Color(1, 0.95, 0.2, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -7)
+shape = SubResource("RectangleShape2D_met")

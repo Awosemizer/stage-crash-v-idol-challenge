@@ -76,6 +76,11 @@ game/                     # Proyecto Godot 4.5
 
 ## Estado actual (prototipo)
 
-Incluye: correr, saltar, wall-jump, slide, HUD de vida, controles táctiles, nivel piloto con púas y meta.
+Incluye: correr, saltar, wall-jump, slide, **Buster con carga Nv1–3**, enemigos **Met-Beat**, HUD de vida, controles táctiles, nivel piloto con púas y meta.
 
 Pendiente: sprites finales estilo densidad X3, 8 jefes, armaduras, audio, menú de título, saves, etc.
+
+### Combate (demo)
+
+- **Atacar (X / B táctil):** tap = disparo Nv1 (1 dmg); mantener = carga Nv2 (~0.45 s) / Nv3 (~1.15 s) con aura en el jugador.
+- **Met-Beat:** se cierra/abre a ritmo; HP 2; solo vulnerable abierto; daño de contacto 2. Hay 3 en Level01.
