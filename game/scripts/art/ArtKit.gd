@@ -139,8 +139,8 @@ static func skin_boss_visual(visual: CanvasItem, boss_id: String, hide_legacy_pa
 	spr.texture = tex
 	spr.centered = true
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	# Boss ColorRects are typically offset_top=-36 bottom=0 → feet at y=0, center ~-18
-	spr.position = Vector2(0, -18)
+	# Feet stay at y=0 (collision unchanged). Center of a 64px frame is -32.
+	spr.position = Vector2(0, -float(BOSS_FRAME_H) * 0.5)
 	set_boss_pose(spr, 0)
 	parent.add_child(spr)
 	parent.move_child(spr, 0)
@@ -189,18 +189,20 @@ static func make_texture_rect(tex: Texture2D, size: Vector2, pos: Vector2 = Vect
 	return tr
 
 
-const BOSS_FRAME_W := 24
-const BOSS_FRAME_H := 36
+const BOSS_FRAME_W := 48
+const BOSS_FRAME_H := 64
 const RUN_FRAMES := 8
 
 
 static func set_boss_pose(sprite: Sprite2D, pose: int = 0) -> void:
-	## pose 0 = idle, 1 = attack/telegraph (sheet is 48×36).
+	## pose 0 = idle, 1 = attack/telegraph (sheet is 96×64).
 	if sprite == null or sprite.texture == null:
 		return
 	sprite.region_enabled = true
 	var p := clampi(pose, 0, 1)
 	sprite.region_rect = Rect2(p * BOSS_FRAME_W, 0, BOSS_FRAME_W, BOSS_FRAME_H)
+	# Keep feet on the collision origin if an older 36px offset was cached.
+	sprite.position.y = -float(BOSS_FRAME_H) * 0.5
 
 
 static func setup_stage_parallax(parallax_root: Node2D, theme: String, level_width: float) -> void:
