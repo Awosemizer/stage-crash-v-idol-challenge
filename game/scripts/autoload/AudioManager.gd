@@ -108,23 +108,34 @@ func _ensure_buses() -> void:
 func _load_streams() -> void:
 	for id in BGM_PATHS:
 		var path: String = BGM_PATHS[id]
-		if ResourceLoader.exists(path):
-			var stream: AudioStream = load(path)
-			if stream:
-				# Loop all BGM except victory jingle
-				if stream is AudioStreamOggVorbis:
-					(stream as AudioStreamOggVorbis).loop = id != "victory"
-				_streams_bgm[id] = stream
+		if not ResourceLoader.exists(path):
+			push_warning("AudioManager: BGM file missing %s → %s" % [id, path])
+			continue
+		var stream: AudioStream = load(path) as AudioStream
+		if stream == null:
+			push_warning("AudioManager: BGM failed to load %s → %s" % [id, path])
+			continue
+		# Loop all BGM except victory jingle
+		if stream is AudioStreamOggVorbis:
+			(stream as AudioStreamOggVorbis).loop = id != "victory"
+		_streams_bgm[id] = stream
 	for id in SFX_PATHS:
 		var path2: String = SFX_PATHS[id]
-		if ResourceLoader.exists(path2):
-			var stream2: AudioStream = load(path2)
-			if stream2:
-				_streams_sfx[id] = stream2
+		if not ResourceLoader.exists(path2):
+			push_warning("AudioManager: SFX file missing %s → %s" % [id, path2])
+			continue
+		var stream2: AudioStream = load(path2) as AudioStream
+		if stream2 == null:
+			push_warning("AudioManager: SFX failed to load %s → %s" % [id, path2])
+			continue
+		_streams_sfx[id] = stream2
 
 
 func play_bgm(id: String, pitch: float = 1.0) -> void:
 	if id.is_empty():
+		return
+	if _bgm == null:
+		push_warning("AudioManager: BGM player not ready (id=%s)" % id)
 		return
 	if id == _current_bgm and _bgm.playing:
 		_bgm.pitch_scale = pitch
@@ -132,8 +143,13 @@ func play_bgm(id: String, pitch: float = 1.0) -> void:
 	if not _streams_bgm.has(id):
 		push_warning("AudioManager: BGM missing %s" % id)
 		return
+	var stream: Variant = _streams_bgm[id]
+	if stream == null or not (stream is AudioStream):
+		push_warning("AudioManager: BGM stream invalid %s" % id)
+		_streams_bgm.erase(id)
+		return
 	_current_bgm = id
-	_bgm.stream = _streams_bgm[id]
+	_bgm.stream = stream
 	_bgm.pitch_scale = pitch
 	_bgm.volume_db = DUCK_DB if _ducked else _bgm_base_db
 	if not muted:
@@ -164,11 +180,25 @@ func play_boss_intro() -> void:
 func play_sfx(id: String, pitch: float = 1.0) -> void:
 	if muted:
 		return
+	if id.is_empty():
+		return
+	if _sfx_pool.is_empty():
+		push_warning("AudioManager: SFX pool empty (id=%s)" % id)
+		return
 	if not _streams_sfx.has(id):
+		# Missing asset — warn once-ish, never crash
+		push_warning("AudioManager: SFX missing %s" % id)
+		return
+	var stream: Variant = _streams_sfx[id]
+	if stream == null or not (stream is AudioStream):
+		push_warning("AudioManager: SFX stream invalid %s" % id)
+		_streams_sfx.erase(id)
 		return
 	var p: AudioStreamPlayer = _sfx_pool[_sfx_i]
 	_sfx_i = (_sfx_i + 1) % _sfx_pool.size()
-	p.stream = _streams_sfx[id]
+	if p == null or not is_instance_valid(p):
+		return
+	p.stream = stream
 	p.pitch_scale = pitch
 	p.volume_db = SFX_VOL
 	p.play()

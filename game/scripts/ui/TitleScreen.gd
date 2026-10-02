@@ -143,7 +143,7 @@ func _build_ui() -> void:
 
 	var ver := Label.new()
 	ver.name = "Version"
-	ver.text = "v0.29.0-proto · fortress/ending polish"
+	ver.text = "v0.30.0-proto · stability/QA"
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ver.add_theme_font_size_override("font_size", 7)
 	ver.modulate = Color(0.55, 0.6, 0.7, 0.75)

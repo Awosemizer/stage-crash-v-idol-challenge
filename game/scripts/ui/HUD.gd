@@ -40,6 +40,7 @@ var _player: Node = null
 var _hp := 28
 var _max_hp := 28
 var _is_paused := false
+var _pause_lock := false  # debounce double-toggle same frame
 var _weapon_ammo := -1
 var _weapon_max_ammo := -1
 var _weapon_id := "buster"
@@ -645,10 +646,17 @@ func _on_pause_btn_gui_input(event: InputEvent) -> void:
 func _quit_to_boss_select() -> void:
 	if _is_paused:
 		_is_paused = false
-		_pause_panel.visible = false
+		if _pause_panel:
+			_pause_panel.visible = false
 		var tree := get_tree()
 		if tree:
 			tree.paused = false
+	# Prevent stuck slow-mo across scene change
+	var gs_clear := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs_clear != null and gs_clear.has_method("clear_hitstop"):
+		gs_clear.clear_hitstop()
+	elif Engine.time_scale != 1.0:
+		Engine.time_scale = 1.0
 	if AudioManager:
 		AudioManager.set_paused_duck(false)
 		AudioManager.play_sfx("ui_confirm")
@@ -659,9 +667,20 @@ func _quit_to_boss_select() -> void:
 
 
 func _toggle_pause() -> void:
+	## Debounce: ignore re-entrant / same-frame double presses (touch+key).
+	if _pause_lock:
+		return
+	_pause_lock = true
 	_is_paused = not _is_paused
-	_pause_panel.visible = _is_paused
+	if _pause_panel:
+		_pause_panel.visible = _is_paused
 	var tree := get_tree()
+	# Always clear hitstop when pausing so time_scale can't stick at 0.05
+	var gs := tree.root.get_node_or_null("GameState") if tree else null
+	if gs != null and gs.has_method("clear_hitstop"):
+		gs.clear_hitstop()
+	elif Engine.time_scale != 1.0:
+		Engine.time_scale = 1.0
 	if tree:
 		tree.paused = _is_paused
 	print("HUD: pausa=%s" % str(_is_paused))
@@ -673,6 +692,9 @@ func _toggle_pause() -> void:
 		if _is_paused:
 			AudioManager.play_sfx("ui_confirm")
 	pause_toggled.emit(_is_paused)
+	# Release lock next idle frame (works while paused — HUD is ALWAYS)
+	await get_tree().process_frame
+	_pause_lock = false
 
 
 func _unhandled_input(event: InputEvent) -> void:

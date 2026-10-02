@@ -446,6 +446,7 @@ func reset_progress() -> void:
 	fortress_segment = 0
 	tutorial_wall_jump_shown = false
 	tutorial_slide_shown = false
+	clear_hitstop()
 	armor_changed.emit(ARMOR_SET_FLIGHT)
 	difficulty_changed.emit(false)
 
@@ -690,23 +691,46 @@ func get_difficulty_display_name() -> String:
 
 ## --- Combat feel (hitstop) ---
 var _hitstop_busy := false
+var _hitstop_token := 0  # invalidate in-flight awaits on clear
+
+
+func clear_hitstop() -> void:
+	## Force-restore Engine.time_scale (pause, scene change, softlock guard).
+	_hitstop_token += 1
+	_hitstop_busy = false
+	if Engine.time_scale != 1.0:
+		Engine.time_scale = 1.0
+
 
 func request_hitstop(duration: float = 0.04, scale: float = 0.08) -> void:
 	## Brief time-scale dip on enemy/boss hit. Uses ignore_time_scale timer.
+	## Skips while paused / already slowed / busy. Always restores via token.
 	if _hitstop_busy or duration <= 0.0:
 		return
+	var tree := get_tree()
+	if tree == null or tree.paused:
+		return
 	if Engine.time_scale < 0.95:
+		# Already slowed — do not stack; ensure we don't leave it stuck forever
 		return
 	_hitstop_busy = true
+	_hitstop_token += 1
+	var my_token := _hitstop_token
 	Engine.time_scale = clampf(scale, 0.02, 0.25)
-	await get_tree().create_timer(duration, true, false, true).timeout
+	await tree.create_timer(duration, true, false, true).timeout
+	# Only the latest request may restore; clear_hitstop bumps the token
+	if my_token != _hitstop_token:
+		return
 	Engine.time_scale = 1.0
 	_hitstop_busy = false
 
 
 func notify_enemy_hit(target: Node, applied: bool = true) -> void:
 	## Call after a player attack lands. Bosses get a slightly longer freeze.
-	if not applied or target == null:
+	if not applied or target == null or not is_instance_valid(target):
+		return
+	var tree := get_tree()
+	if tree != null and tree.paused:
 		return
 	if target.is_in_group("bosses"):
 		request_hitstop(0.055, 0.05)
@@ -890,6 +914,7 @@ func _show_achievement_toast(title: String) -> void:
 ## --- Stage checkpoints (mid-run) ---
 
 func begin_stage(stage_id: String, clear_checkpoint: bool = true) -> void:
+	clear_hitstop()
 	active_stage_id = stage_id
 	if clear_checkpoint:
 		clear_stage_checkpoint(stage_id)

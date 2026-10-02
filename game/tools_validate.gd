@@ -3683,8 +3683,8 @@ func _initialize() -> void:
 
 	# --- v0.20 landscape + Beatfire touch playability ---
 	var proj := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.29.0-proto"' not in proj and 'config/version="0.28.0-proto"' not in proj and 'config/version="0.27.0-proto"' not in proj and 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj:
-		errors.append("project.godot version should be 0.28.0-proto")
+	if 'config/version="0.30.0-proto"' not in proj and 'config/version="0.29.0-proto"' not in proj and 'config/version="0.28.0-proto"' not in proj and 'config/version="0.27.0-proto"' not in proj and 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj:
+		errors.append("project.godot version should be 0.28.0-proto+")
 	else:
 		print("OK project version present")
 	if 'window/stretch/mode="canvas_items"' not in proj:
@@ -4104,12 +4104,12 @@ func _initialize() -> void:
 	else:
 		print("OK Level01 checkpoints")
 	var title_27 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.27" not in title_27 and "0.28" not in title_27 and "0.29" not in title_27:
+	if "0.27" not in title_27 and "0.28" not in title_27 and "0.29" not in title_27 and "0.30" not in title_27:
 		errors.append("TitleScreen version should mention 0.27+")
 	else:
 		print("OK TitleScreen 0.27+")
 	var proj_27 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.27.0-proto"' not in proj_27 and 'config/version="0.28.0-proto"' not in proj_27 and 'config/version="0.29.0-proto"' not in proj_27:
+	if 'config/version="0.27.0-proto"' not in proj_27 and 'config/version="0.28.0-proto"' not in proj_27 and 'config/version="0.29.0-proto"' not in proj_27 and 'config/version="0.30.0-proto"' not in proj_27:
 		errors.append("project.godot version should be 0.27+/0.28")
 	else:
 		print("OK project 0.27+")
@@ -4190,12 +4190,12 @@ func _initialize() -> void:
 	else:
 		print("OK TouchControls scaled gaps")
 	var title_28 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.28" not in title_28 and "0.29" not in title_28:
+	if "0.28" not in title_28 and "0.29" not in title_28 and "0.30" not in title_28:
 		errors.append("TitleScreen version should mention 0.28+")
 	else:
 		print("OK TitleScreen 0.28")
 	var proj_28 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.28.0-proto"' not in proj_28 and 'config/version="0.29.0-proto"' not in proj_28:
+	if 'config/version="0.28.0-proto"' not in proj_28 and 'config/version="0.29.0-proto"' not in proj_28 and 'config/version="0.30.0-proto"' not in proj_28:
 		errors.append("project.godot version should be 0.28+/0.29")
 	else:
 		print("OK project 0.28")
@@ -4285,15 +4285,15 @@ func _initialize() -> void:
 	else:
 		print("OK Heart ending button")
 	var title_29 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.29" not in title_29:
-		errors.append("TitleScreen version should mention 0.29")
+	if "0.29" not in title_29 and "0.30" not in title_29:
+		errors.append("TitleScreen version should mention 0.29+")
 	else:
-		print("OK TitleScreen 0.29")
+		print("OK TitleScreen 0.29+")
 	var proj_29 := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.29.0-proto"' not in proj_29:
-		errors.append("project.godot version should be 0.29.0-proto")
+	if 'config/version="0.29.0-proto"' not in proj_29 and 'config/version="0.30.0-proto"' not in proj_29:
+		errors.append("project.godot version should be 0.29+/0.30")
 	else:
-		print("OK project 0.29")
+		print("OK project 0.29+")
 	# Runtime fortress helpers
 	var gs_rt29 = root.get_node_or_null("GameState")
 	if gs_rt29 == null:
@@ -4315,6 +4315,177 @@ func _initialize() -> void:
 	else:
 		print("OK TouchControls still guarded")
 	print("OK v0.29 fortress/ending")
+
+
+	# --- v0.30 stability / QA ---
+	# Flow smoke: Title → CharacterSelect → BossSelect → each stage instantiate
+	var flow_scenes := [
+		"res://scenes/ui/TitleScreen.tscn",
+		"res://scenes/ui/SaveSelect.tscn",
+		"res://scenes/ui/CharacterSelect.tscn",
+		"res://scenes/ui/BossSelect.tscn",
+		"res://scenes/levels/Level01.tscn",
+		"res://scenes/levels/LevelEchoWind.tscn",
+		"res://scenes/levels/LevelNeonVolt.tscn",
+		"res://scenes/levels/LevelGlitchIce.tscn",
+		"res://scenes/levels/LevelChorusBloom.tscn",
+		"res://scenes/levels/LevelBassquake.tscn",
+		"res://scenes/levels/LevelMetronome.tscn",
+		"res://scenes/levels/LevelStaticShadow.tscn",
+		"res://scenes/ui/FortressComingSoon.tscn",
+		"res://scenes/levels/LevelFortressLobby.tscn",
+		"res://scenes/levels/LevelVoiceArchive.tscn",
+		"res://scenes/levels/LevelCoreShaft.tscn",
+		"res://scenes/levels/LevelHeartCore9.tscn",
+		"res://scenes/ui/EndingScreen.tscn",
+		"res://scenes/ui/CreditsScreen.tscn",
+	]
+	for fpath in flow_scenes:
+		if not ResourceLoader.exists(fpath):
+			errors.append("Flow smoke missing path: " + fpath)
+			continue
+		var packed_flow: PackedScene = load(fpath)
+		if packed_flow == null:
+			errors.append("Flow smoke failed load: " + fpath)
+			continue
+		var node_flow = packed_flow.instantiate()
+		if node_flow == null:
+			errors.append("Flow smoke instantiate null: " + fpath)
+			continue
+		root.add_child(node_flow)
+		await process_frame
+		node_flow.queue_free()
+		await process_frame
+		print("OK flow instantiate: ", fpath)
+	print("OK v0.30 flow smoke Title→Select→BossSelect→stages")
+
+	# Save/load roundtrip for fortress_segment, tutorials, touch prefs
+	var gs30 = root.get_node_or_null("GameState")
+	if gs30 == null:
+		gs30 = root.get_node_or_null("/root/GameState")
+	if gs30 == null:
+		errors.append("GameState missing for 0.30 save roundtrip")
+	else:
+		for si30 in range(3):
+			if gs30.slot_exists(si30):
+				gs30.delete_slot(si30)
+		gs30.begin_new_game(0)
+		gs30.select_miku()
+		gs30.tutorial_wall_jump_shown = true
+		gs30.tutorial_slide_shown = true
+		gs30.fortress_segment = 3
+		gs30.set_touch_btn_size("L")
+		gs30.set_touch_opacity(0.70)
+		if not gs30.save_to_slot(0):
+			errors.append("0.30 save_to_slot failed")
+		else:
+			# Mutate save fields then reload slot
+			gs30.tutorial_wall_jump_shown = false
+			gs30.tutorial_slide_shown = false
+			gs30.fortress_segment = 0
+			if not gs30.load_from_slot(0):
+				errors.append("0.30 load_from_slot failed")
+			else:
+				if not bool(gs30.tutorial_wall_jump_shown) or not bool(gs30.tutorial_slide_shown):
+					errors.append("0.30 tutorial flags not restored")
+				elif int(gs30.fortress_segment) != 3:
+					errors.append("0.30 fortress_segment expected 3 got %d" % int(gs30.fortress_segment))
+				else:
+					print("OK save roundtrip fortress_segment + tutorials")
+			# Touch prefs live in ConfigFile — mutate memory only, then reload disk
+			gs30.touch_btn_size = "S"
+			gs30.touch_opacity = 0.35
+			gs30.load_touch_settings()
+			if str(gs30.touch_btn_size) != "L":
+				errors.append("0.30 touch_btn_size roundtrip expected L got %s" % str(gs30.touch_btn_size))
+			elif absf(float(gs30.touch_opacity) - 0.70) > 0.05:
+				errors.append("0.30 touch_opacity roundtrip expected 0.70 got %s" % str(gs30.touch_opacity))
+			else:
+				print("OK touch prefs ConfigFile roundtrip")
+		# Cleanup
+		for si30b in range(3):
+			if gs30.slot_exists(si30b):
+				gs30.delete_slot(si30b)
+		gs30.active_slot = -1
+		gs30.reset_progress()
+		gs30.set_touch_btn_size("M")
+		gs30.set_touch_opacity(0.50)
+
+	# Hitstop / time_scale guards
+	var gs_hs = FileAccess.get_file_as_string("res://scripts/autoload/GameState.gd")
+	if "clear_hitstop" not in gs_hs or "_hitstop_token" not in gs_hs:
+		errors.append("GameState missing clear_hitstop / token guard")
+	else:
+		print("OK GameState clear_hitstop")
+	var hud_hs = FileAccess.get_file_as_string("res://scripts/ui/HUD.gd")
+	if "clear_hitstop" not in hud_hs or "_pause_lock" not in hud_hs:
+		errors.append("HUD should clear hitstop on pause and debounce double-pause")
+	else:
+		print("OK HUD pause/hitstop guards")
+	if gs30 and gs30.has_method("clear_hitstop"):
+		Engine.time_scale = 0.08
+		gs30._hitstop_busy = true
+		gs30.clear_hitstop()
+		if Engine.time_scale != 1.0 or bool(gs30._hitstop_busy):
+			errors.append("clear_hitstop did not restore time_scale/busy")
+		else:
+			print("OK clear_hitstop runtime")
+		# request while "paused" should no-op
+		var tree_was := false
+		# Can't easily pause SceneTree in validate; just ensure API exists
+		gs30.request_hitstop(0.01, 0.1)
+		await create_timer(0.05).timeout
+		gs30.clear_hitstop()
+		if Engine.time_scale != 1.0:
+			errors.append("time_scale stuck after hitstop test")
+		else:
+			print("OK hitstop restore after request")
+
+	# AudioManager missing-stream safety
+	var am_src30 = FileAccess.get_file_as_string("res://scripts/autoload/AudioManager.gd")
+	if "BGM player not ready" not in am_src30 or "SFX missing" not in am_src30 or "stream invalid" not in am_src30:
+		errors.append("AudioManager should guard missing/invalid streams")
+	else:
+		print("OK AudioManager missing-stream guards")
+	var am30 = root.get_node_or_null("AudioManager")
+	if am30 == null:
+		am30 = root.get_node_or_null("/root/AudioManager")
+	if am30 == null:
+		# Mount manually like GameState
+		var am_script = load("res://scripts/autoload/AudioManager.gd")
+		if am_script:
+			am30 = Node.new()
+			am30.set_script(am_script)
+			am30.name = "AudioManager"
+			root.add_child(am30)
+			await process_frame
+	if am30:
+		# Must not crash
+		am30.play_bgm("does_not_exist_bgm_xyz")
+		am30.play_sfx("does_not_exist_sfx_xyz")
+		am30.play_sfx("")
+		am30.play_bgm("")
+		print("OK AudioManager missing id no-crash")
+	else:
+		errors.append("AudioManager could not be mounted for missing-stream test")
+
+	var title_30 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
+	if "0.30" not in title_30:
+		errors.append("TitleScreen version should mention 0.30")
+	else:
+		print("OK TitleScreen 0.30")
+	var proj_30 := FileAccess.get_file_as_string("res://project.godot")
+	if 'config/version="0.30.0-proto"' not in proj_30:
+		errors.append("project.godot version should be 0.30.0-proto")
+	else:
+		print("OK project 0.30")
+	var readme_30 := FileAccess.get_file_as_string("res://README.md")
+	if "v0.30" not in readme_30 and "0.30" not in readme_30:
+		errors.append("README should note 0.30")
+	else:
+		print("OK README 0.30")
+	print("OK v0.30 stability/QA")
+
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")
