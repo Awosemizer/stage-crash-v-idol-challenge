@@ -1,5 +1,5 @@
 extends Node2D
-## Chorus Bloom — invernadero / escenario floral. Secreto: Energy Tank.
+## Chorus Bloom (touch-first) — invernadero / escenario floral. Secreto: Energy Tank.
 ## Arena final: Chorus Bloom → otorga Petal Chorus.
 
 const SpikeScene := preload("res://scenes/hazards/Spike.tscn")
@@ -58,54 +58,57 @@ func _ready() -> void:
 
 func _build_course() -> void:
 	var solids: Array = [
-		[0, 176, 96, 48, COL_FLOOR],
-		# Greenhouse ledges
-		[112, 144, 48, 16, COL_VINE],
-		[192, 112, 40, 16, COL_FLOOR],
-		# Wall-jump shaft
-		[256, 32, 16, 176, COL_WALL],
-		[320, 0, 16, 208, COL_WALL],
-		[256, 192, 80, 32, COL_FLOOR],
-		# Mid stretch
-		[352, 144, 48, 16, COL_FLOOR],
-		[432, 112, 40, 16, COL_VINE],
-		[496, 80, 40, 16, COL_ACCENT],
-		# Secret alcove (high)
-		[176, 0, 16, 56, COL_WALL],
-		[192, 0, 80, 16, COL_WALL],
-		[192, 40, 64, 16, COL_ACCENT],
-		[176, 40, 16, 16, COL_WALL],
+		# Touch-first — sealed pits, fair gaps, 20px slide clearance
+		[0, 176, 160, 48, COL_FLOOR],
+		# Approach ledges (wider)
+		[144, 144, 56, 16, COL_VINE],
+		[208, 112, 48, 16, COL_FLOOR],
+		[248, 160, 40, 16, COL_FLOOR],  # safe ledge before spike / shaft
+		# Wall-jump shaft — 48px gap + mid foothold
+		[304, 80, 16, 128, COL_WALL],
+		[368, 32, 16, 176, COL_WALL],
+		[304, 192, 80, 32, COL_FLOOR],
+		[320, 128, 32, 12, COL_ACCENT],  # mid foothold for touch wall-jumps
+		# Secret alcove (high, left of shaft)
+		[208, 0, 16, 64, COL_WALL],
+		[224, 0, 96, 16, COL_WALL],
+		[224, 48, 80, 16, COL_ACCENT],
+		[208, 48, 16, 16, COL_WALL],
+		# Mid stretch (wider pads)
+		[400, 144, 64, 16, COL_FLOOR],
+		[480, 112, 56, 16, COL_VINE],
+		[552, 80, 56, 16, COL_ACCENT],
 		# Stage floor
-		[560, 176, 144, 48, COL_FLOOR],
-		[560, 120, 40, 16, COL_VINE],
-		[640, 144, 48, 16, COL_FLOOR],
-		# Slide under trellis
-		[720, 176, 128, 48, COL_FLOOR],
-		[720, 112, 128, 48, COL_WALL],
-		# Final stretch
-		[880, 160, 160, 64, COL_FLOOR],
-		[1040, 160, 80, 64, COL_FLOOR],
+		[624, 176, 144, 48, COL_FLOOR],
+		[624, 120, 48, 16, COL_VINE],
+		[688, 144, 56, 16, COL_FLOOR],
+		# Slide tunnel — 20px clearance
+		[784, 176, 144, 48, COL_FLOOR],
+		[784, 108, 144, 48, COL_WALL],
+		# Final stretch continuous (no softlock hole)
+		[928, 160, 192, 64, COL_FLOOR],
 		[-32, 0, 32, 224, COL_WALL],
 	]
 
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 
+	# Spike pit fair for touch
 	for i in range(3):
-		_add_spike(140.0 + i * 16.0, 200.0)
+		_add_spike(256.0 + i * 12.0, 200.0)
 
 	# Moving / growing vine platforms
-	_add_vine(Vector2(148, 128), Vector2(210, 96), Vector2(44, 12), 2.2, 0.0)
-	_add_vine(Vector2(380, 120), Vector2(460, 88), Vector2(40, 12), 2.0, 0.4)
-	_add_vine(Vector2(600, 148), Vector2(680, 112), Vector2(48, 12), 2.6, 0.8)
-	_add_vine(Vector2(780, 148), Vector2(850, 116), Vector2(40, 12), 1.9, 0.25)
-	_add_vine(Vector2(960, 128), Vector2(1020, 100), Vector2(44, 12), 2.3, 0.55)
+	_add_vine(Vector2(160, 128), Vector2(220, 96), Vector2(48, 12), 2.2, 0.0)
+	_add_vine(Vector2(420, 120), Vector2(500, 88), Vector2(48, 12), 2.0, 0.4)
+	_add_vine(Vector2(640, 148), Vector2(720, 112), Vector2(48, 12), 2.6, 0.8)
+	_add_vine(Vector2(820, 148), Vector2(890, 116), Vector2(44, 12), 1.9, 0.25)
+	_add_vine(Vector2(1000, 128), Vector2(1060, 100), Vector2(48, 12), 2.3, 0.55)
 
-	# Petal hazards
-	_add_petal(170.0, 60.0)
-	_add_petal(420.0, 40.0)
-	_add_petal(700.0, 50.0)
-	_add_petal(920.0, 70.0)
+	# Petal hazards (above touch UI zone; fair spacing)
+	_add_petal(200.0, 100.0)
+	_add_petal(460.0, 90.0)
+	_add_petal(700.0, 100.0)
+	_add_petal(920.0, 90.0)
 
 	_build_secret_energy_tank()
 
@@ -142,10 +145,10 @@ func _add_petal(x: float, y: float) -> void:
 
 func _build_boss_arena() -> void:
 	_add_rect_platform(ARENA_LEFT, ARENA_FLOOR_Y, 320.0, 48.0, COL_ARENA)
-	_add_rect_platform(ARENA_LEFT, 0.0, 320.0, 24.0, COL_WALL)
+	_add_rect_platform(ARENA_LEFT, 0.0, 320.0, 20.0, COL_WALL)
 	_add_rect_platform(LEVEL_RIGHT - 16.0, 0.0, 32.0, 224.0, COL_WALL)
-	_add_rect_platform(ARENA_LEFT + 24.0, 112.0, 40.0, 12.0, COL_VINE)
-	_add_rect_platform(ARENA_LEFT + 256.0, 112.0, 40.0, 12.0, COL_ACCENT)
+	_add_rect_platform(ARENA_LEFT + 20.0, 112.0, 56.0, 12.0, COL_VINE)
+	_add_rect_platform(ARENA_LEFT + 244.0, 112.0, 56.0, 12.0, COL_ACCENT)
 	_add_vine(
 		Vector2(ARENA_LEFT + 100.0, 140.0),
 		Vector2(ARENA_LEFT + 200.0, 140.0),
@@ -282,7 +285,8 @@ func _show_win_banner() -> void:
 	sb.set_corner_radius_all(4)
 	panel.add_theme_stylebox_override("panel", sb)
 	panel.size = Vector2(196, 96)
-	panel.position = Vector2(30, 56)
+	var vp := get_viewport().get_visible_rect().size
+	panel.position = Vector2((vp.x - 196.0) * 0.5, (vp.y - 96.0) * 0.5)
 	root.add_child(panel)
 	var title := Label.new()
 	title.name = "Title"
@@ -363,11 +367,11 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 func _build_secret_energy_tank() -> void:
 	## Alcoba secreta: Energy Tank (no armadura).
-	_add_breakable(272.0, 32.0)
-	_add_breakable(272.0, 48.0)
+	_add_breakable(312.0, 48.0)
+	_add_breakable(312.0, 64.0)
 	var pickup: Area2D = EnergyTankScene.instantiate()
 	pickup.name = "EnergyTankPickup"
-	pickup.position = Vector2(220.0, 32.0)
+	pickup.position = Vector2(252.0, 40.0)
 	entities.add_child(pickup)
 	var hint := Label.new()
 	hint.name = "SecretHint"
@@ -392,9 +396,9 @@ func _add_breakable(x: float, y: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	_add_met(70.0, 176.0)
-	_add_met(450.0, 112.0)
-	_add_met(780.0, 176.0)
+	_add_met(96.0, 176.0)
+	_add_met(500.0, 112.0)
+	_add_met(860.0, 176.0)
 
 
 func _add_met(x: float, floor_y: float) -> void:
@@ -429,13 +433,19 @@ func _add_spike(x: float, y: float) -> void:
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()
 	_player.name = "Player"
-	_player.position = Vector2(48, 150)
+	_player.position = Vector2(56, 148)
 	entities.add_child(_player)
+	if _player.has_method("set_spawn_pos"):
+		_player.set_spawn_pos(Vector2(56, 148))
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.limit_left = 0
 	cam.limit_top = 0
 	cam.limit_right = int(LEVEL_RIGHT)
 	cam.limit_bottom = 224
+	cam.drag_left_margin = 0.28
+	cam.drag_right_margin = 0.28
+	cam.drag_top_margin = 0.22
+	cam.drag_bottom_margin = 0.35
 	cam.make_current()
 
 

@@ -1,5 +1,5 @@
 extends Node2D
-## Bassquake — subwoofer industrial. Sacudidas / suelos colapsables.
+## Bassquake (touch-first) — subwoofer industrial. Sacudidas / suelos colapsables.
 ## Secreto: torso Encore Guard (defensa). Arena: Bassquake → Quake Drop.
 
 const SpikeScene := preload("res://scenes/hazards/Spike.tscn")
@@ -111,48 +111,49 @@ func _trigger_screen_shake(amp: float, duration: float) -> void:
 
 func _build_course() -> void:
 	var solids: Array = [
-		[0, 176, 96, 48, COL_FLOOR],
-		# Industrial ledges
-		[112, 144, 48, 16, COL_METAL],
-		[192, 112, 40, 16, COL_FLOOR],
-		# Wall-jump shaft
-		[256, 32, 16, 176, COL_WALL],
-		[320, 0, 16, 208, COL_WALL],
-		[256, 192, 80, 32, COL_FLOOR],
+		# Touch-first industrial — sealed unfair pits; collapse gap kept fair
+		[0, 176, 160, 48, COL_FLOOR],
+		[144, 144, 56, 16, COL_METAL],
+		[208, 112, 48, 16, COL_FLOOR],
+		[248, 160, 40, 16, COL_FLOOR],  # safe ledge before spike / shaft
+		# Wall-jump shaft — 48px + mid foothold
+		[304, 80, 16, 128, COL_WALL],
+		[368, 32, 16, 176, COL_WALL],
+		[304, 192, 80, 32, COL_FLOOR],
+		[320, 128, 32, 12, COL_ACCENT],  # mid foothold for touch wall-jumps
+		# Secret alcove
+		[208, 0, 16, 64, COL_WALL],
+		[224, 0, 96, 16, COL_WALL],
+		[224, 48, 80, 16, COL_ACCENT],
+		[208, 48, 16, 16, COL_WALL],
 		# Mid stretch
-		[352, 144, 48, 16, COL_FLOOR],
-		[432, 112, 40, 16, COL_METAL],
-		[496, 80, 40, 16, COL_ACCENT],
-		# Secret alcove (high)
-		[176, 0, 16, 56, COL_WALL],
-		[192, 0, 80, 16, COL_WALL],
-		[192, 40, 64, 16, COL_ACCENT],
-		[176, 40, 16, 16, COL_WALL],
-		# Stage floor (gaps filled by collapsing)
-		[560, 176, 96, 48, COL_FLOOR],
-		[560, 120, 40, 16, COL_METAL],
-		[720, 176, 80, 48, COL_FLOOR],
-		# Slide under speaker stack
-		[800, 176, 128, 48, COL_FLOOR],
-		[800, 112, 128, 48, COL_WALL],
-		# Final stretch
-		[960, 160, 160, 64, COL_FLOOR],
-		[1040, 160, 80, 64, COL_FLOOR],
+		[400, 144, 64, 16, COL_FLOOR],
+		[480, 112, 56, 16, COL_METAL],
+		[552, 80, 56, 16, COL_ACCENT],
+		# Stage floor (gap 656..720 filled by collapsing — keep reachable)
+		[624, 176, 96, 48, COL_FLOOR],
+		[624, 120, 48, 16, COL_METAL],
+		[752, 176, 80, 48, COL_FLOOR],
+		# Slide under speaker stack — 20px clearance
+		[832, 176, 144, 48, COL_FLOOR],
+		[832, 108, 144, 48, COL_WALL],
+		# Final stretch continuous
+		[976, 160, 160, 64, COL_FLOOR],
 		[-32, 0, 32, 224, COL_WALL],
 	]
 
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 
+	# Spike pit fair for touch
 	for i in range(3):
-		_add_spike(140.0 + i * 16.0, 200.0)
+		_add_spike(256.0 + i * 12.0, 200.0)
 
 	# Collapsing floors over gaps
-	_add_collapse(Vector2(660, 176), Vector2(48, 12), 0.5, 0.8, 2.2)
-	_add_collapse(Vector2(700, 144), Vector2(40, 12), 0.45, 0.75, 2.0)
-	_add_collapse(Vector2(420, 160), Vector2(44, 12), 0.55, 0.85, 2.5)
-	_add_collapse(Vector2(900, 148), Vector2(48, 12), 0.5, 0.8, 2.3)
-	_add_collapse(Vector2(1000, 128), Vector2(40, 12), 0.4, 0.7, 2.0)
+	_add_collapse(Vector2(728, 176), Vector2(48, 12), 0.55, 0.85, 2.2)
+	_add_collapse(Vector2(720, 144), Vector2(40, 12), 0.5, 0.8, 2.0)
+	_add_collapse(Vector2(440, 160), Vector2(48, 12), 0.55, 0.85, 2.5)
+	_add_collapse(Vector2(1000, 148), Vector2(48, 12), 0.5, 0.8, 2.3)
 
 	_build_secret_encore_torso()
 
@@ -181,10 +182,10 @@ func _add_collapse(pos: Vector2, sz: Vector2, warn: float, fall: float, respawn:
 
 func _build_boss_arena() -> void:
 	_add_rect_platform(ARENA_LEFT, ARENA_FLOOR_Y, 320.0, 48.0, COL_ARENA)
-	_add_rect_platform(ARENA_LEFT, 0.0, 320.0, 24.0, COL_WALL)
+	_add_rect_platform(ARENA_LEFT, 0.0, 320.0, 20.0, COL_WALL)
 	_add_rect_platform(LEVEL_RIGHT - 16.0, 0.0, 32.0, 224.0, COL_WALL)
-	_add_rect_platform(ARENA_LEFT + 24.0, 112.0, 40.0, 12.0, COL_METAL)
-	_add_rect_platform(ARENA_LEFT + 256.0, 112.0, 40.0, 12.0, COL_ACCENT)
+	_add_rect_platform(ARENA_LEFT + 20.0, 112.0, 56.0, 12.0, COL_METAL)
+	_add_rect_platform(ARENA_LEFT + 244.0, 112.0, 56.0, 12.0, COL_ACCENT)
 	_add_collapse(Vector2(ARENA_LEFT + 150.0, 140.0), Vector2(44, 12), 0.4, 0.7, 1.8)
 
 	_gate_visual = ColorRect.new()
@@ -325,7 +326,8 @@ func _show_win_banner() -> void:
 	sb.set_corner_radius_all(4)
 	panel.add_theme_stylebox_override("panel", sb)
 	panel.size = Vector2(196, 96)
-	panel.position = Vector2(30, 56)
+	var vp := get_viewport().get_visible_rect().size
+	panel.position = Vector2((vp.x - 196.0) * 0.5, (vp.y - 96.0) * 0.5)
 	root.add_child(panel)
 	var title := Label.new()
 	title.name = "Title"
@@ -406,11 +408,11 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 func _build_secret_encore_torso() -> void:
 	## Alcoba secreta: torso Encore Guard (defensa / hyper armor en slide).
-	_add_breakable(272.0, 32.0)
-	_add_breakable(272.0, 48.0)
+	_add_breakable(312.0, 48.0)
+	_add_breakable(312.0, 64.0)
 	var pickup: Area2D = ArmorPickupScene.instantiate()
 	pickup.name = "EncoreTorsoPickup"
-	pickup.position = Vector2(220.0, 32.0)
+	pickup.position = Vector2(252.0, 40.0)
 	pickup.armor_set = "encore"
 	pickup.armor_piece = "torso"
 	pickup.display_name_es = "Torso Encore Guard"
@@ -443,9 +445,9 @@ func _add_breakable(x: float, y: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	_add_met(70.0, 176.0)
-	_add_met(450.0, 112.0)
-	_add_met(780.0, 176.0)
+	_add_met(96.0, 176.0)
+	_add_met(500.0, 112.0)
+	_add_met(880.0, 176.0)
 
 
 func _add_met(x: float, floor_y: float) -> void:
@@ -480,13 +482,19 @@ func _add_spike(x: float, y: float) -> void:
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()
 	_player.name = "Player"
-	_player.position = Vector2(48, 150)
+	_player.position = Vector2(56, 148)
 	entities.add_child(_player)
+	if _player.has_method("set_spawn_pos"):
+		_player.set_spawn_pos(Vector2(56, 148))
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.limit_left = 0
 	cam.limit_top = 0
 	cam.limit_right = int(LEVEL_RIGHT)
 	cam.limit_bottom = 224
+	cam.drag_left_margin = 0.28
+	cam.drag_right_margin = 0.28
+	cam.drag_top_margin = 0.22
+	cam.drag_bottom_margin = 0.35
 	cam.make_current()
 
 

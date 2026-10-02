@@ -1,4 +1,5 @@
 extends Node2D
+## Fortress Lobby — touch-first geometry for phone landscape.
 ## Lobby Neon — entrada fortaleza + mid-boss Refrain Unit.
 ## Tras victoria → Voice Archive.
 
@@ -56,20 +57,22 @@ func _ready() -> void:
 
 func _build_course() -> void:
 	var solids: Array = [
-		[0, 176, 120, 48, COL_FLOOR],
-		[140, 144, 48, 16, COL_NEON],
-		[210, 112, 40, 16, COL_FLOOR],
-		[270, 176, 96, 48, COL_FLOOR],
-		[390, 144, 48, 16, COL_NEON],
-		[460, 176, 160, 48, COL_FLOOR],
-		# Slide tunnel
-		[520, 112, 96, 48, COL_WALL],
+		# Touch-first lobby — sealed pits, fair jumps, 20px slide
+		[0, 176, 168, 48, COL_FLOOR],
+		[152, 144, 56, 16, COL_NEON],
+		[216, 112, 48, 16, COL_FLOOR],
+		[272, 176, 112, 48, COL_FLOOR],
+		[400, 144, 56, 16, COL_NEON],
+		[464, 176, 176, 48, COL_FLOOR],
+		# Slide tunnel — 20px clearance over continuous floor
+		[480, 108, 128, 48, COL_WALL],
 		[-32, 0, 32, 224, COL_WALL],
 	]
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
-	_add_spike(160.0, 200.0)
-	_add_spike(176.0, 200.0)
+	# Narrow spike pit between starter and neon ledge
+	_add_spike(172.0, 200.0)
+	_add_spike(184.0, 200.0)
 	var theme := Label.new()
 	theme.text = "LOBBY NEON · SYNTHOCORP"
 	theme.position = Vector2(12, 8)
@@ -88,8 +91,9 @@ func _build_boss_arena() -> void:
 	_add_rect_platform(ARENA_LEFT, ARENA_FLOOR_Y, 304.0, 48.0, COL_ARENA)
 	_add_rect_platform(ARENA_LEFT, 0.0, 304.0, 20.0, COL_WALL)
 	_add_rect_platform(LEVEL_RIGHT - 16.0, 0.0, 32.0, 224.0, COL_WALL)
-	_add_rect_platform(ARENA_LEFT + 40.0, 120.0, 36.0, 10.0, COL_NEON)
-	_add_rect_platform(ARENA_LEFT + 220.0, 120.0, 36.0, 10.0, COL_NEON)
+	# Pads above touch UI zone
+	_add_rect_platform(ARENA_LEFT + 24.0, 112.0, 56.0, 12.0, COL_NEON)
+	_add_rect_platform(ARENA_LEFT + 220.0, 112.0, 56.0, 12.0, COL_NEON)
 
 	_gate_visual = ColorRect.new()
 	_gate_visual.name = "GateVisual"
@@ -198,7 +202,8 @@ func _show_win_banner() -> void:
 	sb.set_corner_radius_all(4)
 	panel.add_theme_stylebox_override("panel", sb)
 	panel.size = Vector2(196, 88)
-	panel.position = Vector2(30, 60)
+	var vp := get_viewport().get_visible_rect().size
+	panel.position = Vector2((vp.x - 196.0) * 0.5, (vp.y - 88.0) * 0.5)
 	root.add_child(panel)
 	var title := Label.new()
 	title.text = "¡REFRAIN CAÍDO!"
@@ -252,8 +257,8 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	_add_met(80.0, 176.0)
-	_add_met(300.0, 176.0)
+	_add_met(96.0, 176.0)
+	_add_met(320.0, 176.0)
 
 
 func _add_met(x: float, floor_y: float) -> void:
@@ -284,13 +289,19 @@ func _add_spike(x: float, y: float) -> void:
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()
 	_player.name = "Player"
-	_player.position = Vector2(40, 150)
+	_player.position = Vector2(56, 148)
 	entities.add_child(_player)
+	if _player.has_method("set_spawn_pos"):
+		_player.set_spawn_pos(Vector2(56, 148))
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.limit_left = 0
 	cam.limit_top = 0
 	cam.limit_right = int(LEVEL_RIGHT)
 	cam.limit_bottom = 224
+	cam.drag_left_margin = 0.28
+	cam.drag_right_margin = 0.28
+	cam.drag_top_margin = 0.22
+	cam.drag_bottom_margin = 0.35
 	cam.make_current()
 
 

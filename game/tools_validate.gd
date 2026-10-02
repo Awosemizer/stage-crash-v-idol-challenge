@@ -3654,10 +3654,10 @@ func _initialize() -> void:
 
 	# --- v0.20 landscape + Beatfire touch playability ---
 	var proj := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.20.0-proto"' not in proj:
-		errors.append("project.godot version should be 0.20.0-proto")
+	if 'config/version="0.21.0-proto"' not in proj and 'config/version="0.20.0-proto"' not in proj:
+		errors.append("project.godot version should be 0.21.0-proto")
 	else:
-		print("OK project version 0.20.0-proto")
+		print("OK project version present")
 	if 'window/stretch/mode="canvas_items"' not in proj:
 		errors.append("display stretch mode should be canvas_items")
 	if 'window/stretch/aspect="expand"' not in proj and 'window/stretch/aspect="keep_height"' not in proj:
@@ -3722,6 +3722,65 @@ func _initialize() -> void:
 		l01_inst.queue_free()
 		await process_frame
 	print("OK v0.20 landscape+Beatfire checks")
+
+	# --- v0.21 all-stages touch playability ---
+	var stage_files: Array[String] = [
+		"res://scripts/levels/LevelEchoWind.gd",
+		"res://scripts/levels/LevelNeonVolt.gd",
+		"res://scripts/levels/LevelGlitchIce.gd",
+		"res://scripts/levels/LevelChorusBloom.gd",
+		"res://scripts/levels/LevelBassquake.gd",
+		"res://scripts/levels/LevelMetronome.gd",
+		"res://scripts/levels/LevelStaticShadow.gd",
+		"res://scripts/levels/LevelFortressLobby.gd",
+		"res://scripts/levels/LevelVoiceArchive.gd",
+		"res://scripts/levels/LevelCoreShaft.gd",
+		"res://scripts/levels/LevelHeartCore9.gd",
+	]
+	for sf in stage_files:
+		var ssrc: String = FileAccess.get_file_as_string(sf)
+		if ssrc.is_empty():
+			errors.append("missing stage script " + sf)
+			continue
+		if "drag_bottom_margin" not in ssrc:
+			errors.append(sf + " missing camera drag for touch")
+		if "set_spawn_pos" not in ssrc:
+			errors.append(sf + " missing set_spawn_pos")
+		# Slide clearance marker (ceiling y=108) where applicable
+		var base: String = String(sf).get_file()
+		if base in ["LevelEchoWind.gd", "LevelNeonVolt.gd", "LevelGlitchIce.gd", "LevelChorusBloom.gd", "LevelBassquake.gd", "LevelMetronome.gd", "LevelStaticShadow.gd", "LevelFortressLobby.gd"]:
+			if ", 108," not in ssrc and "108, 144" not in ssrc and "[480, 108" not in ssrc and "108, 128" not in ssrc:
+				errors.append(sf + " slide tunnel should use ~20px clearance (y=108 ceiling)")
+		if "mid foothold" not in ssrc and base in ["LevelEchoWind.gd", "LevelNeonVolt.gd", "LevelGlitchIce.gd", "LevelChorusBloom.gd", "LevelBassquake.gd", "LevelMetronome.gd", "LevelStaticShadow.gd"]:
+			errors.append(sf + " missing mid foothold for wall-jump")
+		print("OK touch-playable markers ", base)
+	# Spot-check instantiate a couple non-Beatfire stages
+	var spot_scenes: Array[String] = [
+		"res://scenes/levels/LevelEchoWind.tscn",
+		"res://scenes/levels/LevelMetronome.tscn",
+		"res://scenes/levels/LevelFortressLobby.tscn",
+		"res://scenes/levels/LevelCoreShaft.tscn",
+	]
+	for scn_path in spot_scenes:
+		var pscn: PackedScene = load(scn_path)
+		if pscn == null:
+			errors.append(scn_path + " failed to load")
+			continue
+		var inst = pscn.instantiate()
+		root.add_child(inst)
+		await process_frame
+		await process_frame
+		var pl = inst.get_node_or_null("Entities/Player")
+		if pl == null:
+			errors.append(scn_path + " did not spawn Player")
+		else:
+			print("OK ", String(scn_path).get_file(), " Player at ", pl.position)
+		var tc = inst.get_node_or_null("TouchControls")
+		if tc == null:
+			errors.append(scn_path + " missing TouchControls")
+		inst.queue_free()
+		await process_frame
+	print("OK v0.21 all-stages touch playability")
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

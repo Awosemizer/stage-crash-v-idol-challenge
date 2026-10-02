@@ -1,4 +1,5 @@
 extends Node2D
+## Core Shaft — touch-first vertical climb + arena.
 ## Core Shaft — sección vertical (hover ayuda) + Overdub Titan.
 ## Tras victoria → Heart of CORE-9.
 
@@ -55,19 +56,22 @@ func _ready() -> void:
 
 func _build_course() -> void:
 	# Bottom start platform
-	_add_rect_platform(0, SHAFT_FLOOR_Y, 140, 80, COL_FLOOR)
+	_add_rect_platform(0, SHAFT_FLOOR_Y, 180, 80, COL_FLOOR)
 	# Walls of shaft
 	_add_rect_platform(-16, 0, 24, LEVEL_BOTTOM + 80, COL_WALL)
 	_add_rect_platform(LEVEL_RIGHT - 8, 0, 24, LEVEL_BOTTOM + 80, COL_WALL)
 	# Climbing ledges (hover helps big gaps)
+	# Wider footholds + tighter vertical spacing for touch climbs
 	var ledges = [
-		[40, 500, 48, 12],
-		[180, 460, 48, 12],
-		[60, 400, 40, 12],
-		[200, 340, 48, 12],
-		[40, 280, 48, 12],
-		[190, 220, 56, 12],
-		[50, 160, 48, 12],
+		[32, 500, 64, 12],
+		[180, 460, 64, 12],
+		[48, 410, 56, 12],
+		[190, 360, 64, 12],
+		[40, 310, 56, 12],
+		[180, 260, 64, 12],
+		[48, 210, 56, 12],
+		[180, 160, 64, 12],
+		[48, 120, 56, 12],
 	]
 	for L in ledges:
 		_add_rect_platform(float(L[0]), float(L[1]), float(L[2]), float(L[3]), COL_LEDGE)
@@ -92,8 +96,8 @@ func _build_boss_arena() -> void:
 	# Top arena
 	_add_rect_platform(16, ARENA_FLOOR_Y, LEVEL_RIGHT - 32, 40, COL_ARENA)
 	_add_rect_platform(16, 0, LEVEL_RIGHT - 32, 16, COL_WALL)
-	_add_rect_platform(40, 48, 36, 10, COL_LEDGE)
-	_add_rect_platform(220, 48, 36, 10, COL_LEDGE)
+	_add_rect_platform(32, 48, 56, 12, COL_LEDGE)
+	_add_rect_platform(212, 48, 56, 12, COL_LEDGE)
 
 	_arena_trigger = Area2D.new()
 	_arena_trigger.name = "ArenaTrigger"
@@ -174,7 +178,8 @@ func _show_win_banner() -> void:
 	sb.set_corner_radius_all(4)
 	panel.add_theme_stylebox_override("panel", sb)
 	panel.size = Vector2(196, 84)
-	panel.position = Vector2(30, 70)
+	var vp := get_viewport().get_visible_rect().size
+	panel.position = Vector2((vp.x - 196.0) * 0.5, (vp.y - 84.0) * 0.5)
 	root.add_child(panel)
 	var title := Label.new()
 	title.text = "¡EJE LIBRE!"
@@ -259,13 +264,19 @@ func _add_spike(x: float, y: float) -> void:
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()
 	_player.name = "Player"
-	_player.position = Vector2(48, SHAFT_FLOOR_Y - 24)
+	_player.position = Vector2(56, SHAFT_FLOOR_Y - 24)
 	entities.add_child(_player)
+	if _player.has_method("set_spawn_pos"):
+		_player.set_spawn_pos(Vector2(56, SHAFT_FLOOR_Y - 24))
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.limit_left = 0
 	cam.limit_top = 0
 	cam.limit_right = int(LEVEL_RIGHT)
 	cam.limit_bottom = int(LEVEL_BOTTOM + 80)
+	cam.drag_left_margin = 0.28
+	cam.drag_right_margin = 0.28
+	cam.drag_top_margin = 0.22
+	cam.drag_bottom_margin = 0.35
 	cam.make_current()
 
 

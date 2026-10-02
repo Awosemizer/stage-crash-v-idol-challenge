@@ -1,4 +1,5 @@
 extends Node2D
+## Heart CORE-9 — touch-first final arena.
 ## Heart of CORE-9 — arena final. Tras victoria → Ending.
 
 const PlayerScene := preload("res://scenes/player/Player.tscn")
@@ -48,8 +49,9 @@ func _build_arena() -> void:
 	_add_rect_platform(0, 0, LEVEL_RIGHT, 20, COL_WALL)
 	_add_rect_platform(-16, 0, 24, 224, COL_WALL)
 	_add_rect_platform(LEVEL_RIGHT - 8, 0, 24, 224, COL_WALL)
-	_add_rect_platform(48, 112, 40, 10, COL_ACCENT)
-	_add_rect_platform(LEVEL_RIGHT - 88, 112, 40, 10, COL_ACCENT)
+	# Pads above touch UI zone
+	_add_rect_platform(40, 112, 56, 12, COL_ACCENT)
+	_add_rect_platform(LEVEL_RIGHT - 96, 112, 56, 12, COL_ACCENT)
 
 	var theme := Label.new()
 	theme.text = "HEART OF CORE-9"
@@ -114,7 +116,8 @@ func _show_win_then_ending() -> void:
 	sb.set_corner_radius_all(4)
 	panel.add_theme_stylebox_override("panel", sb)
 	panel.size = Vector2(200, 80)
-	panel.position = Vector2(28, 70)
+	var vp := get_viewport().get_visible_rect().size
+	panel.position = Vector2((vp.x - 200.0) * 0.5, (vp.y - 80.0) * 0.5)
 	root.add_child(panel)
 	var title := Label.new()
 	title.text = "¡CORE-9 CAÍDO!"
@@ -174,13 +177,19 @@ func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) ->
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()
 	_player.name = "Player"
-	_player.position = Vector2(48, FLOOR_Y - 24)
+	_player.position = Vector2(56, FLOOR_Y - 24)
 	entities.add_child(_player)
+	if _player.has_method("set_spawn_pos"):
+		_player.set_spawn_pos(Vector2(56, FLOOR_Y - 24))
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.limit_left = 0
 	cam.limit_top = 0
 	cam.limit_right = int(LEVEL_RIGHT)
 	cam.limit_bottom = 224
+	cam.drag_left_margin = 0.28
+	cam.drag_right_margin = 0.28
+	cam.drag_top_margin = 0.22
+	cam.drag_bottom_margin = 0.35
 	cam.make_current()
 
 

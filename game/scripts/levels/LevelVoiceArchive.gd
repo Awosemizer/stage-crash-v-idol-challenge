@@ -1,4 +1,5 @@
 extends Node2D
+## Voice Archive — touch-first fortress segment.
 ## Voice Archive — puzzle de sellos vocales (golpe fuerte) + tanque opcional.
 ## Salida → Core Shaft.
 
@@ -47,13 +48,14 @@ func _ready() -> void:
 
 func _build_course() -> void:
 	var solids: Array = [
-		[0, 176, 160, 48, COL_FLOOR],
-		[180, 144, 48, 16, COL_ACCENT],
-		[250, 176, 80, 48, COL_FLOOR],
-		# Seal chamber floor beyond seals
-		[360, 176, 200, 48, COL_FLOOR],
-		[580, 144, 40, 16, COL_ACCENT],
-		[640, 176, 220, 48, COL_FLOOR],
+		# Touch-first archive — continuous floors, fair ledges
+		[0, 176, 192, 48, COL_FLOOR],
+		[176, 144, 56, 16, COL_ACCENT],
+		[240, 176, 112, 48, COL_FLOOR],
+		# Seal chamber floor (continuous)
+		[352, 176, 240, 48, COL_FLOOR],
+		[560, 128, 56, 12, COL_ACCENT],  # high pad above touch zone
+		[608, 176, 256, 48, COL_FLOOR],
 		[-32, 0, 32, 224, COL_WALL],
 		[LEVEL_RIGHT - 8, 0, 24, 224, COL_WALL],
 		# Ceiling
@@ -67,7 +69,7 @@ func _build_course() -> void:
 	_add_seal(336.0, 176.0)
 
 	# Optional tank alcove above (hover helps)
-	_add_rect_platform(400.0, 80.0, 48.0, 12.0, COL_ACCENT)
+	_add_rect_platform(400.0, 112.0, 56.0, 12.0, COL_ACCENT)  # mid pad above touch UI
 	var tank: Area2D = EnergyTankScene.instantiate()
 	tank.name = "ArchiveTank"
 	tank.position = Vector2(424.0, 64.0)
@@ -183,13 +185,19 @@ func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) ->
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()
 	_player.name = "Player"
-	_player.position = Vector2(40, 150)
+	_player.position = Vector2(56, 148)
 	entities.add_child(_player)
+	if _player.has_method("set_spawn_pos"):
+		_player.set_spawn_pos(Vector2(56, 148))
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.limit_left = 0
 	cam.limit_top = 0
 	cam.limit_right = int(LEVEL_RIGHT)
 	cam.limit_bottom = 224
+	cam.drag_left_margin = 0.28
+	cam.drag_right_margin = 0.28
+	cam.drag_top_margin = 0.22
+	cam.drag_bottom_margin = 0.35
 	cam.make_current()
 
 
