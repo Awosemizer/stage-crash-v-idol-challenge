@@ -338,7 +338,7 @@ func _on_boss_pressed(boss_id: String) -> void:
 		get_tree().change_scene_to_file(LEVEL_STATIC_SHADOW)
 	elif boss_id == "core9":
 		if GameState.is_core9_unlocked():
-			print("BossSelect: entrando stub Fortaleza CORE-9")
+			print("BossSelect: entrando Fortaleza CORE-9")
 			get_tree().change_scene_to_file(FORTRESS_SCENE)
 		else:
 			print("BossSelect: CORE-9 aún bloqueado")

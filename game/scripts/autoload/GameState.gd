@@ -212,6 +212,8 @@ func mark_boss_defeated(boss_id: String) -> void:
 			unlock_weapon("tempo_spike")
 		elif boss_id == BOSS_STATIC_SHADOW:
 			unlock_weapon("static_veil")
+		elif boss_id == BOSS_CORE9:
+			print("GameState: fortaleza CORE-9 completada")
 	boss_defeated.emit(boss_id)
 	print("GameState: jefe derrotado → %s" % boss_id)
 

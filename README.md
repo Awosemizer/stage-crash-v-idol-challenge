@@ -91,3 +91,6 @@ Pendiente: sprites finales estilo densidad X3, 8 jefes, armaduras, audio, menú 
 
 - **Atacar (X / B táctil):** tap = disparo Nv1 (1 dmg); mantener = carga Nv2 (~0.45 s) / Nv3 (~1.15 s) con aura en el jugador.
 - **Met-Beat:** se cierra/abre a ritmo; HP 2; solo vulnerable abierto; daño de contacto 2. Hay 3 en Level01.
+
+
+### v0.13 — Fortaleza CORE-9 jugable (Lobby → Archive → Shaft → Heart → Ending)

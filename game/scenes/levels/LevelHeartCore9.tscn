@@ -1,0 +1,22 @@
+[gd_scene load_steps=2 format=3 uid="uid://blevelheartcore901"]
+
+[ext_resource type="Script" path="res://scripts/levels/LevelHeartCore9.gd" id="1_level"]
+
+[node name="LevelHeartCore9" type="Node2D"]
+script = ExtResource("1_level")
+
+[node name="ParallaxBG" type="Node2D" parent="."]
+z_index = -10
+
+[node name="BG" type="ColorRect" parent="ParallaxBG"]
+offset_left = -64.0
+offset_top = -64.0
+offset_right = 800.0
+offset_bottom = 400.0
+color = Color(0.06, 0.02, 0.1, 1)
+
+[node name="Geometry" type="Node2D" parent="."]
+
+[node name="Hazards" type="Node2D" parent="."]
+
+[node name="Entities" type="Node2D" parent="."]

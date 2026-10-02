@@ -108,6 +108,26 @@ func _initialize() -> void:
 		"res://scenes/combat/StaticVeilShot.tscn",
 		"res://scenes/hazards/StaticZone.tscn",
 		"res://scenes/ui/FortressComingSoon.tscn",
+		"res://scripts/levels/LevelFortressLobby.gd",
+		"res://scripts/levels/LevelVoiceArchive.gd",
+		"res://scripts/levels/LevelCoreShaft.gd",
+		"res://scripts/levels/LevelHeartCore9.gd",
+		"res://scripts/bosses/RefrainUnit.gd",
+		"res://scripts/bosses/OverdubTitan.gd",
+		"res://scripts/bosses/Core9.gd",
+		"res://scripts/props/VocalSeal.gd",
+		"res://scripts/ui/EndingScreen.gd",
+		"res://scripts/ui/CreditsScreen.gd",
+		"res://scenes/levels/LevelFortressLobby.tscn",
+		"res://scenes/levels/LevelVoiceArchive.tscn",
+		"res://scenes/levels/LevelCoreShaft.tscn",
+		"res://scenes/levels/LevelHeartCore9.tscn",
+		"res://scenes/bosses/RefrainUnit.tscn",
+		"res://scenes/bosses/OverdubTitan.tscn",
+		"res://scenes/bosses/Core9.tscn",
+		"res://scenes/props/VocalSeal.tscn",
+		"res://scenes/ui/EndingScreen.tscn",
+		"res://scenes/ui/CreditsScreen.tscn",
 	]
 	for p in paths:
 		if not ResourceLoader.exists(p):
@@ -2561,30 +2581,165 @@ func _initialize() -> void:
 		bsel2.queue_free()
 		await process_frame
 
-	# FortressComingSoon smoke
+	# Fortress hub smoke (was ComingSoon stub)
 	var fs_packed: PackedScene = load("res://scenes/ui/FortressComingSoon.tscn")
 	if fs_packed:
 		var fs = fs_packed.instantiate()
 		root.add_child(fs)
 		await process_frame
 		var ftitle = fs.get_node_or_null("Panel/Title")
-		if ftitle == null or "construcción" not in ftitle.text and "construccion" not in ftitle.text.to_lower():
-			# accented
-			if ftitle and "Fortaleza" in ftitle.text:
-				print("OK FortressComingSoon title=", ftitle.text)
-			else:
-				errors.append("FortressComingSoon missing title")
-		else:
+		if ftitle and "Fortaleza" in ftitle.text:
 			print("OK FortressComingSoon title=", ftitle.text)
+		else:
+			errors.append("FortressComingSoon missing title")
 		var fback = fs.get_node_or_null("ReturnButton")
 		if fback == null:
 			errors.append("FortressComingSoon missing ReturnButton")
 		else:
 			print("OK FortressComingSoon ReturnButton")
+		var fenter = fs.get_node_or_null("Panel/EnterButton")
+		if fenter == null:
+			errors.append("FortressComingSoon missing EnterButton")
+		else:
+			print("OK FortressComingSoon EnterButton")
 		fs.queue_free()
 		await process_frame
 	else:
 		errors.append("FortressComingSoon.tscn failed to load")
+
+	# Fortress lobby instantiate smoke
+	var lobby_packed: PackedScene = load("res://scenes/levels/LevelFortressLobby.tscn")
+	if lobby_packed:
+		var lobby = lobby_packed.instantiate()
+		root.add_child(lobby)
+		await process_frame
+		await process_frame
+		print("OK instantiate LevelFortressLobby children=", lobby.get_child_count())
+		var lent = lobby.get_node_or_null("Entities")
+		if lent == null:
+			errors.append("LevelFortressLobby Entities missing")
+		else:
+			var ru = lent.get_node_or_null("RefrainUnit")
+			if ru == null:
+				errors.append("LevelFortressLobby missing RefrainUnit")
+			else:
+				print("OK Lobby RefrainUnit")
+		lobby.queue_free()
+		await process_frame
+	else:
+		errors.append("LevelFortressLobby.tscn failed to load")
+
+	# Voice Archive + VocalSeal
+	var va_packed: PackedScene = load("res://scenes/levels/LevelVoiceArchive.tscn")
+	if va_packed:
+		var va = va_packed.instantiate()
+		root.add_child(va)
+		await process_frame
+		await process_frame
+		print("OK instantiate LevelVoiceArchive")
+		va.queue_free()
+		await process_frame
+	else:
+		errors.append("LevelVoiceArchive.tscn failed to load")
+
+	# Core Shaft
+	var cs_packed: PackedScene = load("res://scenes/levels/LevelCoreShaft.tscn")
+	if cs_packed:
+		var cs = cs_packed.instantiate()
+		root.add_child(cs)
+		await process_frame
+		await process_frame
+		print("OK instantiate LevelCoreShaft")
+		var csent = cs.get_node_or_null("Entities")
+		if csent and csent.get_node_or_null("OverdubTitan"):
+			print("OK CoreShaft OverdubTitan")
+		else:
+			errors.append("LevelCoreShaft missing OverdubTitan")
+		cs.queue_free()
+		await process_frame
+	else:
+		errors.append("LevelCoreShaft.tscn failed to load")
+
+	# Heart CORE-9
+	var hc_packed: PackedScene = load("res://scenes/levels/LevelHeartCore9.tscn")
+	if hc_packed:
+		var hc = hc_packed.instantiate()
+		root.add_child(hc)
+		await process_frame
+		await process_frame
+		print("OK instantiate LevelHeartCore9")
+		var hcent = hc.get_node_or_null("Entities")
+		if hcent and hcent.get_node_or_null("Core9"):
+			print("OK Heart Core9 boss")
+		else:
+			errors.append("LevelHeartCore9 missing Core9")
+		hc.queue_free()
+		await process_frame
+	else:
+		errors.append("LevelHeartCore9.tscn failed to load")
+
+	# Ending / Credits smoke
+	var end_packed: PackedScene = load("res://scenes/ui/EndingScreen.tscn")
+	if end_packed:
+		var end = end_packed.instantiate()
+		root.add_child(end)
+		await process_frame
+		var ebody = end.get_node_or_null("Body")
+		if ebody == null:
+			errors.append("EndingScreen missing Body")
+		else:
+			print("OK EndingScreen Body")
+		end.queue_free()
+		await process_frame
+	else:
+		errors.append("EndingScreen.tscn failed to load")
+
+	var cred_packed: PackedScene = load("res://scenes/ui/CreditsScreen.tscn")
+	if cred_packed:
+		var cred = cred_packed.instantiate()
+		root.add_child(cred)
+		await process_frame
+		var cback = cred.get_node_or_null("ReturnButton")
+		if cback == null:
+			errors.append("CreditsScreen missing ReturnButton")
+		else:
+			print("OK CreditsScreen ReturnButton")
+		cred.queue_free()
+		await process_frame
+	else:
+		errors.append("CreditsScreen.tscn failed to load")
+
+	# Core9 phase damage rule unit check
+	var c9s: PackedScene = load("res://scenes/bosses/Core9.tscn")
+	if c9s:
+		var c9 = c9s.instantiate()
+		root.add_child(c9)
+		await process_frame
+		if c9.has_method("activate"):
+			c9.activate()
+		# Force phase 3
+		c9.hp = 10
+		c9._phase = 3
+		var before = c9.hp
+		c9.take_damage(1)  # weak → 1
+		if c9.hp != before - 1:
+			errors.append("Core9 P3 weak hit should deal 1, hp=%d" % c9.hp)
+		else:
+			print("OK Core9 P3 weak tick")
+		before = c9.hp
+		c9._invuln = 0.0
+		c9.take_damage(4)  # strong ×1.5 = 6
+		var expected = before - 6
+		if c9.hp != expected and c9.hp != maxi(expected, 0):
+			# may have died
+			if c9.hp > 0 and c9.hp != expected:
+				errors.append("Core9 P3 strong should ×1.5, hp=%d expected=%d" % [c9.hp, expected])
+			else:
+				print("OK Core9 P3 strong ×1.5 (or died)")
+		else:
+			print("OK Core9 P3 strong ×1.5")
+		c9.queue_free()
+		await process_frame
 
 	# Instantiate LevelStaticShadow
 	var ss_level_packed: PackedScene = load("res://scenes/levels/LevelStaticShadow.tscn")

@@ -1,0 +1,83 @@
+[gd_scene load_steps=4 format=3 uid="uid://bcore9final01"]
+
+[ext_resource type="Script" path="res://scripts/bosses/Core9.gd" id="1_boss"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(30, 44)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_contact"]
+size = Vector2(32, 46)
+
+[node name="Core9" type="CharacterBody2D"]
+collision_layer = 8
+collision_mask = 1
+floor_stop_on_slope = true
+script = ExtResource("1_boss")
+
+[node name="Visual" type="ColorRect" parent="."]
+offset_left = -16.0
+offset_top = -44.0
+offset_right = 16.0
+offset_bottom = 0.0
+color = Color(0.45, 0.2, 0.65, 1)
+
+[node name="Core" type="ColorRect" parent="."]
+visible = false
+offset_left = -6.0
+offset_top = -28.0
+offset_right = 6.0
+offset_bottom = -12.0
+color = Color(1, 0.4, 0.95, 0.85)
+
+[node name="Trim" type="ColorRect" parent="."]
+offset_left = -12.0
+offset_top = -40.0
+offset_right = 12.0
+offset_bottom = -34.0
+color = Color(0.85, 0.5, 1, 0.9)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -22)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="ContactArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ContactArea"]
+position = Vector2(0, -22)
+shape = SubResource("RectangleShape2D_contact")
+
+[node name="HpBarBg" type="ColorRect" parent="."]
+offset_left = -36.0
+offset_top = -56.0
+offset_right = 36.0
+offset_bottom = -52.0
+color = Color(0.1, 0.08, 0.1, 0.85)
+
+[node name="HpBarFill" type="ColorRect" parent="."]
+offset_left = -36.0
+offset_top = -56.0
+offset_right = 36.0
+offset_bottom = -52.0
+color = Color(0.6, 0.35, 0.95, 1)
+
+[node name="NameLabel" type="Label" parent="."]
+offset_left = -40.0
+offset_top = -70.0
+offset_right = 40.0
+offset_bottom = -60.0
+theme_override_font_sizes/font_size = 7
+text = "CORE-9"
+horizontal_alignment = 1
+
+[node name="PhaseLabel" type="Label" parent="."]
+offset_left = -28.0
+offset_top = -80.0
+offset_right = 28.0
+offset_bottom = -70.0
+theme_override_font_sizes/font_size = 5
+text = "FASE 1"
+horizontal_alignment = 1
