@@ -152,6 +152,8 @@ func _on_boss_died() -> void:
 	if AudioManager:
 		AudioManager.play_victory()
 	_boss_defeated = true
+	if GameState and GameState.has_method("complete_boss_fight_track"):
+		GameState.complete_boss_fight_track()
 	_show_win_banner()
 	print("LevelCoreShaft: Titan derrotado → Heart CORE-9")
 

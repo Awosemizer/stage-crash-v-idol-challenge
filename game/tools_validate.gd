@@ -14,6 +14,7 @@ func _initialize() -> void:
 		"res://scripts/ui/CharacterSelect.gd",
 		"res://scripts/ui/BossSelect.gd",
 		"res://scripts/ui/SaveSelect.gd",
+		"res://scripts/ui/AchievementsScreen.gd",
 		"res://scripts/combat/BusterShot.gd",
 		"res://scripts/combat/BeatBlazeShot.gd",
 		"res://scripts/combat/Fireball.gd",
@@ -32,6 +33,7 @@ func _initialize() -> void:
 		"res://scenes/ui/CharacterSelect.tscn",
 		"res://scenes/ui/BossSelect.tscn",
 		"res://scenes/ui/SaveSelect.tscn",
+		"res://scenes/ui/AchievementsScreen.tscn",
 		"res://scenes/combat/BusterShot.tscn",
 		"res://scenes/combat/BeatBlazeShot.tscn",
 		"res://scenes/combat/Fireball.tscn",
@@ -3192,6 +3194,148 @@ func _initialize() -> void:
 				gs_save.delete_slot(si2)
 		gs_save.active_slot = -1
 		gs_save.reset_progress()
+
+
+	# --- Achievements + Hard difficulty (v0.16) ---
+	var gs_ach = root.get_node_or_null("/root/GameState")
+	if gs_ach == null:
+		gs_ach = root.get_node_or_null("GameState")
+	if gs_ach == null:
+		errors.append("GameState missing for achievement tests")
+	else:
+		gs_ach.reset_progress()
+		if gs_ach.is_hard():
+			errors.append("default difficulty should be Normal")
+		else:
+			print("OK difficulty default Normal")
+		gs_ach.set_difficulty_hard(true)
+		if not gs_ach.is_hard():
+			errors.append("set_difficulty_hard(true) failed")
+		elif abs(float(gs_ach.get_hurt_invuln_time()) - 0.6) > 0.01:
+			errors.append("Hard invuln expected 0.6, got %s" % str(gs_ach.get_hurt_invuln_time()))
+		elif int(gs_ach.scale_incoming_damage(4)) != 6:
+			errors.append("Hard scale_incoming_damage(4) expected 6, got %d" % int(gs_ach.scale_incoming_damage(4)))
+		else:
+			print("OK Hard +2 damage and 0.6s i-frames")
+		gs_ach.set_difficulty_hard(false)
+		if int(gs_ach.scale_incoming_damage(4)) != 4:
+			errors.append("Normal damage should stay 4")
+		else:
+			print("OK Normal damage unchanged")
+		# Achievements unlock paths
+		gs_ach.begin_new_game(0)
+		gs_ach.set_difficulty_hard(true)
+		# eight masters
+		for bid in ["beatfire", "glitch_ice", "bassquake", "echo_wind", "neon_volt", "metronome", "chorus_bloom", "static_shadow"]:
+			gs_ach.mark_boss_defeated(bid)
+		if not gs_ach.has_achievement("eight_masters"):
+			errors.append("eight_masters not unlocked after 8 masters")
+		else:
+			print("OK achievement eight_masters")
+		# armor + secrets
+		for piece in ["head", "torso", "arms"]:
+			gs_ach.grant_armor_piece("flight", piece)
+		for piece2 in ["head", "torso", "legs"]:
+			gs_ach.grant_armor_piece("encore", piece2)
+		if not gs_ach.has_achievement("all_armor"):
+			errors.append("all_armor not unlocked")
+		else:
+			print("OK achievement all_armor")
+		while gs_ach.get_energy_tanks() < 4:
+			gs_ach.grant_energy_tank()
+		if not gs_ach.has_achievement("all_secrets"):
+			errors.append("all_secrets not unlocked with armor+4 ET")
+		else:
+			print("OK achievement all_secrets")
+		# no-damage boss
+		gs_ach.begin_boss_fight_track()
+		gs_ach.complete_boss_fight_track()
+		if not gs_ach.has_achievement("no_damage_boss"):
+			errors.append("no_damage_boss not unlocked on clean fight")
+		else:
+			print("OK achievement no_damage_boss")
+		# ending clears
+		gs_ach.select_miku()
+		gs_ach.mark_boss_defeated("core9")
+		gs_ach.on_ending_reached()
+		if not gs_ach.has_achievement("defeat_core9"):
+			errors.append("defeat_core9 missing")
+		elif not gs_ach.has_achievement("clear_miku"):
+			errors.append("clear_miku missing")
+		else:
+			print("OK achievements CORE-9 + clear_miku")
+		gs_ach.select_teto()
+		gs_ach.on_ending_reached()
+		if not gs_ach.has_achievement("clear_teto"):
+			errors.append("clear_teto missing")
+		else:
+			print("OK achievement clear_teto")
+		# persist achievements + difficulty in save
+		if not gs_ach.save_to_slot(0):
+			errors.append("save with achievements failed")
+		else:
+			gs_ach.reset_progress()
+			if gs_ach.has_achievement("eight_masters"):
+				errors.append("reset should clear achievements")
+			gs_ach.load_from_slot(0)
+			if not gs_ach.is_hard():
+				errors.append("load did not restore Hard difficulty")
+			elif not gs_ach.has_achievement("eight_masters"):
+				errors.append("load missing eight_masters")
+			elif not gs_ach.has_achievement("clear_miku"):
+				errors.append("load missing clear_miku")
+			else:
+				print("OK achievements+Hard persist in save")
+		# UI: Title AchievementsButton + AchievementsScreen
+		var title_a = load("res://scenes/ui/TitleScreen.tscn")
+		if title_a:
+			var ta = title_a.instantiate()
+			root.add_child(ta)
+			await process_frame
+			if ta.get_node_or_null("AchievementsButton") == null:
+				errors.append("TitleScreen missing AchievementsButton")
+			else:
+				print("OK TitleScreen AchievementsButton")
+			ta.queue_free()
+			await process_frame
+		var ach_ps = load("res://scenes/ui/AchievementsScreen.tscn")
+		if ach_ps == null:
+			errors.append("AchievementsScreen.tscn failed to load")
+		else:
+			var ach_ui = ach_ps.instantiate()
+			root.add_child(ach_ui)
+			await process_frame
+			if ach_ui.get_node_or_null("AchList") == null and ach_ui.get_node_or_null("Scroll") == null:
+				errors.append("AchievementsScreen missing list")
+			else:
+				print("OK AchievementsScreen UI")
+			if ach_ui.get_node_or_null("BackButton") == null:
+				errors.append("AchievementsScreen missing BackButton")
+			ach_ui.queue_free()
+			await process_frame
+		var bsel_src_a = FileAccess.get_file_as_string("res://scripts/ui/BossSelect.gd")
+		if "AchievementsButton" not in bsel_src_a or "DiffButton" not in bsel_src_a:
+			errors.append("BossSelect should expose Logros + DiffButton")
+		else:
+			print("OK BossSelect Logros + dificultad")
+		var char_src_a = FileAccess.get_file_as_string("res://scripts/ui/CharacterSelect.gd")
+		if "DiffButton" not in char_src_a:
+			errors.append("CharacterSelect should have DiffButton")
+		else:
+			print("OK CharacterSelect DiffButton")
+		# Player source hard hooks
+		var player_src = FileAccess.get_file_as_string("res://scripts/player/Player.gd")
+		if "scale_incoming_damage" not in player_src or "get_hurt_invuln_time" not in player_src:
+			errors.append("Player should use Hard damage/i-frame hooks")
+		else:
+			print("OK Player Hard hooks")
+		# Cleanup slots
+		for si3 in range(3):
+			if gs_ach.slot_exists(si3):
+				gs_ach.delete_slot(si3)
+		gs_ach.active_slot = -1
+		gs_ach.reset_progress()
+
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

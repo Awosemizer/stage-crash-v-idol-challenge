@@ -1,5 +1,7 @@
 # Stage Crash: V-Idol Challenge
 
+
+**v0.16:** logros (pantalla Logros, toast) + Hard (+2 daño, i-frames 0.6s).
 Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 
 - Motor: **Godot 4.5**

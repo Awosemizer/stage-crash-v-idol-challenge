@@ -57,6 +57,45 @@ var energy_tanks: int = 0
 
 signal energy_tanks_changed(count: int)
 
+## --- Dificultad ---
+enum Difficulty { NORMAL, HARD }
+var difficulty: Difficulty = Difficulty.NORMAL
+
+const HURT_INVULN_NORMAL := 1.0
+const HURT_INVULN_HARD := 0.6
+const HARD_CONTACT_BONUS := 2  # +2 daño de contacto en Hard
+
+## --- Logros ---
+const ACH_EIGHT_MASTERS := "eight_masters"
+const ACH_ALL_ARMOR := "all_armor"
+const ACH_ALL_SECRETS := "all_secrets"
+const ACH_CLEAR_MIKU := "clear_miku"
+const ACH_CLEAR_TETO := "clear_teto"
+const ACH_DEFEAT_CORE9 := "defeat_core9"
+const ACH_NO_DAMAGE_BOSS := "no_damage_boss"
+
+## Definiciones ES (id → título / descripción). Sin speed clear (stub omitido).
+const ACHIEVEMENT_DEFS := [
+	{"id": ACH_EIGHT_MASTERS, "title": "Ocho maestros", "desc": "Derrota a los 8 Robot Masters"},
+	{"id": ACH_ALL_ARMOR, "title": "Colección de armaduras", "desc": "Obtén todas las piezas Flight + Encore"},
+	{"id": ACH_ALL_SECRETS, "title": "Secretos al 100%", "desc": "Todas las armaduras y 4 Energy Tanks"},
+	{"id": ACH_CLEAR_MIKU, "title": "Clear con Miku", "desc": "Termina CORE-9 con Hatsune Miku"},
+	{"id": ACH_CLEAR_TETO, "title": "Clear con Teto", "desc": "Termina CORE-9 con Kasane Teto"},
+	{"id": ACH_DEFEAT_CORE9, "title": "Núcleo apagado", "desc": "Derrota a CORE-9"},
+	{"id": ACH_NO_DAMAGE_BOSS, "title": "Sin rasguño", "desc": "Vence un jefe sin recibir daño"},
+]
+
+signal achievement_unlocked(ach_id: String, title: String)
+signal difficulty_changed(is_hard: bool)
+
+## unlocked[id] = true
+var _achievements: Dictionary = {}
+
+## Tracking pelea de jefe (no-damage)
+var _boss_fight_tracking := false
+var _boss_fight_took_damage := false
+
+
 
 func select_miku() -> void:
 	selected_character = Character.MIKU
@@ -121,6 +160,7 @@ func grant_armor_piece(set_id: String, piece_id: String, auto_equip: bool = true
 	armor_changed.emit(set_id)
 	if was_new:
 		print("GameState: armadura %s/%s obtenida" % [set_id, piece_id])
+		evaluate_achievements()
 	return was_new
 
 
@@ -188,34 +228,37 @@ func is_boss_defeated(boss_id: String) -> bool:
 
 
 func mark_boss_defeated(boss_id: String) -> void:
-	## Marca jefe vencido (idempotente).
-	if boss_id == BOSS_BEATFIRE:
-		if beatfire_defeated:
-			return
-		beatfire_defeated = true
-		unlock_weapon("beat_blaze")
-	else:
-		if bool(_bosses_defeated.get(boss_id, false)):
-			return
-		_bosses_defeated[boss_id] = true
-		if boss_id == BOSS_ECHO_WIND:
-			unlock_weapon("echo_gale")
-		elif boss_id == BOSS_NEON_VOLT:
-			unlock_weapon("neon_arc")
-		elif boss_id == BOSS_GLITCH_ICE:
-			unlock_weapon("freeze_sample")
-		elif boss_id == BOSS_CHORUS_BLOOM:
-			unlock_weapon("petal_chorus")
-		elif boss_id == BOSS_BASSQUAKE:
-			unlock_weapon("quake_drop")
-		elif boss_id == BOSS_METRONOME:
-			unlock_weapon("tempo_spike")
-		elif boss_id == BOSS_STATIC_SHADOW:
-			unlock_weapon("static_veil")
-		elif boss_id == BOSS_CORE9:
-			print("GameState: fortaleza CORE-9 completada")
-	boss_defeated.emit(boss_id)
-	print("GameState: jefe derrotado → %s" % boss_id)
+	## Marca jefe vencido (idempotente). Siempre cierra tracking no-damage.
+	var already := is_boss_defeated(boss_id)
+	if not already:
+		if boss_id == BOSS_BEATFIRE:
+			beatfire_defeated = true
+			unlock_weapon("beat_blaze")
+		else:
+			_bosses_defeated[boss_id] = true
+			if boss_id == BOSS_ECHO_WIND:
+				unlock_weapon("echo_gale")
+			elif boss_id == BOSS_NEON_VOLT:
+				unlock_weapon("neon_arc")
+			elif boss_id == BOSS_GLITCH_ICE:
+				unlock_weapon("freeze_sample")
+			elif boss_id == BOSS_CHORUS_BLOOM:
+				unlock_weapon("petal_chorus")
+			elif boss_id == BOSS_BASSQUAKE:
+				unlock_weapon("quake_drop")
+			elif boss_id == BOSS_METRONOME:
+				unlock_weapon("tempo_spike")
+			elif boss_id == BOSS_STATIC_SHADOW:
+				unlock_weapon("static_veil")
+			elif boss_id == BOSS_CORE9:
+				print("GameState: fortaleza CORE-9 completada")
+		boss_defeated.emit(boss_id)
+		print("GameState: jefe derrotado → %s" % boss_id)
+	complete_boss_fight_track()
+	if not already:
+		evaluate_achievements()
+		if active_slot >= 0:
+			autosave()
 
 
 func mark_beatfire_defeated() -> void:
@@ -254,6 +297,7 @@ func grant_energy_tank() -> int:
 		energy_tanks += 1
 		energy_tanks_changed.emit(energy_tanks)
 		print("GameState: Energy Tank → %d/%d" % [energy_tanks, MAX_ENERGY_TANKS])
+		evaluate_achievements()
 	return energy_tanks
 
 
@@ -333,7 +377,12 @@ func reset_progress() -> void:
 	_weapons_unlocked.clear()
 	energy_tanks = 0
 	energy_tanks_changed.emit(energy_tanks)
+	difficulty = Difficulty.NORMAL
+	_achievements.clear()
+	_boss_fight_tracking = false
+	_boss_fight_took_damage = false
 	armor_changed.emit(ARMOR_SET_FLIGHT)
+	difficulty_changed.emit(false)
 
 
 func _dup_armor_dict(src: Dictionary) -> Dictionary:
@@ -359,6 +408,10 @@ func to_save_dict() -> Dictionary:
 	for k in _weapons_unlocked.keys():
 		if bool(_weapons_unlocked[k]):
 			weapons[str(k)] = true
+	var ach: Dictionary = {}
+	for k in _achievements.keys():
+		if bool(_achievements[k]):
+			ach[str(k)] = true
 	return {
 		"version": SAVE_VERSION,
 		"character": get_character_id(),
@@ -367,6 +420,8 @@ func to_save_dict() -> Dictionary:
 		"armor_owned": _dup_armor_dict(_armor_owned),
 		"armor_equipped": _dup_armor_dict(_armor_equipped),
 		"energy_tanks": energy_tanks,
+		"difficulty": "hard" if is_hard() else "normal",
+		"achievements": ach,
 	}
 
 
@@ -405,6 +460,15 @@ func apply_save_dict(data: Dictionary) -> void:
 
 	energy_tanks = clampi(int(data.get("energy_tanks", 0)), 0, MAX_ENERGY_TANKS)
 	energy_tanks_changed.emit(energy_tanks)
+	var diff := str(data.get("difficulty", "normal"))
+	difficulty = Difficulty.HARD if diff == "hard" else Difficulty.NORMAL
+	difficulty_changed.emit(is_hard())
+	_achievements.clear()
+	var ach_data = data.get("achievements", {})
+	if typeof(ach_data) == TYPE_DICTIONARY:
+		for k in ach_data.keys():
+			if bool(ach_data[k]):
+				_achievements[str(k)] = true
 	armor_changed.emit(ARMOR_SET_FLIGHT)
 
 
@@ -494,6 +558,7 @@ func get_slot_summary(slot: int) -> Dictionary:
 		"character_name": "Vacío",
 		"bosses_beaten": 0,
 		"energy_tanks": 0,
+		"difficulty": "normal",
 	}
 	if not slot_exists(slot):
 		return empty
@@ -514,6 +579,7 @@ func get_slot_summary(slot: int) -> Dictionary:
 			if bool(bosses[k]):
 				n += 1
 	var char_name := "Kasane Teto" if char_id == "teto" else "Hatsune Miku"
+	var diff_s := str(parsed.get("difficulty", "normal"))
 	return {
 		"exists": true,
 		"empty": false,
@@ -521,4 +587,200 @@ func get_slot_summary(slot: int) -> Dictionary:
 		"character_name": char_name,
 		"bosses_beaten": n,
 		"energy_tanks": int(parsed.get("energy_tanks", 0)),
+		"difficulty": diff_s,
 	}
+
+
+## --- Dificultad / daño Hard ---
+
+func is_hard() -> bool:
+	return difficulty == Difficulty.HARD
+
+
+func set_difficulty_hard(on: bool) -> void:
+	difficulty = Difficulty.HARD if on else Difficulty.NORMAL
+	difficulty_changed.emit(is_hard())
+	print("GameState: dificultad → %s" % ("Hard" if on else "Normal"))
+
+
+func set_difficulty_id(id: String) -> void:
+	set_difficulty_hard(id == "hard")
+
+
+func get_difficulty_id() -> String:
+	return "hard" if is_hard() else "normal"
+
+
+func get_difficulty_display_name() -> String:
+	return "Difícil" if is_hard() else "Normal"
+
+
+func get_hurt_invuln_time() -> float:
+	return HURT_INVULN_HARD if is_hard() else HURT_INVULN_NORMAL
+
+
+func scale_incoming_damage(amount: int) -> int:
+	## Hard: +2 al daño de contacto / golpes (mín. amount).
+	if amount <= 0:
+		return amount
+	if is_hard():
+		return amount + HARD_CONTACT_BONUS
+	return amount
+
+
+## --- Logros ---
+
+func has_achievement(ach_id: String) -> bool:
+	return bool(_achievements.get(ach_id, false))
+
+
+func get_unlocked_achievements() -> Array:
+	var out: Array = []
+	for d in ACHIEVEMENT_DEFS:
+		var aid: String = str(d.get("id", ""))
+		if has_achievement(aid):
+			out.append(aid)
+	return out
+
+
+func get_achievement_defs() -> Array:
+	return ACHIEVEMENT_DEFS.duplicate(true)
+
+
+func unlock_achievement(ach_id: String) -> bool:
+	## Desbloquea logro. Devuelve true si es nuevo.
+	if ach_id.is_empty() or has_achievement(ach_id):
+		return false
+	var title := ach_id
+	for d in ACHIEVEMENT_DEFS:
+		if str(d.get("id", "")) == ach_id:
+			title = str(d.get("title", ach_id))
+			break
+	_achievements[ach_id] = true
+	achievement_unlocked.emit(ach_id, title)
+	print("GameState: logro → %s (%s)" % [title, ach_id])
+	_show_achievement_toast(title)
+	if active_slot >= 0:
+		autosave()
+	return true
+
+
+func robot_master_defeated_count() -> int:
+	## Solo los 8 masters (sin CORE-9 / fortaleza).
+	var masters := [
+		BOSS_BEATFIRE, BOSS_GLITCH_ICE, BOSS_BASSQUAKE, BOSS_ECHO_WIND,
+		BOSS_NEON_VOLT, BOSS_METRONOME, BOSS_CHORUS_BLOOM, BOSS_STATIC_SHADOW,
+	]
+	var n := 0
+	for bid in masters:
+		if is_boss_defeated(bid):
+			n += 1
+	return n
+
+
+func has_all_armor_pieces() -> bool:
+	var flight_ok := (
+		has_armor_piece(ARMOR_SET_FLIGHT, ARMOR_PIECE_HEAD)
+		and has_armor_piece(ARMOR_SET_FLIGHT, ARMOR_PIECE_TORSO)
+		and has_armor_piece(ARMOR_SET_FLIGHT, ARMOR_PIECE_ARMS)
+	)
+	var encore_ok := (
+		has_armor_piece(ARMOR_SET_ENCORE, ARMOR_PIECE_HEAD)
+		and has_armor_piece(ARMOR_SET_ENCORE, ARMOR_PIECE_TORSO)
+		and has_armor_piece(ARMOR_SET_ENCORE, ARMOR_PIECE_LEGS)
+	)
+	return flight_ok and encore_ok
+
+
+func has_all_secrets_best_effort() -> bool:
+	## Best-effort: 6 piezas de armadura + 4 Energy Tanks.
+	return has_all_armor_pieces() and energy_tanks >= MAX_ENERGY_TANKS
+
+
+func evaluate_achievements() -> void:
+	if robot_master_defeated_count() >= 8:
+		unlock_achievement(ACH_EIGHT_MASTERS)
+	if has_all_armor_pieces():
+		unlock_achievement(ACH_ALL_ARMOR)
+	if has_all_secrets_best_effort():
+		unlock_achievement(ACH_ALL_SECRETS)
+	if is_boss_defeated(BOSS_CORE9):
+		unlock_achievement(ACH_DEFEAT_CORE9)
+
+
+func on_ending_reached() -> void:
+	## Llamar desde EndingScreen — clear Miku/Teto + CORE-9.
+	unlock_achievement(ACH_DEFEAT_CORE9)
+	if is_teto():
+		unlock_achievement(ACH_CLEAR_TETO)
+	else:
+		unlock_achievement(ACH_CLEAR_MIKU)
+	evaluate_achievements()
+
+
+func begin_boss_fight_track() -> void:
+	_boss_fight_tracking = true
+	_boss_fight_took_damage = false
+
+
+func note_player_damaged() -> void:
+	if _boss_fight_tracking:
+		_boss_fight_took_damage = true
+
+
+func complete_boss_fight_track() -> void:
+	## Cierra pelea de jefe; desbloquea no-damage si no hubo golpes.
+	if not _boss_fight_tracking:
+		return
+	var clean := not _boss_fight_took_damage
+	_boss_fight_tracking = false
+	if clean:
+		unlock_achievement(ACH_NO_DAMAGE_BOSS)
+
+
+func _finish_boss_fight_track() -> void:
+	complete_boss_fight_track()
+
+
+func cancel_boss_fight_track() -> void:
+	_boss_fight_tracking = false
+	_boss_fight_took_damage = false
+
+
+func _show_achievement_toast(title: String) -> void:
+	var tree := get_tree()
+	if tree == null:
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 100
+	layer.name = "AchievementToast"
+	tree.root.add_child(layer)
+	var panel := ColorRect.new()
+	panel.color = Color(0.08, 0.12, 0.2, 0.92)
+	panel.position = Vector2(28, 8)
+	panel.size = Vector2(200, 36)
+	layer.add_child(panel)
+	var border := ColorRect.new()
+	border.color = Color(1.0, 0.85, 0.25, 1.0)
+	border.position = Vector2(28, 8)
+	border.size = Vector2(200, 2)
+	layer.add_child(border)
+	var hdr := Label.new()
+	hdr.text = "¡LOGRO!"
+	hdr.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hdr.add_theme_font_size_override("font_size", 7)
+	hdr.modulate = Color(1.0, 0.85, 0.3, 1.0)
+	hdr.position = Vector2(28, 10)
+	hdr.size = Vector2(200, 12)
+	layer.add_child(hdr)
+	var body := Label.new()
+	body.text = title
+	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	body.add_theme_font_size_override("font_size", 9)
+	body.modulate = Color(0.95, 0.98, 1.0, 1.0)
+	body.position = Vector2(28, 24)
+	body.size = Vector2(200, 14)
+	layer.add_child(body)
+	tree.create_timer(3.0).timeout.connect(Callable(layer, "queue_free"))
+
+

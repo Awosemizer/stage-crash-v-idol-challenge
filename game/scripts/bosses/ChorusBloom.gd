@@ -54,6 +54,8 @@ func _ready() -> void:
 
 
 func activate() -> void:
+	if GameState and GameState.has_method("begin_boss_fight_track"):
+		GameState.begin_boss_fight_track()
 	_active = true
 	_beat = 0.35
 	_state = State.IDLE

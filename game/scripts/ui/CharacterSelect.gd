@@ -43,8 +43,8 @@ func _build_ui() -> void:
 	miku_btn.name = "MikuButton"
 	miku_btn.text = "MIKU\nBuster"
 	miku_btn.add_theme_font_size_override("font_size", 11)
-	miku_btn.position = Vector2(16, 56)
-	miku_btn.size = Vector2(104, 120)
+	miku_btn.position = Vector2(16, 48)
+	miku_btn.size = Vector2(104, 112)
 	_style_char_button(miku_btn, Color(0.08, 0.35, 0.45, 0.95), Color(0.25, 0.9, 0.98, 1.0))
 	miku_btn.pressed.connect(_on_miku)
 	add_child(miku_btn)
@@ -93,8 +93,8 @@ func _build_ui() -> void:
 	teto_btn.name = "TetoButton"
 	teto_btn.text = ""
 	teto_btn.add_theme_font_size_override("font_size", 11)
-	teto_btn.position = Vector2(136, 56)
-	teto_btn.size = Vector2(104, 120)
+	teto_btn.position = Vector2(136, 48)
+	teto_btn.size = Vector2(104, 112)
 	_style_char_button(teto_btn, Color(0.4, 0.1, 0.15, 0.95), Color(0.95, 0.35, 0.4, 1.0))
 	teto_btn.pressed.connect(_on_teto)
 	add_child(teto_btn)
@@ -134,6 +134,16 @@ func _build_ui() -> void:
 	teto_sub2.size = Vector2(104, 12)
 	teto_sub2.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	teto_btn.add_child(teto_sub2)
+
+	var diff_btn := Button.new()
+	diff_btn.name = "DiffButton"
+	diff_btn.add_theme_font_size_override("font_size", 8)
+	diff_btn.position = Vector2(72, 168)
+	diff_btn.size = Vector2(112, 22)
+	_style_char_button(diff_btn, Color(0.16, 0.14, 0.22, 0.95), Color(0.85, 0.55, 1.0, 0.95))
+	diff_btn.pressed.connect(_on_diff_toggle)
+	add_child(diff_btn)
+	_refresh_diff_label(diff_btn)
 
 	var back := Button.new()
 	back.name = "BackButton"
@@ -181,3 +191,21 @@ func _on_back() -> void:
 	if AudioManager:
 		AudioManager.play_sfx("ui_confirm")
 	get_tree().change_scene_to_file("res://scenes/ui/TitleScreen.tscn")
+
+func _refresh_diff_label(btn: Button = null) -> void:
+	var b := btn
+	if b == null:
+		b = get_node_or_null("DiffButton") as Button
+	if b == null:
+		return
+	var hard := GameState.is_hard() if GameState else false
+	b.text = "Dificultad: Difícil" if hard else "Dificultad: Normal"
+
+
+func _on_diff_toggle() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
+	if GameState:
+		GameState.set_difficulty_hard(not GameState.is_hard())
+	_refresh_diff_label()
+

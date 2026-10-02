@@ -5,6 +5,8 @@ const CREDITS := "res://scenes/ui/CreditsScreen.tscn"
 
 
 func _ready() -> void:
+	if GameState and GameState.has_method("on_ending_reached"):
+		GameState.on_ending_reached()
 	_build_ui()
 	if AudioManager:
 		AudioManager.play_victory()

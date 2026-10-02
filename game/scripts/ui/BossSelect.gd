@@ -113,7 +113,7 @@ func _build_ui() -> void:
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	footer.add_theme_font_size_override("font_size", 6)
 	footer.modulate = Color(0.6, 0.65, 0.75, 0.75)
-	footer.position = Vector2(0, 204)
+	footer.position = Vector2(0, 192)
 	footer.size = Vector2(256, 10)
 	footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(footer)
@@ -123,19 +123,40 @@ func _build_ui() -> void:
 	back.text = "Volver"
 	back.add_theme_font_size_override("font_size", 7)
 	back.position = Vector2(4, 200)
-	back.size = Vector2(48, 18)
+	back.size = Vector2(40, 18)
 	_style_btn(back, Color(0.18, 0.18, 0.26, 0.95), Color(0.55, 0.6, 0.7, 0.85))
 	back.pressed.connect(_on_back)
 	add_child(back)
 
+	var ach_btn := Button.new()
+	ach_btn.name = "AchievementsButton"
+	ach_btn.text = "Logros"
+	ach_btn.add_theme_font_size_override("font_size", 6)
+	ach_btn.position = Vector2(46, 200)
+	ach_btn.size = Vector2(40, 18)
+	_style_btn(ach_btn, Color(0.22, 0.18, 0.08, 0.95), Color(1.0, 0.85, 0.3, 0.95))
+	ach_btn.pressed.connect(_on_achievements)
+	add_child(ach_btn)
+
+	var diff_btn := Button.new()
+	diff_btn.name = "DiffButton"
+	diff_btn.add_theme_font_size_override("font_size", 6)
+	diff_btn.position = Vector2(88, 200)
+	diff_btn.size = Vector2(52, 18)
+	_style_btn(diff_btn, Color(0.16, 0.12, 0.22, 0.95), Color(0.85, 0.55, 1.0, 0.9))
+	diff_btn.pressed.connect(_on_diff_toggle)
+	add_child(diff_btn)
+	_refresh_diff_label(diff_btn)
+
 	var char_lbl := Label.new()
 	char_lbl.name = "CharLabel"
-	char_lbl.text = GameState.get_character_display_name()
+	var diff_tag := " [D]" if GameState.is_hard() else ""
+	char_lbl.text = GameState.get_character_display_name() + diff_tag
 	char_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	char_lbl.add_theme_font_size_override("font_size", 6)
 	char_lbl.modulate = GameState.get_portrait_color()
-	char_lbl.position = Vector2(140, 200)
-	char_lbl.size = Vector2(112, 10)
+	char_lbl.position = Vector2(144, 200)
+	char_lbl.size = Vector2(108, 10)
 	char_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(char_lbl)
 
@@ -357,3 +378,32 @@ func _on_back() -> void:
 	if AudioManager:
 		AudioManager.play_sfx("ui_confirm")
 	get_tree().change_scene_to_file(CHAR_SELECT)
+
+func _refresh_diff_label(btn: Button = null) -> void:
+	var b := btn
+	if b == null:
+		b = get_node_or_null("DiffButton") as Button
+	if b == null:
+		return
+	b.text = "Difícil" if GameState.is_hard() else "Normal"
+	var char_lbl = get_node_or_null("CharLabel") as Label
+	if char_lbl:
+		var diff_tag := " [D]" if GameState.is_hard() else ""
+		char_lbl.text = GameState.get_character_display_name() + diff_tag
+
+
+func _on_diff_toggle() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
+	GameState.set_difficulty_hard(not GameState.is_hard())
+	if GameState.active_slot >= 0:
+		GameState.autosave()
+	_refresh_diff_label()
+
+
+func _on_achievements() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
+	Engine.set_meta("achievements_return", "boss_select")
+	get_tree().change_scene_to_file("res://scenes/ui/AchievementsScreen.tscn")
+

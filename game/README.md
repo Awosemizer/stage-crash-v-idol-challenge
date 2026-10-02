@@ -21,6 +21,8 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 
 Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome / LevelStaticShadow.
 
+**v0.16:** logros (persistentes) + dificultad Hard (+2 daño, i-frames 0.6s), pantalla Logros.
+
 **v0.15:** audio chiptune (BGM/SFX), AudioManager, mute en título, duck en pausa.
 
 **v0.14:** 3 slots de guardado (Continuar/Nueva partida), `user://save_N.json`, autosave al Boss Select.

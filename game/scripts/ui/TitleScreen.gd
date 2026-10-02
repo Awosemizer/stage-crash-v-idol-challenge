@@ -106,20 +106,30 @@ func _build_ui() -> void:
 
 	var ver := Label.new()
 	ver.name = "Version"
-	ver.text = "v0.15.0-proto · Android · audio"
+	ver.text = "v0.16.0-proto · Android · logros"
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ver.add_theme_font_size_override("font_size", 6)
 	ver.modulate = Color(0.55, 0.6, 0.7, 0.7)
-	ver.position = Vector2(0, 200)
+	ver.position = Vector2(0, 202)
 	ver.size = Vector2(170, 10)
 	ver.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(ver)
 
+	var ach_btn := Button.new()
+	ach_btn.name = "AchievementsButton"
+	ach_btn.text = "Logros"
+	ach_btn.add_theme_font_size_override("font_size", 9)
+	ach_btn.position = Vector2(68, 176)
+	ach_btn.size = Vector2(120, 22)
+	_style_button(ach_btn, Color(0.22, 0.18, 0.08, 0.95), Color(1.0, 0.85, 0.3, 1.0))
+	ach_btn.pressed.connect(_on_achievements_pressed)
+	add_child(ach_btn)
+
 	var mute_btn := Button.new()
 	mute_btn.name = "MuteButton"
 	mute_btn.add_theme_font_size_override("font_size", 7)
-	mute_btn.position = Vector2(176, 200)
-	mute_btn.size = Vector2(72, 18)
+	mute_btn.position = Vector2(176, 202)
+	mute_btn.size = Vector2(72, 16)
 	_style_button(mute_btn, Color(0.16, 0.16, 0.22, 0.95), Color(0.65, 0.7, 0.8, 0.9))
 	mute_btn.pressed.connect(_on_mute_pressed)
 	add_child(mute_btn)
@@ -184,3 +194,10 @@ func _on_mute_pressed() -> void:
 		AudioManager.play_sfx("ui_confirm")
 		AudioManager.toggle_mute()
 	_refresh_mute_label()
+
+
+func _on_achievements_pressed() -> void:
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
+	Engine.set_meta("achievements_return", "title")
+	get_tree().change_scene_to_file("res://scenes/ui/AchievementsScreen.tscn")

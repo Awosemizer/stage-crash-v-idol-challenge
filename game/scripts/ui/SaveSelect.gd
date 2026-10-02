@@ -132,7 +132,9 @@ func _make_slot_cell(slot: int, is_new: bool) -> Control:
 		var bosses: int = int(summary.get("bosses_beaten", 0))
 		var tanks: int = int(summary.get("energy_tanks", 0))
 		var cname: String = str(summary.get("character_name", "?"))
-		detail.text = "%s · %d/8 jefes · ET %d" % [cname, bosses, tanks]
+		var diff_s := str(summary.get("difficulty", "normal"))
+		var diff_tag := "Difícil" if diff_s == "hard" else "Normal"
+		detail.text = "%s · %d/8 · ET %d · %s" % [cname, bosses, tanks, diff_tag]
 		if is_new:
 			detail.text += "  (sobrescribir)"
 		detail.modulate = Color(0.85, 0.9, 0.95, 0.95)

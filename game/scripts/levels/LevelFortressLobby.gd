@@ -172,6 +172,8 @@ func _on_boss_died() -> void:
 	if AudioManager:
 		AudioManager.play_victory()
 	_boss_defeated = true
+	if GameState and GameState.has_method("complete_boss_fight_track"):
+		GameState.complete_boss_fight_track()
 	_open_gate()
 	_show_win_banner()
 	print("LevelFortressLobby: Refrain Unit derrotado → Voice Archive")

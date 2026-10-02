@@ -1171,11 +1171,20 @@ func take_damage(amount: int) -> void:
 func _take_hit(amount: int) -> void:
 	if _invuln > 0.0:
 		return
+	# Hard: +2 daño de contacto / golpes
+	if GameState and GameState.has_method("scale_incoming_damage"):
+		amount = int(GameState.scale_incoming_damage(amount))
 	# Encore Guard torso: reduce contact / hit damage by 1 (min 1)
 	if _has_encore_torso and amount > 1:
 		amount = maxi(1, amount - 1)
 	hp = maxi(hp - amount, 0)
-	_invuln = 1.0  # GDD: 1.0 s after hit
+	# GDD: 1.0 s Normal / 0.6 s Hard
+	if GameState and GameState.has_method("get_hurt_invuln_time"):
+		_invuln = float(GameState.get_hurt_invuln_time())
+	else:
+		_invuln = 1.0
+	if GameState and GameState.has_method("note_player_damaged"):
+		GameState.note_player_damaged()
 	if AudioManager:
 		AudioManager.play_sfx("hurt")
 	# Cancel charge on hit
