@@ -20,6 +20,11 @@ func _build_ui() -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 
+	var concert := ArtKit.menu_backdrop("res://assets/sprites/ui/menu_concert.png")
+	if concert:
+		concert.name = "MenuBG"
+		add_child(concert)
+
 	var header := Label.new()
 	header.name = "Header"
 	header.text = "Elige tu V-Idol"
@@ -46,7 +51,7 @@ func _build_ui() -> void:
 	miku_btn.pressed.connect(_on_miku)
 	add_child(miku_btn)
 
-	var miku_tex := ArtKit.char_portrait_tex(false)
+	var miku_tex := _idle_frame(false)
 	var miku_swatch: Control
 	if miku_tex:
 		miku_swatch = ArtKit.make_texture_rect(miku_tex, Vector2(48, 48), Vector2(28, 6))
@@ -85,7 +90,7 @@ func _build_ui() -> void:
 	teto_btn.pressed.connect(_on_teto)
 	add_child(teto_btn)
 
-	var teto_tex := ArtKit.char_portrait_tex(true)
+	var teto_tex := _idle_frame(true)
 	var teto_swatch: Control
 	if teto_tex:
 		teto_swatch = ArtKit.make_texture_rect(teto_tex, Vector2(48, 48), Vector2(28, 6))
@@ -131,6 +136,18 @@ func _build_ui() -> void:
 	_SafeArea.style_button(back, Color(0.2, 0.2, 0.28, 0.9), Color(0.6, 0.65, 0.75, 0.8))
 	back.pressed.connect(_on_back)
 	add_child(back)
+
+
+
+func _idle_frame(is_teto: bool) -> Texture2D:
+	var path := "res://assets/sprites/player/%s_idle.png" % ("teto" if is_teto else "miku")
+	var tex := ArtKit.load_tex(path)
+	if tex == null:
+		return ArtKit.char_portrait_tex(is_teto)
+	var atlas := AtlasTexture.new()
+	atlas.atlas = tex
+	atlas.region = Rect2(0, 0, 32, 32)
+	return atlas
 
 
 func _layout() -> void:
@@ -183,9 +200,9 @@ func _layout() -> void:
 func _layout_char_card(btn: Button, w: float, h: float, _who: String) -> void:
 	var swatch := btn.get_child(0) as Control
 	if swatch and (swatch.name.ends_with("Swatch")):
-		var ps := minf(56.0, h * 0.4)
+		var ps := 64.0 if h >= 148.0 else 32.0
 		swatch.size = Vector2(ps, ps)
-		swatch.position = Vector2((w - ps) * 0.5, 8.0)
+		swatch.position = Vector2((w - ps) * 0.5, 6.0)
 	var name_lbl := btn.get_node_or_null("MikuName") as Label
 	if name_lbl == null:
 		name_lbl = btn.get_node_or_null("TetoName") as Label

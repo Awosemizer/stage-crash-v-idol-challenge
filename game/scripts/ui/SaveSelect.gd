@@ -25,6 +25,11 @@ func _build_ui() -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 
+	var concert := ArtKit.menu_backdrop("res://assets/sprites/ui/menu_concert.png")
+	if concert:
+		concert.name = "MenuBG"
+		add_child(concert)
+
 	var is_new := GameState.save_ui_mode != "continue"
 	var header := Label.new()
 	header.name = "Header"

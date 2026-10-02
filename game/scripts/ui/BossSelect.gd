@@ -55,6 +55,11 @@ func _build_ui() -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 
+	var board := ArtKit.menu_backdrop("res://assets/sprites/ui/menu_billboard.png")
+	if board:
+		board.name = "MenuBG"
+		add_child(board)
+
 	var top_bar := ColorRect.new()
 	top_bar.name = "TopBar"
 	top_bar.color = Color(0.12, 0.1, 0.22, 1.0)
@@ -341,13 +346,15 @@ func _relayout_cell(root: Control, cw: float, ch: float) -> void:
 	btn.size = Vector2(cw, ch)
 	btn.position = Vector2.ZERO
 	var portrait := btn.get_node_or_null("Portrait") as Control
+	var ps := 22.0
 	if portrait:
-		var ps := minf(22.0, ch * 0.42)
+		ps = 32.0 if ch >= 46.0 else 24.0
+		ps = minf(ps, maxf(ch - 16.0, 22.0))
 		portrait.size = Vector2(ps, ps)
 		portrait.position = Vector2(4, 4)
 	var name_lbl := btn.get_node_or_null("NameLabel") as Label
 	if name_lbl:
-		name_lbl.position = Vector2(28, 3)
+		name_lbl.position = Vector2(ps + 6.0, 3)
 		name_lbl.size = Vector2(maxf(cw - 32.0, 20.0), maxf(ch * 0.4, 16.0))
 		name_lbl.add_theme_font_size_override("font_size", 9 if ch >= 40.0 else 8)
 		# Leave the check badge clear of the name.

@@ -3,6 +3,7 @@
 
 **v0.40:** sprites de Miku y Teto a 32 px — idle, correr, salto, pared, desliz, disparo y sable. Alas de Stage Flight y hombreras de Encore si llevas la pieza. Sin cambiar el combate.
 **v0.41:** sprites de los 8 Robot Masters (idle + ataque, 48×64) y baldosas de suelo 16×16. CORE-9 holograma. Sin cambiar el combate.
+**v0.45:** título con escenario y logo en pixel, cartelera detrás de los jefes, Miku y Teto más grandes al elegir. Los botones no cambian.
 **v0.44:** cada etapa tiene su fondo (luces, hielo, club, cielo, neón, reloj, invernadero, glitch, fortaleza). Sin cambiar el combate.
 **v0.43:** más detalle en Miku, Teto y los 8 jefes (sombras, ojos, pelo, arma). Mismos tamaños de frame. Sin cambiar el combate.
 **v0.42:** Met-Beat (cerrado/abierto), disparos en pixel (buster, sable, armas y notas de jefe) y retratos 64 px en la cartelera. Sin cambiar el combate.
@@ -29,7 +30,7 @@ Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.44.0-proto`
+- Versión demo: `0.45.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)

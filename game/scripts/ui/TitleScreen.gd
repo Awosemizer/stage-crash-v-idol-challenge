@@ -25,6 +25,17 @@ func _build_ui() -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 
+	var concert := ArtKit.menu_backdrop("res://assets/sprites/ui/menu_concert.png")
+	if concert:
+		concert.name = "MenuBG"
+		add_child(concert)
+
+	var logo_px := ArtKit.load_tex("res://assets/sprites/ui/logo_stage_crash.png")
+	if logo_px:
+		var logo_word := ArtKit.make_texture_rect(logo_px, Vector2(132, 28), Vector2.ZERO)
+		logo_word.name = "PixelLogo"
+		add_child(logo_word)
+
 	var accent := ColorRect.new()
 	accent.name = "AccentBar"
 	accent.color = Color(0.25, 0.85, 0.95, 0.85)
@@ -144,7 +155,7 @@ func _build_ui() -> void:
 
 	var ver := Label.new()
 	ver.name = "Version"
-	ver.text = "v0.44.0-proto · stages"
+	ver.text = "v0.45.0-proto · menus"
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ver.add_theme_font_size_override("font_size", 8)
 	ver.modulate = Color(0.55, 0.6, 0.7, 0.75)
@@ -180,14 +191,21 @@ func _layout() -> void:
 	if logo:
 		logo.position = Vector2(area.position.x, area.position.y + 4.0)
 
+	var pixel_logo := get_node_or_null("PixelLogo") as Control
+	if pixel_logo:
+		pixel_logo.visible = not tight
+		pixel_logo.position = Vector2(ox + (DESIGN_W - 132.0) * 0.5, area.position.y + 6.0)
+		pixel_logo.size = Vector2(132, 28)
 	var title := get_node_or_null("Title") as Label
 	if title:
+		title.visible = tight or pixel_logo == null
 		title.position = Vector2(area.position.x, area.position.y + (4.0 if tight else 8.0))
 		title.size = Vector2(area.size.x, 20)
 		title.add_theme_font_size_override("font_size", 14 if tight else 16)
 
 	var subtitle := get_node_or_null("Subtitle") as Label
 	if subtitle:
+		subtitle.visible = tight or pixel_logo == null
 		subtitle.position = Vector2(area.position.x, area.position.y + (26.0 if tight else 52.0))
 		subtitle.size = Vector2(area.size.x, 20)
 		subtitle.add_theme_font_size_override("font_size", 15 if tight else 18)

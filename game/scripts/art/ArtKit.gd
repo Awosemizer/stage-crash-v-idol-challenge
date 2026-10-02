@@ -173,6 +173,19 @@ static func char_portrait_tex(is_teto: bool) -> Texture2D:
 	return load_tex("res://assets/sprites/ui/portrait_teto.png" if is_teto else "res://assets/sprites/ui/portrait_miku.png")
 
 
+
+static func menu_backdrop(path: String) -> TextureRect:
+	## Full-rect nearest backdrop. Does not take clicks.
+	var tex := load_tex(path)
+	if tex == null:
+		return null
+	var tr := make_texture_rect(tex, Vector2(398, 224))
+	tr.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	return tr
+
+
 static func title_banner_tex() -> Texture2D:
 	return load_tex("res://assets/sprites/ui/title_banner.png")
 
