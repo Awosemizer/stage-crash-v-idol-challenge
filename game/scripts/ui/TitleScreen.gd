@@ -36,9 +36,22 @@ func _build_ui() -> void:
 	accent2.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(accent2)
 
+	var chrome_tex := ArtKit.panel_chrome_tex()
+	if chrome_tex:
+		var chrome := ArtKit.make_texture_rect(chrome_tex, Vector2(200, 56), Vector2(28, 10))
+		chrome.name = "PanelChrome"
+		chrome.modulate = Color(1, 1, 1, 0.55)
+		add_child(chrome)
+
+	var logo_tex := ArtKit.load_tex("res://assets/sprites/ui/synthocorp_mark.png")
+	if logo_tex:
+		var logo := ArtKit.make_texture_rect(logo_tex, Vector2(18, 18), Vector2(8, 6))
+		logo.name = "SynthoMark"
+		add_child(logo)
+
 	var banner_tex := ArtKit.title_banner_tex()
 	if banner_tex:
-		var banner := ArtKit.make_texture_rect(banner_tex, Vector2(160, 20), Vector2(48, 94))
+		var banner := ArtKit.make_texture_rect(banner_tex, Vector2(192, 28), Vector2(32, 88))
 		banner.name = "TitleBanner"
 		add_child(banner)
 	var miku_p := ArtKit.char_portrait_tex(false)
@@ -85,6 +98,18 @@ func _build_ui() -> void:
 	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(tag)
 
+	var sparks := Control.new()
+	sparks.name = "TitleSparkles"
+	sparks.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(sparks)
+	for i in 6:
+		var d := ColorRect.new()
+		d.size = Vector2(2, 2)
+		d.position = Vector2(24 + i * 36, 100 + (i % 3) * 8)
+		d.color = Color(0.7, 0.9, 1.0, 0.35 + 0.1 * (i % 3))
+		d.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		sparks.add_child(d)
+
 	var has_saves := GameState.any_slot_exists()
 
 	var continue_btn := Button.new()
@@ -122,7 +147,7 @@ func _build_ui() -> void:
 
 	var ver := Label.new()
 	ver.name = "Version"
-	ver.text = "v0.17.0-proto · pixel art pass"
+	ver.text = "v0.19.0-proto · art+audio pro"
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ver.add_theme_font_size_override("font_size", 6)
 	ver.modulate = Color(0.55, 0.6, 0.7, 0.7)

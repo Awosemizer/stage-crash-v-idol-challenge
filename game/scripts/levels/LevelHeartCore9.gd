@@ -33,6 +33,7 @@ func _ready() -> void:
 	if AudioManager:
 		AudioManager.play_stage_bgm("core9")
 	bg.color = COL_BG
+	ArtKit.setup_stage_parallax(bg.get_parent(), "fortress", float(LEVEL_RIGHT))
 	bg.offset_right = LEVEL_RIGHT + 64.0
 	_build_arena()
 	_spawn_player()

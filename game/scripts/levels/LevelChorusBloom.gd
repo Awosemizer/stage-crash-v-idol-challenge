@@ -46,6 +46,7 @@ func _ready() -> void:
 	if AudioManager:
 		AudioManager.play_stage_bgm("chorus_bloom")
 	bg.color = COL_BG
+	ArtKit.setup_stage_parallax(bg.get_parent(), "chorus_bloom", float(LEVEL_RIGHT))
 	bg.offset_right = LEVEL_RIGHT + 64.0
 	_build_course()
 	_spawn_enemies()

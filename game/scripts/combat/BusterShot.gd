@@ -88,8 +88,11 @@ func _try_hit(target: Node) -> void:
 		if target.has_method("take_damage"):
 			# Met cerrado puede devolver false / no consumir
 			var result = target.take_damage(damage)
+			ArtKit.spawn_hit_spark(get_parent(), global_position, 0.9 + 0.15 * float(level))
 			if result == false:
 				# Rebotó en caparazón: destruir proyectil igual
 				queue_free()
 				return
+		else:
+			ArtKit.spawn_hit_spark(get_parent(), global_position)
 		queue_free()

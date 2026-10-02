@@ -71,6 +71,20 @@ func _build_ui() -> void:
 	accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(accent)
 
+	var accent2 := ColorRect.new()
+	accent2.name = "AccentMagenta"
+	accent2.color = Color(0.92, 0.28, 0.55, 0.75)
+	accent2.position = Vector2(0, 30)
+	accent2.size = Vector2(256, 1)
+	accent2.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(accent2)
+
+	var mark := ArtKit.load_tex("res://assets/sprites/ui/synthocorp_mark.png")
+	if mark:
+		var logo := ArtKit.make_texture_rect(mark, Vector2(14, 14), Vector2(4, 6))
+		logo.name = "SynthoMark"
+		add_child(logo)
+
 	var header := Label.new()
 	header.name = "Header"
 	header.text = "SYNTHOCORP · CARTELERA"
@@ -249,6 +263,13 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 		swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	btn.add_child(swatch)
 
+	var frame_tex := ArtKit.select_frame_tex()
+	if frame_tex:
+		var fr := ArtKit.make_texture_rect(frame_tex, Vector2(CELL_W, CELL_H), Vector2.ZERO)
+		fr.name = "SelectFrame"
+		fr.modulate = Color(1, 1, 1, 0.35 if greyed else 0.7)
+		btn.add_child(fr)
+
 	var name_lbl := Label.new()
 	name_lbl.name = "NameLabel"
 	name_lbl.text = _short_name(boss_name)
@@ -381,7 +402,7 @@ func _on_boss_pressed(boss_id: String) -> void:
 
 func _on_back() -> void:
 	if AudioManager:
-		AudioManager.play_sfx("ui_confirm")
+		AudioManager.play_sfx("menu_move")
 	get_tree().change_scene_to_file(CHAR_SELECT)
 
 func _refresh_diff_label(btn: Button = null) -> void:

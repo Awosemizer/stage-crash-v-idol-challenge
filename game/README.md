@@ -21,6 +21,7 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 
 Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome / LevelStaticShadow.
 
+**v0.19:** art+audio pro pass — 8-frame run, boss poses, parallax, hit FX, longer BGM, layered SFX.
 **v0.18:** armaduras GDD — Sonic Slash (Teto), Barrier Pulse (Miku), Counter Guard, hover+ set completo.
 
 **v0.16:** logros (persistentes) + dificultad Hard (+2 daño, i-frames 0.6s), pantalla Logros.

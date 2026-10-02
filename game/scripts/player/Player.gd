@@ -129,6 +129,9 @@ var _tex_run: Texture2D
 var _tex_jump: Texture2D
 var _tex_slide: Texture2D
 var _run_frame := 0
+var _idle_frame := 0
+var _charge_rings: Dictionary = {}
+var _prev_charge_lv := 0
 var _saber_timer := 0.0
 var _saber_cd := 0.0
 var _saber_hit_ids: Dictionary = {}  # instance_id -> true this swing
@@ -589,7 +592,11 @@ func _load_character_sprites() -> void:
 		visual.region_enabled = false
 		if _tex_idle:
 			visual.texture = _tex_idle
+			visual.region_enabled = true
+			visual.region_rect = Rect2(0, 0, 16, 32)
 		visual.modulate = Color.WHITE
+	if _charge_rings.is_empty():
+		_charge_rings = ArtKit.make_charge_aura_layers(self)
 
 
 func _restore_unlocked_weapons() -> void:
@@ -675,6 +682,10 @@ func _swing_saber() -> void:
 		AudioManager.play_sfx("shoot", 0.92)
 	_saber_cd = SABER_COOLDOWN
 	_position_saber()
+	var parent_fx := get_parent()
+	if parent_fx == null:
+		parent_fx = get_tree().current_scene
+	ArtKit.spawn_slash_arc(parent_fx, global_position + Vector2(facing * 8.0, -2.0), facing)
 	saber_hitbox.monitoring = true
 	if saber_shape:
 		saber_shape.disabled = false
@@ -1017,15 +1028,26 @@ func _handle_buster(delta: float) -> void:
 	if Input.is_action_just_pressed("attack"):
 		_charging = true
 		_charge_time = 0.0
+		_prev_charge_lv = 1
 	elif _charging and Input.is_action_pressed("attack"):
 		_charge_time += delta
+		var lv_now := _charge_level_from_time(_charge_time)
+		if lv_now > _prev_charge_lv:
+			if AudioManager:
+				if lv_now >= 3:
+					AudioManager.play_sfx("charge_full")
+				else:
+					AudioManager.play_sfx("charge_tick")
+			_prev_charge_lv = lv_now
 	elif _charging and Input.is_action_just_released("attack"):
 		_fire_buster(_charge_level_from_time(_charge_time))
 		_charging = false
 		_charge_time = 0.0
+		_prev_charge_lv = 0
 	elif not Input.is_action_pressed("attack"):
 		_charging = false
 		_charge_time = 0.0
+		_prev_charge_lv = 0
 
 
 func _charge_level_from_time(t: float) -> int:
@@ -1049,7 +1071,9 @@ func _fire_buster(level: int) -> void:
 	if parent_node == null:
 		parent_node = get_tree().current_scene
 	parent_node.add_child(shot)
-	shot.global_position = global_position + Vector2(facing * SHOT_SPAWN_X, SHOT_SPAWN_Y)
+	var muzzle_pos := global_position + Vector2(facing * SHOT_SPAWN_X, SHOT_SPAWN_Y)
+	shot.global_position = muzzle_pos
+	ArtKit.spawn_muzzle_flash(parent_node, muzzle_pos, facing)
 	if shot.has_method("setup"):
 		shot.setup(facing, level)
 	# Stage Flight arms: +1 damage stub (weapon+)
@@ -1086,6 +1110,8 @@ func _can_slide(on_floor: bool) -> bool:
 func _start_slide() -> void:
 	_is_sliding = true
 	_slide_timer = SLIDE_DURATION
+	if AudioManager:
+		AudioManager.play_sfx("slide")
 	# Encore Guard: legs = longer slide i-frames; torso = hyper armor
 	_invuln = INVULN_SLIDE
 	if _has_encore_legs:
@@ -1132,7 +1158,7 @@ func _do_wall_jump(wall_dir: int) -> void:
 	_coyote = 0.0
 	_jump_buffer = 0.0
 	if AudioManager:
-		AudioManager.play_sfx("jump", 1.08)
+		AudioManager.play_sfx("wall_jump")
 	if _is_sliding:
 		_end_slide()
 
@@ -1186,18 +1212,22 @@ func _update_visual() -> void:
 		visual.texture = _tex_slide
 		visual.position = Vector2(0, 4)
 	elif not is_on_floor() and _tex_jump:
-		visual.region_enabled = false
 		visual.texture = _tex_jump
+		visual.region_enabled = true
+		var jf := 0 if velocity.y < -40.0 else 1
+		visual.region_rect = Rect2(jf * 16, 0, 16, 32)
 		visual.position = Vector2(0, -2)
 	elif moving and is_on_floor() and _tex_run:
 		visual.texture = _tex_run
 		visual.region_enabled = true
-		_run_frame = int(_anim_time * 10.0) % 4
+		_run_frame = int(_anim_time * 12.0) % ArtKit.RUN_FRAMES
 		visual.region_rect = Rect2(_run_frame * 16, 0, 16, 32)
 		visual.position = Vector2(0, -2)
 	elif _tex_idle:
-		visual.region_enabled = false
 		visual.texture = _tex_idle
+		visual.region_enabled = true
+		_idle_frame = int(_anim_time * 2.0) % 2
+		visual.region_rect = Rect2(_idle_frame * 16, 0, 16, 32)
 		visual.position = Vector2(0, -2)
 
 	var base_mod := Color.WHITE
@@ -1246,6 +1276,7 @@ func _update_visual() -> void:
 		base_mod = base_mod.lerp(Color(0.55, 0.85, 1.0, 1.0), 0.45)
 	if _parry_window > 0.0:
 		base_mod = base_mod.lerp(Color(1.0, 0.75, 0.35, 1.0), 0.5)
+	_update_charge_rings(lv)
 	_update_thruster()
 	_update_barrier_visuals()
 
@@ -1604,6 +1635,7 @@ func _fire_sonic_slash() -> void:
 		parent_node = get_tree().current_scene
 	parent_node.add_child(shot)
 	shot.global_position = global_position + Vector2(facing * (SHOT_SPAWN_X + 6.0), SHOT_SPAWN_Y)
+	ArtKit.spawn_slash_arc(parent_node, shot.global_position, facing)
 	if shot.has_method("setup"):
 		shot.setup(facing)
 	print("Player: Sonic Slash")
@@ -1648,3 +1680,26 @@ func _update_barrier_visuals() -> void:
 			_parry_visual.color = Color(1.0, 0.82, 0.3, 0.35 + 0.3 * absf(sin(Time.get_ticks_msec() * 0.04)))
 		else:
 			_parry_visual.visible = false
+
+
+func _update_charge_rings(lv: int) -> void:
+	var inner: Sprite2D = _charge_rings.get("inner") as Sprite2D
+	var outer: Sprite2D = _charge_rings.get("outer") as Sprite2D
+	if inner == null and outer == null:
+		return
+	var show_rings := lv >= 2
+	if inner:
+		inner.visible = show_rings
+		if show_rings:
+			inner.rotation = _anim_time * 4.0
+			inner.modulate = Color(0.5, 0.85, 1.0, 0.55 + 0.25 * absf(sin(_anim_time * 8.0)))
+			inner.scale = Vector2(0.85, 0.95) if lv == 2 else Vector2(1.0, 1.1)
+	if outer:
+		outer.visible = lv >= 3
+		if outer.visible:
+			outer.rotation = -_anim_time * 3.0
+			if lv >= 4:
+				outer.modulate = Color(0.9, 0.45, 1.0, 0.65 + 0.3 * absf(sin(_anim_time * 14.0)))
+			else:
+				outer.modulate = Color(1.0, 0.9, 0.35, 0.6 + 0.3 * absf(sin(_anim_time * 10.0)))
+			outer.scale = Vector2(1.15, 1.25)

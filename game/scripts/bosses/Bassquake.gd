@@ -67,6 +67,8 @@ func activate() -> void:
 	if GameState and GameState.has_method("begin_boss_fight_track"):
 		GameState.begin_boss_fight_track()
 	_active = true
+	if AudioManager and AudioManager.has_method("play_boss_intro"):
+		AudioManager.play_boss_intro()
 	_beat = 0.35
 	_state = State.IDLE
 	_phase = 0
@@ -289,6 +291,9 @@ func _sync_sprite_art(col: Color) -> void:
 	var spr := get_node_or_null("SpriteArt") as Sprite2D
 	if spr == null:
 		return
+	# Attack/tell pose when not idle (IDLE==0 across bosses)
+	var pose := 0 if int(_state) == 0 else 1
+	ArtKit.set_boss_pose(spr, pose)
 	# White/near-white = hit flash
 	if col.r >= 0.95 and col.g >= 0.95 and col.b >= 0.95:
 		spr.modulate = Color(2.2, 2.2, 2.2, 1.0)

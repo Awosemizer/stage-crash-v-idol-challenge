@@ -33,6 +33,13 @@ const SFX_PATHS := {
 	"ui_confirm": "res://audio/sfx/ui_confirm.ogg",
 	"boss_hit": "res://audio/sfx/boss_hit.ogg",
 	"pickup": "res://audio/sfx/pickup.ogg",
+	"slide": "res://audio/sfx/slide.ogg",
+	"wall_jump": "res://audio/sfx/wall_jump.ogg",
+	"charge_tick": "res://audio/sfx/charge_tick.ogg",
+	"charge_full": "res://audio/sfx/charge_full.ogg",
+	"explosion": "res://audio/sfx/explosion.ogg",
+	"menu_move": "res://audio/sfx/menu_move.ogg",
+	"boss_intro": "res://audio/sfx/boss_intro.ogg",
 }
 
 ## Mapeo etapa → BGM id
@@ -147,6 +154,11 @@ func stop_bgm() -> void:
 func play_victory() -> void:
 	## Jingle de victoria (sustituye BGM brevemente).
 	play_bgm("victory", 1.0)
+
+
+func play_boss_intro() -> void:
+	## Sting al activar un jefe (no corta el BGM de etapa).
+	play_sfx("boss_intro")
 
 
 func play_sfx(id: String, pitch: float = 1.0) -> void:

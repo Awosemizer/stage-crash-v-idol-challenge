@@ -154,6 +154,13 @@ func _initialize() -> void:
 		"res://audio/sfx/ui_confirm.ogg",
 		"res://audio/sfx/boss_hit.ogg",
 		"res://audio/sfx/pickup.ogg",
+		"res://audio/sfx/slide.ogg",
+		"res://audio/sfx/wall_jump.ogg",
+		"res://audio/sfx/charge_tick.ogg",
+		"res://audio/sfx/charge_full.ogg",
+		"res://audio/sfx/explosion.ogg",
+		"res://audio/sfx/menu_move.ogg",
+		"res://audio/sfx/boss_intro.ogg",
 ]
 	for p in paths:
 		if not ResourceLoader.exists(p):
@@ -3574,6 +3581,82 @@ func _initialize() -> void:
 			if gs18.has_method("select_miku"):
 				gs18.select_miku()
 		print("OK v0.18 armor ability checks")
+
+	# --- v0.19 art + audio pro pass ---
+	var art19 := [
+		"res://assets/sprites/fx/hit_spark.png",
+		"res://assets/sprites/fx/muzzle.png",
+		"res://assets/sprites/fx/slash_arc.png",
+		"res://assets/sprites/fx/charge_ring.png",
+		"res://assets/sprites/bg/parallax_beatfire_far.png",
+		"res://assets/sprites/bg/parallax_beatfire_mid.png",
+		"res://assets/sprites/ui/panel_chrome.png",
+		"res://assets/sprites/ui/select_frame.png",
+		"res://scripts/art/ParallaxScroller.gd",
+		"res://scripts/art/SpriteBurst.gd",
+	]
+	for a19 in art19:
+		if not ResourceLoader.exists(a19):
+			errors.append("missing v0.19 art: %s" % a19)
+	# Run sheet should be wider (8 frames)
+	var run_img := Image.new()
+	if ResourceLoader.exists("res://assets/sprites/player/miku_run.png"):
+		var rtex = load("res://assets/sprites/player/miku_run.png") as Texture2D
+		if rtex and rtex.get_width() < 128:
+			errors.append("miku_run should be 8 frames (width>=128), got %d" % rtex.get_width())
+		else:
+			print("OK miku_run width=", rtex.get_width() if rtex else -1)
+	# Boss sheet 2 poses
+	if ResourceLoader.exists("res://assets/sprites/bosses/beatfire.png"):
+		var btex = load("res://assets/sprites/bosses/beatfire.png") as Texture2D
+		if btex and btex.get_width() < 48:
+			errors.append("beatfire boss sheet should be 2 poses (width>=48)")
+		else:
+			print("OK beatfire sheet width=", btex.get_width() if btex else -1)
+	# ArtKit helpers
+	var artkit_src := FileAccess.get_file_as_string("res://scripts/art/ArtKit.gd")
+	for needle in ["setup_stage_parallax", "spawn_hit_spark", "spawn_muzzle_flash", "set_boss_pose", "make_charge_aura_layers"]:
+		if needle not in artkit_src:
+			errors.append("ArtKit missing %s" % needle)
+	# AudioManager new APIs
+	var am_src := FileAccess.get_file_as_string("res://scripts/autoload/AudioManager.gd")
+	if "play_boss_intro" not in am_src:
+		errors.append("AudioManager missing play_boss_intro")
+	if "charge_full" not in am_src or "wall_jump" not in am_src:
+		errors.append("AudioManager missing layered SFX ids")
+	# Player uses 8-frame run + rings
+	var psrc19 := FileAccess.get_file_as_string("res://scripts/player/Player.gd")
+	if "ArtKit.RUN_FRAMES" not in psrc19 and "% 8" not in psrc19:
+		# allow either
+		if "ArtKit.RUN_FRAMES" not in psrc19:
+			errors.append("Player should animate 8 run frames")
+	if "spawn_muzzle_flash" not in psrc19:
+		errors.append("Player should spawn muzzle flash")
+	if "_update_charge_rings" not in psrc19:
+		errors.append("Player missing charge ring layers")
+	# Level01 parallax hook
+	var l01 := FileAccess.get_file_as_string("res://scripts/levels/Level01.gd")
+	if "setup_stage_parallax" not in l01:
+		errors.append("Level01 should setup parallax")
+	# Title chrome
+	var title_src := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
+	if "PanelChrome" not in title_src and "panel_chrome" not in title_src:
+		errors.append("TitleScreen should use panel chrome")
+	if "0.19" not in title_src:
+		errors.append("TitleScreen version should mention 0.19")
+	# Boss intro on Beatfire
+	var bf_src := FileAccess.get_file_as_string("res://scripts/bosses/BeatfireMan.gd")
+	if "play_boss_intro" not in bf_src:
+		errors.append("BeatfireMan should play boss intro sting")
+	if "set_boss_pose" not in bf_src:
+		errors.append("BeatfireMan should switch boss poses")
+	# Project version
+	var proj := FileAccess.get_file_as_string("res://project.godot")
+	if 'config/version="0.19.0-proto"' not in proj:
+		errors.append("project.godot version should be 0.19.0-proto")
+	else:
+		print("OK project version 0.19.0-proto")
+	print("OK v0.19 art+audio checks")
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

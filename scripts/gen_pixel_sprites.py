@@ -82,12 +82,18 @@ def draw_player_frame(char: str, pose: str, frame: int = 0) -> Image.Image:
     leg_off = 0
     arm_off = 0
     if pose == "run":
-        bob = 0 if frame % 2 == 0 else 1
-        leg_off = -1 if frame % 2 == 0 else 1
-        arm_off = 1 if frame % 2 == 0 else -1
+        cycle = frame % 8
+        bob = 0 if cycle in (0, 1, 4, 5) else 1
+        leg_table = [-2, -1, 0, 1, 2, 1, 0, -1]
+        arm_table = [1, 1, 0, -1, -1, -1, 0, 1]
+        leg_off = leg_table[cycle]
+        arm_off = arm_table[cycle]
     elif pose == "jump":
-        bob = -1
-        leg_off = 0
+        bob = -2 if frame % 2 == 0 else -1
+        leg_off = -1 if frame % 2 == 0 else 1
+    elif pose == "idle":
+        bob = 0 if frame % 2 == 0 else 0
+        # blink on odd idle frame handled below via eye skip
     elif pose == "slide":
         # drawn differently — wider low body
         return draw_slide(char)
@@ -118,11 +124,15 @@ def draw_player_frame(char: str, pose: str, frame: int = 0) -> Image.Image:
 
     # head
     fill_rect(img, 5, y0 + 3, 10, y0 + 9, skin)
-    # eyes
-    px(img, 6, y0 + 6, eye)
-    px(img, 9, y0 + 6, eye)
-    px(img, 6, y0 + 5, (255, 255, 255, 200))
-    px(img, 9, y0 + 5, (255, 255, 255, 200))
+    # eyes (blink on idle odd frames)
+    if pose == "idle" and frame % 2 == 1:
+        px(img, 6, y0 + 6, eye)
+        px(img, 9, y0 + 6, eye)
+    else:
+        px(img, 6, y0 + 6, eye)
+        px(img, 9, y0 + 6, eye)
+        px(img, 6, y0 + 5, (255, 255, 255, 200))
+        px(img, 9, y0 + 5, (255, 255, 255, 200))
     # headset / mic
     if char == "miku":
         fill_rect(img, 4, y0 + 5, 4, y0 + 8, (80, 90, 100, 255))
@@ -196,14 +206,24 @@ def draw_slide(char: str) -> Image.Image:
 
 def gen_players() -> None:
     for char in ("miku", "teto"):
-        save(draw_player_frame(char, "idle"), f"player/{char}_idle.png")
-        # run sheet 4 frames × 16
-        sheet = new_img(64, 32)
-        for f in range(4):
+        # idle 2-frame blink sheet
+        idle_sheet = new_img(32, 32)
+        for f in range(2):
+            fr = draw_player_frame(char, "idle", f)
+            idle_sheet.paste(fr, (f * 16, 0), fr)
+        save(idle_sheet, f"player/{char}_idle.png")
+        # run sheet 8 frames × 16
+        sheet = new_img(128, 32)
+        for f in range(8):
             fr = draw_player_frame(char, "run", f)
             sheet.paste(fr, (f * 16, 0), fr)
         save(sheet, f"player/{char}_run.png")
-        save(draw_player_frame(char, "jump"), f"player/{char}_jump.png")
+        # jump 2 poses (ascent / apex)
+        jump_sheet = new_img(32, 32)
+        for f in range(2):
+            fr = draw_player_frame(char, "jump", f)
+            jump_sheet.paste(fr, (f * 16, 0), fr)
+        save(jump_sheet, f"player/{char}_jump.png")
         save(draw_slide(char), f"player/{char}_slide.png")
 
 
@@ -406,17 +426,45 @@ def draw_boss(name: str, w: int = 24, h: int = 36) -> Image.Image:
     return img
 
 
+def draw_boss_attack(name: str, w: int = 24, h: int = 36) -> Image.Image:
+    """Attack / telegraph pose — arms raised, motif exaggerated."""
+    img = draw_boss(name, w, h)
+    spec = BOSS_SPECS[name]
+    trim, accent = spec["trim"], spec["accent"]
+    # raise arms
+    fill_rect(img, 1, 6, 5, 14, spec["body"])
+    fill_rect(img, 18, 6, 22, 14, spec["body"])
+    fill_rect(img, 1, 5, 4, 7, accent)
+    fill_rect(img, 19, 5, 22, 7, accent)
+    # glow core
+    disc(img, 12, 18, 4, accent)
+    # telegraph sparks
+    for x, y in [(3, 4), (20, 4), (0, 16), (23, 16), (11, 1)]:
+        px(img, x, y, trim)
+    return img
+
+
 def gen_bosses() -> None:
     for name in BOSS_SPECS:
-        save(draw_boss(name), f"bosses/{name}.png")
-        # UI portrait 32x32 crop/scale of boss
+        idle = draw_boss(name)
+        atk = draw_boss_attack(name)
+        sheet = new_img(48, 36)
+        sheet.paste(idle, (0, 0), idle)
+        sheet.paste(atk, (24, 0), atk)
+        save(sheet, f"bosses/{name}.png")
+        # UI portrait 32x32 from idle
         big = draw_boss(name, 32, 40)
-        # center crop-ish to 32x32
         portrait = new_img(32, 32)
         portrait.paste(big, (4, -4), big)
-        # frame
         outline_rect(portrait, 0, 0, 31, 31, (255, 255, 255, 180))
+        # inner accent frame
+        outline_rect(portrait, 1, 1, 30, 30, spec_accent_frame(name))
         save(portrait, f"ui/portrait_{name}.png")
+
+
+def spec_accent_frame(name: str):
+    c = BOSS_SPECS[name]["accent"]
+    return (c[0], c[1], c[2], 200)
 
 
 # ===================== TILES =====================
@@ -554,6 +602,147 @@ def gen_ui() -> None:
     save(logo, "ui/synthocorp_mark.png")
 
 
+def gen_fx() -> None:
+    # hit spark 4 frames × 16
+    sheet = new_img(64, 16)
+    cols = [(255, 255, 220, 255), (255, 200, 80, 255), (255, 120, 40, 255), (200, 80, 255, 255)]
+    for f in range(4):
+        fr = new_img(16, 16)
+        c = cols[f]
+        r = 1 + f
+        disc(fr, 8, 8, r, c)
+        for ang in range(8):
+            ox = int(8 + (3 + f) * (1 if ang % 2 == 0 else -1) * (1 if ang < 4 else 0.5))
+            oy = int(8 + (3 + f) * (1 if (ang // 2) % 2 == 0 else -1) * (0.5 if ang < 4 else 1))
+            px(fr, ox, oy, c)
+            px(fr, ox + 1, oy, (255, 255, 255, 180))
+        sheet.paste(fr, (f * 16, 0), fr)
+    save(sheet, "fx/hit_spark.png")
+
+    # muzzle flash 3 frames
+    muzzle = new_img(48, 16)
+    for f in range(3):
+        fr = new_img(16, 16)
+        c = (180, 230, 255, 255) if f < 2 else (255, 240, 120, 255)
+        fill_rect(fr, 2, 6, 14 - f, 9, c)
+        fill_rect(fr, 10 - f, 4, 14, 11, (255, 255, 255, 220))
+        for y in (5, 10):
+            px(fr, 14, y, c)
+        muzzle.paste(fr, (f * 16, 0), fr)
+    save(muzzle, "fx/muzzle.png")
+
+    # slash arc 3 frames (24x24)
+    slash = new_img(72, 24)
+    for f in range(3):
+        fr = new_img(24, 24)
+        c = (255, 120, 160, 255) if f != 1 else (255, 230, 120, 255)
+        # crescent
+        for y in range(4, 20):
+            x0 = 4 + abs(y - 12) // 2 + f
+            x1 = 18 - abs(y - 12) // 3 + f
+            for x in range(x0, min(x1, 23)):
+                px(fr, x, y, c if (x + y + f) % 2 == 0 else (255, 255, 255, 200))
+        slash.paste(fr, (f * 24, 0), fr)
+    save(slash, "fx/slash_arc.png")
+
+    # charge aura rings (inner/outer) 2×32
+    rings = new_img(64, 32)
+    for f, col in enumerate([(80, 200, 255, 180), (255, 220, 80, 200)]):
+        fr = new_img(32, 32)
+        for y in range(32):
+            for x in range(32):
+                dx, dy = x - 16, y - 16
+                d2 = dx * dx + dy * dy
+                if 10 * 10 <= d2 <= 14 * 14 or (f == 1 and 7 * 7 <= d2 <= 9 * 9):
+                    px(fr, x, y, col)
+                if d2 <= 3 * 3:
+                    px(fr, x, y, (255, 255, 255, 90))
+        rings.paste(fr, (f * 32, 0), fr)
+    save(rings, "fx/charge_ring.png")
+
+
+def gen_parallax() -> None:
+    themes = {
+        "beatfire": [(40, 12, 18), (90, 30, 25), (180, 70, 40)],
+        "echo_wind": [(10, 30, 40), (40, 90, 80), (140, 210, 190)],
+        "neon_volt": [(20, 12, 40), (60, 40, 20), (220, 220, 60)],
+        "glitch_ice": [(12, 24, 40), (50, 110, 150), (180, 230, 250)],
+        "chorus_bloom": [(20, 35, 22), (80, 40, 70), (200, 120, 170)],
+        "bassquake": [(30, 22, 12), (80, 55, 25), (180, 130, 50)],
+        "metronome": [(18, 18, 28), (50, 50, 70), (180, 185, 210)],
+        "static_shadow": [(12, 10, 22), (40, 30, 60), (140, 120, 180)],
+        "fortress": [(15, 8, 28), (50, 25, 70), (120, 60, 180)],
+        "default": [(20, 15, 25), (50, 35, 45), (120, 90, 80)],
+    }
+    for theme, cols in themes.items():
+        far = new_img(128, 64)
+        fill_rect(far, 0, 0, 127, 63, (*cols[0], 255))
+        # distant silhouettes
+        for i, h in enumerate([20, 28, 18, 32, 22, 26, 16, 30]):
+            x0 = i * 16
+            fill_rect(far, x0, 64 - h, x0 + 14, 63, (*cols[1], 220))
+            # windows
+            if h > 22:
+                for wy in range(64 - h + 4, 60, 6):
+                    px(far, x0 + 4, wy, (*cols[2], 180))
+                    px(far, x0 + 9, wy, (*cols[2], 180))
+        save(far, f"bg/parallax_{theme}_far.png")
+
+        mid = new_img(160, 64)
+        fill_rect(mid, 0, 40, 159, 63, (*cols[1], 0))  # transparent upper
+        for i in range(10):
+            x0 = i * 16
+            h = 18 + (i * 5) % 14
+            fill_rect(mid, x0, 64 - h, x0 + 12, 63, (*cols[1], 200))
+            fill_rect(mid, x0 + 2, 64 - h + 2, x0 + 5, 64 - h + 5, (*cols[2], 160))
+        # floating motifs
+        for x, y in [(20, 20), (70, 12), (120, 18), (145, 28)]:
+            disc(mid, x, y, 2, (*cols[2], 150))
+        save(mid, f"bg/parallax_{theme}_mid.png")
+
+
+def gen_ui_chrome() -> None:
+    # title panel chrome
+    panel = new_img(128, 48)
+    fill_rect(panel, 0, 0, 127, 47, (18, 14, 32, 255))
+    outline_rect(panel, 0, 0, 127, 47, (57, 230, 240, 255))
+    outline_rect(panel, 2, 2, 125, 45, (230, 70, 85, 200))
+    for x in range(8, 120, 8):
+        px(panel, x, 4, (255, 255, 255, 120))
+    save(panel, "ui/panel_chrome.png")
+
+    # boss select cell frame
+    frame = new_img(32, 32)
+    fill_rect(frame, 0, 0, 31, 31, (0, 0, 0, 0))
+    outline_rect(frame, 0, 0, 31, 31, (255, 255, 255, 200))
+    outline_rect(frame, 1, 1, 30, 30, (100, 220, 255, 160))
+    px(frame, 0, 0, (255, 220, 80, 255))
+    px(frame, 31, 0, (255, 220, 80, 255))
+    px(frame, 0, 31, (255, 220, 80, 255))
+    px(frame, 31, 31, (255, 220, 80, 255))
+    save(frame, "ui/select_frame.png")
+
+    # richer title banner
+    banner = new_img(224, 40)
+    fill_rect(banner, 0, 0, 223, 39, (10, 8, 24, 255))
+    fill_rect(banner, 0, 0, 223, 3, (57, 230, 240, 255))
+    fill_rect(banner, 0, 36, 223, 39, (230, 70, 85, 255))
+    # scanlines
+    for y in range(6, 34, 2):
+        for x in range(0, 224, 3):
+            px(banner, x, y, (40, 30, 60, 80))
+    # stars
+    for x, y in [(12, 12), (36, 22), (64, 10), (100, 18), (140, 12), (170, 24), (200, 14)]:
+        px(banner, x, y, (255, 255, 255, 220))
+        px(banner, x + 1, y, (180, 220, 255, 140))
+    fill_rect(banner, 24, 10, 36, 28, (57, 230, 240, 210))
+    fill_rect(banner, 188, 10, 200, 28, (230, 70, 85, 210))
+    # center gem
+    disc(banner, 112, 20, 5, (180, 80, 255, 255))
+    disc(banner, 112, 20, 2, (255, 255, 255, 255))
+    save(banner, "ui/title_banner.png")
+
+
 def main() -> None:
     ROOT.mkdir(parents=True, exist_ok=True)
     gen_players()
@@ -561,6 +750,9 @@ def main() -> None:
     gen_bosses()
     gen_tiles()
     gen_ui()
+    gen_ui_chrome()
+    gen_fx()
+    gen_parallax()
     print("DONE sprites →", ROOT)
 
 

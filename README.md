@@ -1,6 +1,7 @@
 # Stage Crash: V-Idol Challenge
 
 
+**v0.19:** art+audio pro pass — 8-frame run, boss poses, parallax, hit FX, longer BGM, layered SFX.
 **v0.17:** pixel-art placeholders (player Miku/Teto frames, bosses, tiles, Met-Beat, UI portraits).
 
 **v0.16:** logros (pantalla Logros, toast) + Hard (+2 daño, i-frames 0.6s).
@@ -10,7 +11,7 @@ Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.14.0-proto`
+- Versión demo: `0.19.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)
@@ -49,7 +50,7 @@ En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
 
 Archivo listo (debug, un solo archivo, ~27 MB):
 
-**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.17 — pixel art pass)
+**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.19 — art+audio pro)
 
 1. Descarga el APK desde este repo (botón Raw / Download).
 2. En el teléfono: permite **orígenes desconocidos** / instalar apps desconocidas para el navegador o gestor de archivos.

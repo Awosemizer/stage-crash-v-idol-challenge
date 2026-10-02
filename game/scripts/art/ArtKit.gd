@@ -132,6 +132,7 @@ static func skin_boss_visual(visual: CanvasItem, boss_id: String, hide_legacy_pa
 	var existing := parent.get_node_or_null("SpriteArt") as Sprite2D
 	if existing:
 		existing.texture = tex
+		set_boss_pose(existing, 0)
 		return existing
 	var spr := Sprite2D.new()
 	spr.name = "SpriteArt"
@@ -140,6 +141,7 @@ static func skin_boss_visual(visual: CanvasItem, boss_id: String, hide_legacy_pa
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	# Boss ColorRects are typically offset_top=-36 bottom=0 → feet at y=0, center ~-18
 	spr.position = Vector2(0, -18)
+	set_boss_pose(spr, 0)
 	parent.add_child(spr)
 	parent.move_child(spr, 0)
 	if visual is CanvasItem:
@@ -185,3 +187,176 @@ static func make_texture_rect(tex: Texture2D, size: Vector2, pos: Vector2 = Vect
 	tr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return tr
+
+
+const BOSS_FRAME_W := 24
+const BOSS_FRAME_H := 36
+const RUN_FRAMES := 8
+
+
+static func set_boss_pose(sprite: Sprite2D, pose: int = 0) -> void:
+	## pose 0 = idle, 1 = attack/telegraph (sheet is 48×36).
+	if sprite == null or sprite.texture == null:
+		return
+	sprite.region_enabled = true
+	var p := clampi(pose, 0, 1)
+	sprite.region_rect = Rect2(p * BOSS_FRAME_W, 0, BOSS_FRAME_W, BOSS_FRAME_H)
+
+
+static func setup_stage_parallax(parallax_root: Node2D, theme: String, level_width: float) -> void:
+	## Adds far/mid scrolling layers under ParallaxBG. Safe to call once per level.
+	if parallax_root == null:
+		return
+	if parallax_root.get_node_or_null("ParallaxFar") != null:
+		return
+	var t := theme
+	var far_path := "res://assets/sprites/bg/parallax_%s_far.png" % t
+	var mid_path := "res://assets/sprites/bg/parallax_%s_mid.png" % t
+	if not ResourceLoader.exists(far_path):
+		far_path = "res://assets/sprites/bg/parallax_default_far.png"
+		mid_path = "res://assets/sprites/bg/parallax_default_mid.png"
+	var far_tex := load_tex(far_path)
+	var mid_tex := load_tex(mid_path)
+	var scroller := ParallaxScroller.new()
+	scroller.name = "ParallaxScroller"
+	parallax_root.add_child(scroller)
+	parallax_root.move_child(scroller, 0)
+
+	if far_tex:
+		var far := _make_tiled_bg_layer("ParallaxFar", far_tex, level_width, -8)
+		scroller.add_child(far)
+		scroller.far_layer = far
+	if mid_tex:
+		var mid := _make_tiled_bg_layer("ParallaxMid", mid_tex, level_width, -4)
+		scroller.add_child(mid)
+		scroller.mid_layer = mid
+	scroller.level_width = level_width
+
+
+static func _make_tiled_bg_layer(layer_name: String, tex: Texture2D, level_width: float, z: int) -> Node2D:
+	var holder := Node2D.new()
+	holder.name = layer_name
+	holder.z_index = z
+	var tw := float(tex.get_width())
+	var tiles := maxi(2, int(ceil((level_width + 128.0) / tw)) + 1)
+	for i in tiles:
+		var spr := Sprite2D.new()
+		spr.texture = tex
+		spr.centered = false
+		spr.position = Vector2(i * tw - 64.0, 160.0 - float(tex.get_height()))
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		spr.modulate = Color(1, 1, 1, 0.85)
+		holder.add_child(spr)
+	return holder
+
+
+static func spawn_hit_spark(parent: Node, global_pos: Vector2, scale_mul: float = 1.0) -> void:
+	if parent == null:
+		return
+	var tex := load_tex("res://assets/sprites/fx/hit_spark.png")
+	if tex == null:
+		return
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	spr.region_enabled = true
+	spr.region_rect = Rect2(0, 0, 16, 16)
+	spr.centered = true
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	spr.z_index = 20
+	spr.scale = Vector2(scale_mul, scale_mul)
+	parent.add_child(spr)
+	spr.global_position = global_pos
+	var anim := SpriteBurst.new()
+	anim.name = "HitSparkAnim"
+	anim.target = spr
+	anim.frame_w = 16
+	anim.frame_h = 16
+	anim.frames = 4
+	anim.fps = 18.0
+	anim.lifetime = 0.22
+	spr.add_child(anim)
+
+
+static func spawn_muzzle_flash(parent: Node, global_pos: Vector2, facing: int) -> void:
+	if parent == null:
+		return
+	var tex := load_tex("res://assets/sprites/fx/muzzle.png")
+	if tex == null:
+		return
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	spr.region_enabled = true
+	spr.region_rect = Rect2(0, 0, 16, 16)
+	spr.centered = true
+	spr.flip_h = facing < 0
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	spr.z_index = 15
+	parent.add_child(spr)
+	spr.global_position = global_pos
+	var anim := SpriteBurst.new()
+	anim.target = spr
+	anim.frame_w = 16
+	anim.frame_h = 16
+	anim.frames = 3
+	anim.fps = 24.0
+	anim.lifetime = 0.12
+	spr.add_child(anim)
+
+
+static func spawn_slash_arc(parent: Node, global_pos: Vector2, facing: int) -> void:
+	if parent == null:
+		return
+	var tex := load_tex("res://assets/sprites/fx/slash_arc.png")
+	if tex == null:
+		return
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	spr.region_enabled = true
+	spr.region_rect = Rect2(0, 0, 24, 24)
+	spr.centered = true
+	spr.flip_h = facing < 0
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	spr.z_index = 14
+	parent.add_child(spr)
+	spr.global_position = global_pos + Vector2(facing * 10.0, -4.0)
+	var anim := SpriteBurst.new()
+	anim.target = spr
+	anim.frame_w = 24
+	anim.frame_h = 24
+	anim.frames = 3
+	anim.fps = 20.0
+	anim.lifetime = 0.16
+	spr.add_child(anim)
+
+
+static func make_charge_aura_layers(parent: Node2D) -> Dictionary:
+	## Returns {inner: Sprite2D, outer: Sprite2D} layered charge rings.
+	var tex := load_tex("res://assets/sprites/fx/charge_ring.png")
+	var out := {"inner": null, "outer": null}
+	if tex == null or parent == null:
+		return out
+	for i in 2:
+		var spr := Sprite2D.new()
+		spr.name = "ChargeRing%d" % i
+		spr.texture = tex
+		spr.region_enabled = true
+		spr.region_rect = Rect2(i * 32, 0, 32, 32)
+		spr.centered = true
+		spr.position = Vector2(0, -8)
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		spr.z_index = 5
+		spr.visible = false
+		parent.add_child(spr)
+		if i == 0:
+			out["inner"] = spr
+		else:
+			out["outer"] = spr
+	return out
+
+
+static func panel_chrome_tex() -> Texture2D:
+	return load_tex("res://assets/sprites/ui/panel_chrome.png")
+
+
+static func select_frame_tex() -> Texture2D:
+	return load_tex("res://assets/sprites/ui/select_frame.png")
