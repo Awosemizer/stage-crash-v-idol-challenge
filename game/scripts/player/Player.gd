@@ -386,6 +386,27 @@ func get_weapon_id() -> String:
 	return str(get_current_weapon().get("id", WEAPON_BUSTER))
 
 
+func get_owned_weapons() -> Array:
+	## Snapshot for pause weapon strip / HUD.
+	var out: Array = []
+	for w in _weapons:
+		out.append({
+			"id": str(w.get("id", "")),
+			"name": str(w.get("name", "")),
+			"ammo": int(w.get("ammo", -1)),
+			"max_ammo": int(w.get("max_ammo", -1)),
+		})
+	return out
+
+
+func select_weapon(weapon_id: String) -> void:
+	_select_weapon_by_id(weapon_id)
+
+
+func cycle_weapon(dir: int) -> void:
+	_cycle_weapon(dir)
+
+
 func grant_weapon(weapon_id: String) -> void:
 	## Otorga arma robada de jefe (… / Tempo Spike / Static Veil).
 	var gs := _game_state()

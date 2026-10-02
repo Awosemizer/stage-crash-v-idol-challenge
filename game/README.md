@@ -21,6 +21,8 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 
 Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome / LevelStaticShadow.
 
+**v0.23:** Touch weapon switch — prev/next buttons (SafeArea, upper-right) + pause weapon strip; gamepad LB/RB cycle weapons, LT/RT slide.
+
 **v0.22:** Landscape UI polish — SafeArea margins, ≥28–44px touch buttons, BossSelect 3×3 fits 16:9/20:9, readable HUD, touch pause menu.
 
 **v0.21:** Touch-playability pass across all 8 stages + fortress (sealed pits, fair gaps, slide clearance, arena pads, camera/spawn).

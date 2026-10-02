@@ -3654,8 +3654,8 @@ func _initialize() -> void:
 
 	# --- v0.20 landscape + Beatfire touch playability ---
 	var proj := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.22.0-proto"' not in proj and 'config/version="0.21.0-proto"' not in proj and 'config/version="0.20.0-proto"' not in proj:
-		errors.append("project.godot version should be 0.22.0-proto")
+	if 'config/version="0.23.0-proto"' not in proj and 'config/version="0.22.0-proto"' not in proj and 'config/version="0.21.0-proto"' not in proj:
+		errors.append("project.godot version should be 0.23.0-proto")
 	else:
 		print("OK project version present")
 	if 'window/stretch/mode="canvas_items"' not in proj:
@@ -3803,6 +3803,72 @@ func _initialize() -> void:
 	else:
 		print("OK HUD touch reserve")
 	print("OK v0.22 landscape UI polish")
+
+	# --- v0.23 touch weapon switching ---
+	var touch_w := FileAccess.get_file_as_string("res://scripts/ui/TouchControls.gd")
+	if "WeaponPrevBtn" not in touch_w or "WeaponNextBtn" not in touch_w:
+		errors.append("TouchControls should expose WeaponPrevBtn / WeaponNextBtn")
+	else:
+		print("OK TouchControls weapon prev/next buttons")
+	if "weapon_prev" not in touch_w or "weapon_next" not in touch_w:
+		errors.append("TouchControls should wire weapon_prev / weapon_next")
+	else:
+		print("OK TouchControls weapon actions")
+	if "JOY_BUTTON_LEFT_SHOULDER" not in touch_w or "weapon_prev" not in touch_w:
+		errors.append("TouchControls should bind LB to weapon_prev")
+	else:
+		print("OK gamepad LB/RB weapon switch")
+	var hud_w := FileAccess.get_file_as_string("res://scripts/ui/HUD.gd")
+	if "WeaponStrip" not in hud_w or "_rebuild_weapon_strip" not in hud_w:
+		errors.append("HUD pause should have tap-to-select WeaponStrip")
+	else:
+		print("OK HUD pause weapon strip")
+	var pl_w := FileAccess.get_file_as_string("res://scripts/player/Player.gd")
+	if "func get_owned_weapons" not in pl_w or "func select_weapon" not in pl_w:
+		errors.append("Player should expose get_owned_weapons / select_weapon")
+	else:
+		print("OK Player weapon list/select APIs")
+	# Live instantiate: weapon buttons exist + joy bindings on weapon actions
+	var touch_ps: PackedScene = load("res://scenes/ui/TouchControls.tscn")
+	if touch_ps:
+		var touch_live = touch_ps.instantiate()
+		root.add_child(touch_live)
+		await process_frame
+		var root_c = touch_live.get_node_or_null("Root")
+		if root_c == null:
+			errors.append("TouchControls Root missing for weapon buttons")
+		else:
+			if root_c.get_node_or_null("WeaponPrevBtn") == null or root_c.get_node_or_null("WeaponNextBtn") == null:
+				errors.append("TouchControls Root missing WeaponPrevBtn/WeaponNextBtn nodes")
+			else:
+				print("OK TouchControls live weapon button nodes")
+		for wa in ["weapon_prev", "weapon_next"]:
+			var has_joy_w := false
+			if InputMap.has_action(wa):
+				for e in InputMap.action_get_events(wa):
+					if e is InputEventJoypadButton:
+						has_joy_w = true
+						break
+			if not has_joy_w:
+				errors.append("No joypad binding on action: " + wa)
+			else:
+				print("OK joypad bound: ", wa)
+		touch_live.queue_free()
+		await process_frame
+	var hud_ps2: PackedScene = load("res://scenes/ui/HUD.tscn")
+	if hud_ps2:
+		var hud_live = hud_ps2.instantiate()
+		root.add_child(hud_live)
+		await process_frame
+		var hroot = hud_live.get_node_or_null("Root")
+		var pp = hroot.get_node_or_null("PausePanel") if hroot else null
+		if pp == null or pp.get_node_or_null("WeaponStrip") == null:
+			errors.append("HUD PausePanel missing WeaponStrip")
+		else:
+			print("OK HUD live WeaponStrip node")
+		hud_live.queue_free()
+		await process_frame
+	print("OK v0.23 touch weapon switching")
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

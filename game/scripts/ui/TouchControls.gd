@@ -1,7 +1,8 @@
 extends CanvasLayer
-## Touch HUD overlay — virtual 8-dir stick + Jump / Attack / Slide.
+## Touch HUD overlay — virtual 8-dir stick + Jump / Attack / Slide + weapon prev/next.
 ## Presses the same InputMap actions Player.gd already reads
-## (move_left/right/up/down, jump, attack, slide). Also binds joypad.
+## (move_left/right/up/down, jump, attack, slide, weapon_prev, weapon_next).
+## Also binds joypad (GDD: LB/RB=weapon, LT/RT=slide).
 ## Layout uses SafeArea insets so notches / bezels don't eat controls.
 ## Sized for phone landscape (16:9 / 20:9) with canvas_items + expand.
 
@@ -20,7 +21,11 @@ const KNOB_R := 16.0
 const BTN_JUMP := 34.0
 const BTN_ATTACK := 30.0
 const BTN_SLIDE := 24.0
+const BTN_WEAPON := 22.0
 const CLUSTER_GAP := 8.0
+const WEAPON_GAP := 6.0
+## Keep weapon switch clear of pause (28) + armor row (~15) + margin.
+const WEAPON_TOP_CLEAR := 48.0
 
 var _root: Control
 var _stick_base: Panel
@@ -28,9 +33,13 @@ var _stick_knob: Panel
 var _btn_jump: Panel
 var _btn_attack: Panel
 var _btn_slide: Panel
+var _btn_wprev: Panel
+var _btn_wnext: Panel
 var _lbl_a: Label
 var _lbl_b: Label
 var _lbl_s: Label
+var _lbl_wp: Label
+var _lbl_wn: Label
 
 var _stick_touch_idx := -1
 var _stick_center := Vector2.ZERO
@@ -58,12 +67,21 @@ func _exit_tree() -> void:
 
 
 func _setup_joypad_bindings() -> void:
-	# GDD: A=jump · B/X=attack · LB/RB=slide · stick/D-pad=move
+	# GDD: A=jump · B/X=attack · LT/RT=slide · LB/RB=weapon · stick/D-pad=move
+	# Drop legacy shoulder→slide bindings from older builds.
+	_remove_joy_button("slide", JOY_BUTTON_LEFT_SHOULDER)
+	_remove_joy_button("slide", JOY_BUTTON_RIGHT_SHOULDER)
 	_add_joy_button("jump", JOY_BUTTON_A)
 	_add_joy_button("attack", JOY_BUTTON_B)
 	_add_joy_button("attack", JOY_BUTTON_X)
-	_add_joy_button("slide", JOY_BUTTON_LEFT_SHOULDER)
-	_add_joy_button("slide", JOY_BUTTON_RIGHT_SHOULDER)
+	# Shoulders = weapon switch (not slide)
+	_add_joy_button("weapon_prev", JOY_BUTTON_LEFT_SHOULDER)
+	_add_joy_button("weapon_next", JOY_BUTTON_RIGHT_SHOULDER)
+	# Triggers = slide
+	_add_joy_axis("slide", JOY_AXIS_TRIGGER_LEFT, 1.0)
+	_add_joy_axis("slide", JOY_AXIS_TRIGGER_RIGHT, 1.0)
+	# Stick click as extra slide ("L" in GDD)
+	_add_joy_button("slide", JOY_BUTTON_LEFT_STICK)
 	_add_joy_button("move_up", JOY_BUTTON_DPAD_UP)
 	_add_joy_button("move_down", JOY_BUTTON_DPAD_DOWN)
 	_add_joy_button("move_left", JOY_BUTTON_DPAD_LEFT)
@@ -72,8 +90,6 @@ func _setup_joypad_bindings() -> void:
 	_add_joy_axis("move_right", JOY_AXIS_LEFT_X, 1.0)
 	_add_joy_axis("move_up", JOY_AXIS_LEFT_Y, -1.0)
 	_add_joy_axis("move_down", JOY_AXIS_LEFT_Y, 1.0)
-	_add_joy_axis("slide", JOY_AXIS_TRIGGER_LEFT, 1.0)
-	_add_joy_axis("slide", JOY_AXIS_TRIGGER_RIGHT, 1.0)
 
 
 func _add_joy_button(action: StringName, button: int) -> void:
@@ -85,6 +101,14 @@ func _add_joy_button(action: StringName, button: int) -> void:
 	var ev := InputEventJoypadButton.new()
 	ev.button_index = button
 	InputMap.action_add_event(action, ev)
+
+
+func _remove_joy_button(action: StringName, button: int) -> void:
+	if not InputMap.has_action(action):
+		return
+	for e in InputMap.action_get_events(action):
+		if e is InputEventJoypadButton and (e as InputEventJoypadButton).button_index == button:
+			InputMap.action_erase_event(action, e)
 
 
 func _add_joy_axis(action: StringName, axis: int, axis_value: float) -> void:
@@ -136,10 +160,25 @@ func _build_ui() -> void:
 	_root.add_child(_btn_slide)
 	_lbl_s = _make_btn_label(_btn_slide, "SL")
 
+	# Weapon prev/next — small, upper-right (away from jump/attack cluster)
+	_btn_wprev = _make_round_panel(Color(0.25, 0.55, 0.75, 1.0))
+	_btn_wprev.name = "WeaponPrevBtn"
+	_btn_wprev.mouse_filter = Control.MOUSE_FILTER_STOP
+	_root.add_child(_btn_wprev)
+	_lbl_wp = _make_btn_label(_btn_wprev, "<")
+
+	_btn_wnext = _make_round_panel(Color(0.25, 0.55, 0.75, 1.0))
+	_btn_wnext.name = "WeaponNextBtn"
+	_btn_wnext.mouse_filter = Control.MOUSE_FILTER_STOP
+	_root.add_child(_btn_wnext)
+	_lbl_wn = _make_btn_label(_btn_wnext, ">")
+
 	_stick_base.gui_input.connect(_on_stick_gui_input)
 	_btn_jump.gui_input.connect(_on_button_gui_input.bind("jump", _btn_jump))
 	_btn_attack.gui_input.connect(_on_button_gui_input.bind("attack", _btn_attack))
 	_btn_slide.gui_input.connect(_on_button_gui_input.bind("slide", _btn_slide))
+	_btn_wprev.gui_input.connect(_on_button_gui_input.bind("weapon_prev", _btn_wprev))
+	_btn_wnext.gui_input.connect(_on_button_gui_input.bind("weapon_next", _btn_wnext))
 
 
 func _make_round_panel(col: Color) -> Panel:
@@ -211,6 +250,18 @@ func _layout() -> void:
 		minf(_btn_jump.position.y + j - s, bottom - s)
 	)
 
+	# Weapon prev/next — upper-right, clear of pause/armor and of jump/attack
+	var w := BTN_WEAPON * 2.0
+	_btn_wnext.size = Vector2(w, w)
+	_btn_wprev.size = Vector2(w, w)
+	var weapon_y := top + WEAPON_TOP_CLEAR
+	# Stay well above the attack cluster
+	var attack_top := minf(_btn_jump.position.y, _btn_attack.position.y)
+	weapon_y = minf(weapon_y, attack_top - w - 16.0)
+	weapon_y = maxf(weapon_y, top)
+	_btn_wnext.position = Vector2(right - w, weapon_y)
+	_btn_wprev.position = Vector2(right - w * 2.0 - WEAPON_GAP, weapon_y)
+
 	# Keep labels readable
 	if _lbl_a:
 		_lbl_a.add_theme_font_size_override("font_size", 10)
@@ -218,6 +269,10 @@ func _layout() -> void:
 		_lbl_b.add_theme_font_size_override("font_size", 10)
 	if _lbl_s:
 		_lbl_s.add_theme_font_size_override("font_size", 8)
+	if _lbl_wp:
+		_lbl_wp.add_theme_font_size_override("font_size", 12)
+	if _lbl_wn:
+		_lbl_wn.add_theme_font_size_override("font_size", 12)
 
 
 func _reset_knob() -> void:

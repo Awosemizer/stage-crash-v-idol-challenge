@@ -44,6 +44,9 @@ var _weapon_ammo := -1
 var _weapon_max_ammo := -1
 var _weapon_id := "buster"
 var _weakness_label: Label = null
+var _weapon_strip: HFlowContainer = null
+var _weapon_strip_title: Label = null
+var _weapon_strip_btns: Array = []
 
 
 func _ready() -> void:
@@ -289,6 +292,22 @@ func _build_ui() -> void:
 	_quit_btn.pressed.connect(_quit_to_boss_select)
 	_pause_panel.add_child(_quit_btn)
 
+	_weapon_strip_title = Label.new()
+	_weapon_strip_title.name = "WeaponStripTitle"
+	_weapon_strip_title.text = "Armas"
+	_weapon_strip_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_weapon_strip_title.add_theme_font_size_override("font_size", 10)
+	_weapon_strip_title.modulate = Color(0.75, 0.9, 1.0, 0.95)
+	_weapon_strip_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pause_panel.add_child(_weapon_strip_title)
+
+	_weapon_strip = HFlowContainer.new()
+	_weapon_strip.name = "WeaponStrip"
+	_weapon_strip.process_mode = Node.PROCESS_MODE_ALWAYS
+	_weapon_strip.add_theme_constant_override("h_separation", 4)
+	_weapon_strip.add_theme_constant_override("v_separation", 4)
+	_pause_panel.add_child(_weapon_strip)
+
 
 func _make_panel(col: Color) -> Panel:
 	var p := Panel.new()
@@ -355,20 +374,25 @@ func _layout() -> void:
 	if _weakness_label and _weakness_label.position.y + 10.0 > max_hud_bottom:
 		_weakness_label.position.y = max_hud_bottom - 12.0
 
-	# Centered pause panel — large touch targets
-	var pw := minf(220.0, area.size.x * 0.85)
+	# Centered pause panel — large touch targets + weapon strip
+	var pw := minf(280.0, area.size.x * 0.92)
 	var btn_h := maxf(_SafeArea.MIN_BTN_H, minf(_SafeArea.PREFERRED_BTN_H, 40.0))
-	var ph := 28.0 + btn_h * 2.0 + 24.0
+	var strip_h := 56.0
+	var ph := 28.0 + btn_h * 2.0 + 24.0 + strip_h + 18.0
+	ph = minf(ph, area.size.y * 0.92)
 	_pause_panel.size = Vector2(pw, ph)
-	_pause_panel.position = Vector2((vp.x - pw) * 0.5, (vp.y - ph) * 0.5)
-	_pause_title.position = Vector2(0, 8)
-	_pause_title.size = Vector2(pw, 20)
+	_pause_panel.position = Vector2(
+		area.position.x + (area.size.x - pw) * 0.5,
+		area.position.y + (area.size.y - ph) * 0.5
+	)
+	_pause_title.position = Vector2(0, 6)
+	_pause_title.size = Vector2(pw, 18)
 	var bw := minf(160.0, pw - 24.0)
 	_resume_btn.size = Vector2(bw, btn_h)
-	_resume_btn.position = Vector2((pw - bw) * 0.5, 32)
+	_resume_btn.position = Vector2((pw - bw) * 0.5, 26)
 	if _quit_btn:
 		_quit_btn.size = Vector2(bw, btn_h)
-		_quit_btn.position = Vector2((pw - bw) * 0.5, 32 + btn_h + 8.0)
+		_quit_btn.position = Vector2((pw - bw) * 0.5, 26 + btn_h + 6.0)
 		# Style quit/resume for visibility
 		var rn := StyleBoxFlat.new()
 		rn.bg_color = Color(0.12, 0.35, 0.28, 0.95)
@@ -382,6 +406,13 @@ func _layout() -> void:
 		qn.border_color = Color(0.95, 0.45, 0.5)
 		qn.set_corner_radius_all(4)
 		_quit_btn.add_theme_stylebox_override("normal", qn)
+	var strip_top := 26 + btn_h * 2.0 + 14.0
+	if _weapon_strip_title:
+		_weapon_strip_title.position = Vector2(8, strip_top)
+		_weapon_strip_title.size = Vector2(pw - 16.0, 14)
+	if _weapon_strip:
+		_weapon_strip.position = Vector2(10, strip_top + 16.0)
+		_weapon_strip.size = Vector2(pw - 20.0, maxf(ph - (strip_top + 20.0), 40.0))
 
 	_refresh_hp_bar()
 	_refresh_armor()
@@ -497,6 +528,9 @@ func _toggle_pause() -> void:
 	if tree:
 		tree.paused = _is_paused
 	print("HUD: pausa=%s" % str(_is_paused))
+	if _is_paused:
+		_rebuild_weapon_strip()
+		_layout()
 	if AudioManager:
 		AudioManager.set_paused_duck(_is_paused)
 		if _is_paused:
@@ -511,6 +545,89 @@ func _unhandled_input(event: InputEvent) -> void:
 		if k.keycode == KEY_ESCAPE or k.physical_keycode == KEY_ESCAPE:
 			_toggle_pause()
 			get_viewport().set_input_as_handled()
+
+
+func _rebuild_weapon_strip() -> void:
+	## Tap-to-select weapon grid on pause (GDD). Works while tree.paused.
+	if _weapon_strip == null:
+		return
+	for c in _weapon_strip.get_children():
+		c.queue_free()
+	_weapon_strip_btns.clear()
+	var weapons: Array = []
+	if _player != null and _player.has_method("get_owned_weapons"):
+		weapons = _player.get_owned_weapons()
+	if weapons.is_empty():
+		# Fallback: show current HUD weapon only
+		weapons = [{"id": _weapon_id, "name": weapon_name, "ammo": _weapon_ammo, "max_ammo": _weapon_max_ammo}]
+	var cur_id := _weapon_id
+	if _player != null and _player.has_method("get_weapon_id"):
+		cur_id = str(_player.get_weapon_id())
+	for w in weapons:
+		var wid := str(w.get("id", ""))
+		var wname := str(w.get("name", wid))
+		var short := _weapon_short_name(wid, wname)
+		var btn := Button.new()
+		btn.name = "Wpn_%s" % wid
+		btn.text = short
+		btn.custom_minimum_size = Vector2(56, 28)
+		btn.add_theme_font_size_override("font_size", 9)
+		btn.process_mode = Node.PROCESS_MODE_ALWAYS
+		btn.focus_mode = Control.FOCUS_NONE
+		var selected := wid == cur_id
+		var bg := Color(0.15, 0.45, 0.55, 0.95) if selected else Color(0.14, 0.16, 0.22, 0.95)
+		var bd := Color(0.45, 0.95, 1.0) if selected else Color(0.55, 0.6, 0.7)
+		_SafeArea.style_button(btn, bg, bd, 3)
+		btn.pressed.connect(_on_weapon_strip_pressed.bind(wid))
+		_weapon_strip.add_child(btn)
+		_weapon_strip_btns.append(btn)
+
+
+func _weapon_short_name(wid: String, full: String) -> String:
+	match wid:
+		"buster":
+			return "Buster"
+		"saber":
+			return "Sable"
+		"beat_blaze":
+			return "Blaze"
+		"echo_gale":
+			return "Gale"
+		"neon_arc":
+			return "Neon"
+		"freeze_sample":
+			return "Freeze"
+		"petal_chorus":
+			return "Petal"
+		"quake_drop":
+			return "Quake"
+		"tempo_spike":
+			return "Tempo"
+		"static_veil":
+			return "Veil"
+		_:
+			return full if full.length() <= 8 else full.substr(0, 7)
+
+
+func _on_weapon_strip_pressed(weapon_id: String) -> void:
+	if _player != null and _player.has_method("select_weapon"):
+		_player.select_weapon(weapon_id)
+	elif _player != null and _player.has_method("cycle_weapon"):
+		# Fallback: cycle until match (should not be needed)
+		pass
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
+	# Refresh highlight without closing pause
+	_rebuild_weapon_strip()
+	# Sync label immediately
+	if _player != null and _player.has_method("get_current_weapon"):
+		var w: Dictionary = _player.get_current_weapon()
+		_on_player_weapon_changed(
+			str(w.get("id", "buster")),
+			str(w.get("name", "Buster")),
+			int(w.get("ammo", -1)),
+			int(w.get("max_ammo", -1))
+		)
 
 
 func refresh_weakness_hint() -> void:
