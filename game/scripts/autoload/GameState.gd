@@ -16,8 +16,20 @@ const ARMOR_SLOT_ORDER := [ARMOR_PIECE_HEAD, ARMOR_PIECE_TORSO, ARMOR_PIECE_LEGS
 
 const COLOR_FLIGHT := Color(0.35, 0.85, 1.0, 1.0)
 
+## Boss ids (Robot Masters + fortaleza).
+const BOSS_BEATFIRE := "beatfire"
+const BOSS_GLITCH_ICE := "glitch_ice"
+const BOSS_BASSQUAKE := "bassquake"
+const BOSS_ECHO_WIND := "echo_wind"
+const BOSS_NEON_VOLT := "neon_volt"
+const BOSS_METRONOME := "metronome"
+const BOSS_CHORUS_BLOOM := "chorus_bloom"
+const BOSS_STATIC_SHADOW := "static_shadow"
+const BOSS_CORE9 := "core9"
+
 signal character_changed(character_id: String)
 signal armor_changed(set_id: String)
+signal boss_defeated(boss_id: String)
 
 var selected_character: Character = Character.MIKU
 
@@ -25,6 +37,10 @@ var selected_character: Character = Character.MIKU
 var _armor_owned: Dictionary = {}
 ## equipped[set_id][piece_id] = true (proto: auto-equip on pickup)
 var _armor_equipped: Dictionary = {}
+
+## Progreso de jefes — proto: solo Beatfire jugable.
+var beatfire_defeated: bool = false
+var _bosses_defeated: Dictionary = {}
 
 
 func select_miku() -> void:
@@ -124,3 +140,53 @@ func has_flight_torso_equipped() -> bool:
 
 func get_flight_armor_color() -> Color:
 	return COLOR_FLIGHT
+
+
+func is_boss_defeated(boss_id: String) -> bool:
+	if boss_id == BOSS_BEATFIRE:
+		return beatfire_defeated
+	return bool(_bosses_defeated.get(boss_id, false))
+
+
+func mark_boss_defeated(boss_id: String) -> void:
+	## Marca jefe vencido (idempotente).
+	if boss_id == BOSS_BEATFIRE:
+		if beatfire_defeated:
+			return
+		beatfire_defeated = true
+	else:
+		if bool(_bosses_defeated.get(boss_id, false)):
+			return
+		_bosses_defeated[boss_id] = true
+	boss_defeated.emit(boss_id)
+	print("GameState: jefe derrotado → %s" % boss_id)
+
+
+func mark_beatfire_defeated() -> void:
+	mark_boss_defeated(BOSS_BEATFIRE)
+
+
+func is_beatfire_defeated() -> bool:
+	return beatfire_defeated
+
+
+func has_pending_armor_secret(boss_id: String) -> bool:
+	## Stub: Beatfire → torso Stage Flight pendiente si no lo tiene.
+	if boss_id == BOSS_BEATFIRE:
+		return not has_armor_piece(ARMOR_SET_FLIGHT, ARMOR_PIECE_TORSO)
+	return false
+
+
+func defeated_boss_count() -> int:
+	var n := 0
+	if beatfire_defeated:
+		n += 1
+	for k in _bosses_defeated.keys():
+		if bool(_bosses_defeated[k]):
+			n += 1
+	return n
+
+
+func is_core9_unlocked() -> bool:
+	## Bloqueado hasta los 8 Robot Masters.
+	return defeated_boss_count() >= 8

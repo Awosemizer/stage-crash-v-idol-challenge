@@ -19,7 +19,7 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 /workspace/tools/godot --headless --path /workspace/miku-teto-megaman/game --quit-after 2
 ```
 
-Main scene: `scenes/levels/Level01.tscn`.
+Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01.
 
 ## Controls
 
@@ -86,7 +86,9 @@ Bound at runtime by TouchControls (same actions):
 - `MetBeat` — enemigo caparazón a ritmo (HP 2, contacto 2)
 - `TouchControls` — mobile overlay + joypad InputMap wiring (CanvasLayer 100)
 - `HUD` — life bar, portrait, weapon label, energy tanks, armor stubs, pause (CanvasLayer 50; Spanish strings)
+- `TitleScreen` / `CharacterSelect` / **`BossSelect`** — flujo de menú (grilla 3×3, CORE-9 bloqueado)
 - `Level01` — platforms, wall-jump, spikes, slide tunnel, **3 Met-Beat**, arena **Beatfire Man**
+- Victoria jefe → `GameState.beatfire_defeated` + botón/auto a Boss Select
 - Viewport **256×224**, integer stretch, pixel snap, physics 60 Hz
 - Placeholder ColorRect / Polygon2D art (Miku cyan player; no Capcom assets)
 
@@ -106,6 +108,10 @@ game/
   scripts/hazards/Hazard.gd
   scripts/ui/TouchControls.gd
   scripts/ui/HUD.gd
+  scripts/ui/TitleScreen.gd
+  scripts/ui/CharacterSelect.gd
+  scripts/ui/BossSelect.gd
+  scripts/autoload/GameState.gd
   scenes/player/Player.tscn
   scenes/combat/BusterShot.tscn
   scenes/enemies/MetBeat.tscn
@@ -116,6 +122,9 @@ game/
   scenes/hazards/Spike.tscn
   scenes/ui/TouchControls.tscn
   scenes/ui/HUD.tscn
+  scenes/ui/TitleScreen.tscn
+  scenes/ui/CharacterSelect.tscn
+  scenes/ui/BossSelect.tscn
 ```
 
 ## Validate scripts/scenes
@@ -128,7 +137,7 @@ Expect `VALIDATE_PASS`.
 
 ## Next recommended step
 
-Selector de etapas, más jefes, Teto sable, arte definitivo.
+Más jefes jugables, fortaleza CORE-9, arte definitivo.
 
 ## Android debug APK
 

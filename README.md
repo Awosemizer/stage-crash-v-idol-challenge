@@ -6,7 +6,7 @@ Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.3.0-proto`
+- Versión demo: `0.5.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)
@@ -18,7 +18,7 @@ Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)
 1. Instala [Godot 4.5](https://godotengine.org/download/).
 2. Abre Godot → **Import** / **Open**.
 3. Selecciona la carpeta `game/` (el archivo `game/project.godot`).
-4. Ejecuta la escena principal (Title → selección Miku/Teto → nivel piloto Beatfire).
+4. Ejecuta la escena principal (Title → Miku/Teto → Boss Select → Beatfire).
 
 ### Controles (PC / editor)
 
@@ -36,7 +36,8 @@ En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
 
 1. **Title** — *Stage Crash: V-Idol Challenge* → **Jugar**
 2. **Selección** — **Miku** (Buster + carga, cian) o **Teto** (Sable melee, rojo)
-3. **Level01** — etapa piloto Beatfire Man
+3. **Boss Select** — grilla 3×3 SynthoCorp (8 Robot Masters + CORE-9 centro bloqueado)
+4. **Level01** — etapa piloto Beatfire Man (único jugable; resto "Pronto")
 
 ---
 

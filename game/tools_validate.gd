@@ -11,6 +11,7 @@ func _initialize() -> void:
 		"res://scripts/ui/HUD.gd",
 		"res://scripts/ui/TitleScreen.gd",
 		"res://scripts/ui/CharacterSelect.gd",
+		"res://scripts/ui/BossSelect.gd",
 		"res://scripts/combat/BusterShot.gd",
 		"res://scripts/combat/BeatBlazeShot.gd",
 		"res://scripts/combat/Fireball.gd",
@@ -27,6 +28,7 @@ func _initialize() -> void:
 		"res://scenes/ui/HUD.tscn",
 		"res://scenes/ui/TitleScreen.tscn",
 		"res://scenes/ui/CharacterSelect.tscn",
+		"res://scenes/ui/BossSelect.tscn",
 		"res://scenes/combat/BusterShot.tscn",
 		"res://scenes/combat/BeatBlazeShot.tscn",
 		"res://scenes/combat/Fireball.tscn",
@@ -131,6 +133,133 @@ func _initialize() -> void:
 		await process_frame
 	else:
 		errors.append("CharacterSelect.tscn failed to load")
+
+	# CharacterSelect must route to BossSelect (not Level01)
+	var sel_src = FileAccess.get_file_as_string("res://scripts/ui/CharacterSelect.gd")
+	if "BossSelect.tscn" not in sel_src:
+		errors.append("CharacterSelect should go to BossSelect")
+	else:
+		print("OK CharacterSelect → BossSelect")
+
+	# Boss select UI
+	var boss_sel_packed: PackedScene = load("res://scenes/ui/BossSelect.tscn")
+	if boss_sel_packed:
+		var bsel = boss_sel_packed.instantiate()
+		root.add_child(bsel)
+		await process_frame
+		var grid = bsel.get_node_or_null("BossGrid")
+		if grid == null:
+			errors.append("BossSelect missing BossGrid")
+		else:
+			print("OK BossSelect BossGrid children=", grid.get_child_count())
+			if grid.get_child_count() != 9:
+				errors.append("BossSelect grid expected 9 cells, got %d" % grid.get_child_count())
+		var beat_cell = null
+		var core_cell = null
+		if grid:
+			for c in grid.get_children():
+				var bid = str(c.get_meta("boss_id", ""))
+				if bid == "beatfire":
+					beat_cell = c
+				elif bid == "core9":
+					core_cell = c
+		if beat_cell == null:
+			errors.append("BossSelect missing Beatfire cell")
+		else:
+			var st = beat_cell.get_node_or_null("SelectButton/StatusLabel")
+			if st and "Pronto" in st.text and (gs == null or not gs.is_beatfire_defeated()):
+				# playable should say ENTRAR not Pronto when not defeated
+				errors.append("Beatfire playable status unexpected: " + st.text)
+			elif st:
+				print("OK Beatfire status=", st.text)
+			# Secret stub when flight torso missing
+			var secret = beat_cell.get_node_or_null("SelectButton/SecretStub")
+			if secret == null and gs != null and gs.has_pending_armor_secret("beatfire"):
+				errors.append("Beatfire missing SecretStub for pending armor")
+			elif secret:
+				print("OK Beatfire SecretStub present")
+		if core_cell == null:
+			errors.append("BossSelect missing CORE-9 cell")
+		else:
+			var cst = core_cell.get_node_or_null("SelectButton/StatusLabel")
+			if cst == null or "BLOQUEADO" not in cst.text:
+				errors.append("CORE-9 should show BLOQUEADO")
+			else:
+				print("OK CORE-9 locked status=", cst.text)
+		# Greyed Pronto on a locked boss
+		var pronto_ok := false
+		if grid:
+			for c in grid.get_children():
+				var bid2 = str(c.get_meta("boss_id", ""))
+				if bid2 in ["glitch_ice", "neon_volt", "bassquake"]:
+					var st2 = c.get_node_or_null("SelectButton/StatusLabel")
+					if st2 and "Pronto" in st2.text:
+						pronto_ok = true
+						break
+		if not pronto_ok:
+			errors.append("Expected at least one boss with Pronto label")
+		else:
+			print("OK greyed Pronto bosses present")
+		# Spanish / GDD names present in scene tree
+		var names_needed = ["Beatfire Man", "Glitch Ice", "Bassquake", "Echo Wind", "Neon Volt", "Metronome", "Chorus Bloom", "Static Shadow", "CORE-9"]
+		var found_names := 0
+		if grid:
+			for c in grid.get_children():
+				var nl = c.get_node_or_null("SelectButton/NameLabel")
+				if nl:
+					for nn in names_needed:
+						if nn in nl.text or nl.text in nn:
+							found_names += 1
+							break
+		if found_names < 8:
+			errors.append("BossSelect missing GDD boss name labels (found %d)" % found_names)
+		else:
+			print("OK BossSelect GDD names found=", found_names)
+		# Header SynthoCorp vibe
+		var hdr = bsel.get_node_or_null("Header")
+		if hdr == null or "SYNTHOCORP" not in hdr.text:
+			errors.append("BossSelect missing SynthoCorp header")
+		else:
+			print("OK BossSelect SynthoCorp header")
+		bsel.queue_free()
+		await process_frame
+	else:
+		errors.append("BossSelect.tscn failed to load")
+
+	# GameState boss defeat API
+	if gs:
+		gs.beatfire_defeated = false
+		gs._bosses_defeated.clear()
+		if gs.is_beatfire_defeated():
+			errors.append("beatfire_defeated should start false")
+		else:
+			print("OK beatfire_defeated starts false")
+		gs.mark_beatfire_defeated()
+		if not gs.is_beatfire_defeated() or not gs.beatfire_defeated:
+			errors.append("mark_beatfire_defeated failed")
+		else:
+			print("OK mark_beatfire_defeated")
+		# Rebuild BossSelect with checkmark
+		var bsel2 = load("res://scenes/ui/BossSelect.tscn").instantiate()
+		root.add_child(bsel2)
+		await process_frame
+		var grid2 = bsel2.get_node_or_null("BossGrid")
+		var check_ok := false
+		if grid2:
+			for c in grid2.get_children():
+				if str(c.get_meta("boss_id", "")) == "beatfire":
+					var chk = c.get_node_or_null("SelectButton/Checkmark")
+					var st3 = c.get_node_or_null("SelectButton/StatusLabel")
+					if chk != null or (st3 and "VENCIDO" in st3.text):
+						check_ok = true
+						print("OK Beatfire checkmark/VENCIDO after defeat")
+		if not check_ok:
+			errors.append("BossSelect missing checkmark after beatfire_defeated")
+		bsel2.queue_free()
+		await process_frame
+		# Leave defeated true for later boss-kill path consistency, then reset before level
+		gs.beatfire_defeated = false
+		gs._bosses_defeated.clear()
 
 	# Main scene should be Title
 	var main_path: String = str(ProjectSettings.get_setting("application/run/main_scene", ""))
@@ -640,12 +769,21 @@ func _initialize() -> void:
 						errors.append("Boss defeat did not grant Beat Blaze")
 					else:
 						print("OK boss defeat granted Beat Blaze")
+				if gs and not gs.is_beatfire_defeated():
+					errors.append("Boss defeat did not set GameState.beatfire_defeated")
+				else:
+					print("OK GameState.beatfire_defeated after win")
 				var win = level.get_node_or_null("WinBanner")
 				if win == null:
 					# May already be created
 					print("WARN WinBanner not found immediately (may be timing)")
 				else:
 					print("OK WinBanner shown")
+					var ret = win.get_node_or_null("Root/Panel/ReturnBossSelect")
+					if ret == null:
+						errors.append("WinBanner missing ReturnBossSelect button")
+					else:
+						print("OK ReturnBossSelect button")
 		level.queue_free()
 	else:
 		errors.append("Level01.tscn failed to load")

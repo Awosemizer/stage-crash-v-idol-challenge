@@ -1,7 +1,7 @@
 extends Control
 ## Selección de personaje — Miku (cian) / Teto (rojo). Guarda en GameState.
 
-const LEVEL_SCENE := "res://scenes/levels/Level01.tscn"
+const BOSS_SELECT_SCENE := "res://scenes/ui/BossSelect.tscn"
 
 
 func _ready() -> void:
@@ -165,12 +165,12 @@ func _style_char_button(btn: Button, bg: Color, border: Color) -> void:
 
 func _on_miku() -> void:
 	GameState.select_miku()
-	get_tree().change_scene_to_file(LEVEL_SCENE)
+	get_tree().change_scene_to_file(BOSS_SELECT_SCENE)
 
 
 func _on_teto() -> void:
 	GameState.select_teto()
-	get_tree().change_scene_to_file(LEVEL_SCENE)
+	get_tree().change_scene_to_file(BOSS_SELECT_SCENE)
 
 
 func _on_back() -> void:

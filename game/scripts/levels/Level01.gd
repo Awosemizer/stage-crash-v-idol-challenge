@@ -203,6 +203,11 @@ func _open_gate() -> void:
 func _on_boss_died() -> void:
 	_boss_defeated = true
 	_open_gate()
+	# Persist progress for Boss Select checkmark
+	if GameState.has_method("mark_beatfire_defeated"):
+		GameState.mark_beatfire_defeated()
+	else:
+		GameState.beatfire_defeated = true
 	# Restore camera to full level
 	if _player:
 		var cam: Camera2D = _player.get_node_or_null("Camera2D")
@@ -223,41 +228,78 @@ func _show_win_banner() -> void:
 	_win_banner.layer = 80
 	add_child(_win_banner)
 	var root := Control.new()
+	root.name = "Root"
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.mouse_filter = Control.MOUSE_FILTER_STOP
 	_win_banner.add_child(root)
 	var panel := Panel.new()
+	panel.name = "Panel"
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.08, 0.05, 0.1, 0.88)
+	sb.bg_color = Color(0.08, 0.05, 0.1, 0.92)
 	sb.set_border_width_all(2)
 	sb.border_color = Color(1.0, 0.55, 0.2, 1.0)
 	sb.set_corner_radius_all(4)
 	panel.add_theme_stylebox_override("panel", sb)
-	panel.size = Vector2(180, 64)
-	panel.position = Vector2(38, 70)
+	panel.size = Vector2(196, 96)
+	panel.position = Vector2(30, 56)
 	root.add_child(panel)
 	var title := Label.new()
+	title.name = "Title"
 	title.text = "¡VICTORIA!"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 14)
 	title.modulate = Color(1.0, 0.85, 0.3, 1.0)
-	title.position = Vector2(0, 8)
-	title.size = Vector2(180, 20)
+	title.position = Vector2(0, 6)
+	title.size = Vector2(196, 18)
 	panel.add_child(title)
 	var sub := Label.new()
-	sub.text = "Arma obtenida:\nBeat Blaze"
+	sub.name = "Subtitle"
+	sub.text = "Arma obtenida: Beat Blaze"
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub.add_theme_font_size_override("font_size", 8)
+	sub.add_theme_font_size_override("font_size", 7)
 	sub.modulate = Color(1.0, 0.65, 0.3, 1.0)
-	sub.position = Vector2(0, 30)
-	sub.size = Vector2(180, 28)
+	sub.position = Vector2(0, 26)
+	sub.size = Vector2(196, 14)
 	panel.add_child(sub)
-	# Auto-hide after a few seconds (keep weapon)
-	get_tree().create_timer(4.0).timeout.connect(func () -> void:
-		if is_instance_valid(_win_banner):
-			_win_banner.queue_free()
-			_win_banner = null
+	var back_btn := Button.new()
+	back_btn.name = "ReturnBossSelect"
+	back_btn.text = "Volver al selector"
+	back_btn.add_theme_font_size_override("font_size", 8)
+	back_btn.position = Vector2(28, 48)
+	back_btn.size = Vector2(140, 24)
+	var bn := StyleBoxFlat.new()
+	bn.bg_color = Color(0.15, 0.45, 0.55, 0.95)
+	bn.set_border_width_all(2)
+	bn.border_color = Color(0.35, 0.9, 1.0, 1.0)
+	bn.set_corner_radius_all(3)
+	var bh := bn.duplicate()
+	bh.bg_color = bn.bg_color.lightened(0.12)
+	var bp := bn.duplicate()
+	bp.bg_color = bn.bg_color.darkened(0.15)
+	back_btn.add_theme_stylebox_override("normal", bn)
+	back_btn.add_theme_stylebox_override("hover", bh)
+	back_btn.add_theme_stylebox_override("pressed", bp)
+	back_btn.add_theme_stylebox_override("focus", bh)
+	back_btn.pressed.connect(_return_to_boss_select)
+	panel.add_child(back_btn)
+	var hint := Label.new()
+	hint.name = "AutoHint"
+	hint.text = "Auto en 6s…"
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.add_theme_font_size_override("font_size", 5)
+	hint.modulate = Color(0.7, 0.75, 0.85, 0.7)
+	hint.position = Vector2(0, 78)
+	hint.size = Vector2(196, 10)
+	panel.add_child(hint)
+	# Auto-return to Boss Select after banner
+	get_tree().create_timer(6.0).timeout.connect(func () -> void:
+		if is_instance_valid(self) and _boss_defeated:
+			_return_to_boss_select()
 	)
+
+
+func _return_to_boss_select() -> void:
+	get_tree().change_scene_to_file("res://scenes/ui/BossSelect.tscn")
 
 
 func _show_banner(text: String, color: Color, duration: float) -> void:
