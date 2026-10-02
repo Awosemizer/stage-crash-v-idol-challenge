@@ -3642,8 +3642,8 @@ func _initialize() -> void:
 	var title_src := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
 	if "PanelChrome" not in title_src and "panel_chrome" not in title_src:
 		errors.append("TitleScreen should use panel chrome")
-	if "0.19" not in title_src and "0.20" not in title_src:
-		errors.append("TitleScreen version should mention 0.19 or 0.20")
+	if "0.19" not in title_src and "0.20" not in title_src and "0.22" not in title_src:
+		errors.append("TitleScreen version should mention 0.19 or 0.20 or 0.22")
 	# Boss intro on Beatfire
 	var bf_src := FileAccess.get_file_as_string("res://scripts/bosses/BeatfireMan.gd")
 	if "play_boss_intro" not in bf_src:
@@ -3654,8 +3654,8 @@ func _initialize() -> void:
 
 	# --- v0.20 landscape + Beatfire touch playability ---
 	var proj := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.21.0-proto"' not in proj and 'config/version="0.20.0-proto"' not in proj:
-		errors.append("project.godot version should be 0.21.0-proto")
+	if 'config/version="0.22.0-proto"' not in proj and 'config/version="0.21.0-proto"' not in proj and 'config/version="0.20.0-proto"' not in proj:
+		errors.append("project.godot version should be 0.22.0-proto")
 	else:
 		print("OK project version present")
 	if 'window/stretch/mode="canvas_items"' not in proj:
@@ -3781,6 +3781,28 @@ func _initialize() -> void:
 		inst.queue_free()
 		await process_frame
 	print("OK v0.21 all-stages touch playability")
+
+	# --- v0.22 landscape UI polish ---
+	var sa_src := FileAccess.get_file_as_string("res://scripts/ui/SafeArea.gd")
+	if "PREFERRED_BTN_H" not in sa_src or "btn_h" not in sa_src:
+		errors.append("SafeArea should expose PREFERRED_BTN_H / btn_h helpers")
+	else:
+		print("OK SafeArea btn helpers")
+	var bsel_ui := FileAccess.get_file_as_string("res://scripts/ui/BossSelect.gd")
+	if "_layout" not in bsel_ui or "content_rect" not in bsel_ui:
+		errors.append("BossSelect should layout via SafeArea content_rect")
+	else:
+		print("OK BossSelect responsive layout")
+	var hud_ui := FileAccess.get_file_as_string("res://scripts/ui/HUD.gd")
+	if "QuitButton" not in hud_ui and "Salir al selector" not in hud_ui:
+		errors.append("HUD pause should have Quit to boss select")
+	else:
+		print("OK HUD touch pause quit")
+	if "TOUCH_RESERVE_BOTTOM" not in hud_ui:
+		errors.append("HUD should reserve bottom space away from touch controls")
+	else:
+		print("OK HUD touch reserve")
+	print("OK v0.22 landscape UI polish")
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

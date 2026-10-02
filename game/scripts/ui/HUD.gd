@@ -9,12 +9,14 @@ const _SafeArea := preload("res://scripts/ui/SafeArea.gd")
 
 const MAX_ENERGY_TANKS := 4
 const ARMOR_SLOTS := 3
-const PORTRAIT_SIZE := 16.0
-const HP_BAR_W := 56.0
-const HP_BAR_H := 6.0
-const TANK_SIZE := 6.0
-const ARMOR_SIZE := 10.0
-const PAUSE_BTN := 18.0
+const PORTRAIT_SIZE := 18.0
+const HP_BAR_W := 72.0
+const HP_BAR_H := 8.0
+const TANK_SIZE := 7.0
+const ARMOR_SIZE := 12.0
+const PAUSE_BTN := 28.0
+## Keep HUD cluster above touch stick / buttons (bottom ~90px reserved).
+const TOUCH_RESERVE_BOTTOM := 90.0
 
 @export var weapon_name: String = "Buster"
 @export var energy_tanks: int = 0  # 0–4 owned; icons empty until filled later
@@ -32,6 +34,7 @@ var _pause_btn: Panel
 var _pause_panel: Panel
 var _pause_title: Label
 var _resume_btn: Button
+var _quit_btn: Button
 
 var _player: Node = null
 var _hp := 28
@@ -197,21 +200,21 @@ func _build_ui() -> void:
 
 	_hp_label = Label.new()
 	_hp_label.name = "HpLabel"
-	_hp_label.add_theme_font_size_override("font_size", 7)
+	_hp_label.add_theme_font_size_override("font_size", 9)
 	_hp_label.modulate = Color(1, 1, 1, 0.9)
 	_hp_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(_hp_label)
 
 	_weapon_label = Label.new()
 	_weapon_label.name = "WeaponLabel"
-	_weapon_label.add_theme_font_size_override("font_size", 7)
+	_weapon_label.add_theme_font_size_override("font_size", 9)
 	_weapon_label.modulate = Color(0.85, 0.95, 1.0, 0.95)
 	_weapon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(_weapon_label)
 
 	_weakness_label = Label.new()
 	_weakness_label.name = "WeaknessHint"
-	_weakness_label.add_theme_font_size_override("font_size", 5)
+	_weakness_label.add_theme_font_size_override("font_size", 7)
 	_weakness_label.modulate = Color(0.95, 0.7, 0.4, 0.9)
 	_weakness_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_weakness_label.visible = false
@@ -236,7 +239,7 @@ func _build_ui() -> void:
 	pause_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	pause_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	pause_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	pause_lbl.add_theme_font_size_override("font_size", 8)
+	pause_lbl.add_theme_font_size_override("font_size", 11)
 	pause_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_pause_btn.add_child(pause_lbl)
 
@@ -265,17 +268,26 @@ func _build_ui() -> void:
 	_pause_title = Label.new()
 	_pause_title.text = "PAUSA"
 	_pause_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_pause_title.add_theme_font_size_override("font_size", 12)
+	_pause_title.add_theme_font_size_override("font_size", 14)
 	_pause_title.modulate = Color(0.4, 0.95, 1.0, 1.0)
 	_pause_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_pause_panel.add_child(_pause_title)
 
 	_resume_btn = Button.new()
+	_resume_btn.name = "ResumeButton"
 	_resume_btn.text = "Continuar"
-	_resume_btn.add_theme_font_size_override("font_size", 8)
+	_resume_btn.add_theme_font_size_override("font_size", 12)
 	_resume_btn.process_mode = Node.PROCESS_MODE_ALWAYS
 	_resume_btn.pressed.connect(_toggle_pause)
 	_pause_panel.add_child(_resume_btn)
+
+	_quit_btn = Button.new()
+	_quit_btn.name = "QuitButton"
+	_quit_btn.text = "Salir al selector"
+	_quit_btn.add_theme_font_size_override("font_size", 11)
+	_quit_btn.process_mode = Node.PROCESS_MODE_ALWAYS
+	_quit_btn.pressed.connect(_quit_to_boss_select)
+	_pause_panel.add_child(_quit_btn)
 
 
 func _make_panel(col: Color) -> Panel:
@@ -335,15 +347,41 @@ func _layout() -> void:
 			border.size = Vector2(ARMOR_SIZE - 2, ARMOR_SIZE - 2)
 			border.color = Color(0.12, 0.14, 0.18, 0.9)
 
-	# Centered pause panel within safe content
-	var pw := 140.0
-	var ph := 60.0
+	# Keep HUD top cluster out of thumb zone (touch stick/buttons bottom)
+	# Weapon / tanks already under portrait; ensure they stay above mid-screen.
+	var max_hud_bottom := maxf(vp.y - TOUCH_RESERVE_BOTTOM, top + 48.0)
+	if _weapon_label and _weapon_label.position.y + 12.0 > max_hud_bottom:
+		_weapon_label.position.y = max_hud_bottom - 24.0
+	if _weakness_label and _weakness_label.position.y + 10.0 > max_hud_bottom:
+		_weakness_label.position.y = max_hud_bottom - 12.0
+
+	# Centered pause panel — large touch targets
+	var pw := minf(220.0, area.size.x * 0.85)
+	var btn_h := maxf(_SafeArea.MIN_BTN_H, minf(_SafeArea.PREFERRED_BTN_H, 40.0))
+	var ph := 28.0 + btn_h * 2.0 + 24.0
 	_pause_panel.size = Vector2(pw, ph)
 	_pause_panel.position = Vector2((vp.x - pw) * 0.5, (vp.y - ph) * 0.5)
-	_pause_title.position = Vector2(0, 6)
-	_pause_title.size = Vector2(pw, 16)
-	_resume_btn.size = Vector2(80, 18)
-	_resume_btn.position = Vector2((pw - 80) * 0.5, 32)
+	_pause_title.position = Vector2(0, 8)
+	_pause_title.size = Vector2(pw, 20)
+	var bw := minf(160.0, pw - 24.0)
+	_resume_btn.size = Vector2(bw, btn_h)
+	_resume_btn.position = Vector2((pw - bw) * 0.5, 32)
+	if _quit_btn:
+		_quit_btn.size = Vector2(bw, btn_h)
+		_quit_btn.position = Vector2((pw - bw) * 0.5, 32 + btn_h + 8.0)
+		# Style quit/resume for visibility
+		var rn := StyleBoxFlat.new()
+		rn.bg_color = Color(0.12, 0.35, 0.28, 0.95)
+		rn.set_border_width_all(2)
+		rn.border_color = Color(0.4, 0.95, 0.65)
+		rn.set_corner_radius_all(4)
+		_resume_btn.add_theme_stylebox_override("normal", rn)
+		var qn := StyleBoxFlat.new()
+		qn.bg_color = Color(0.22, 0.12, 0.16, 0.95)
+		qn.set_border_width_all(2)
+		qn.border_color = Color(0.95, 0.45, 0.5)
+		qn.set_corner_radius_all(4)
+		_quit_btn.add_theme_stylebox_override("normal", qn)
 
 	_refresh_hp_bar()
 	_refresh_armor()
@@ -436,6 +474,20 @@ func _on_pause_btn_gui_input(event: InputEvent) -> void:
 		if (event as InputEventMouseButton).pressed:
 			_toggle_pause()
 			get_viewport().set_input_as_handled()
+
+
+
+func _quit_to_boss_select() -> void:
+	if _is_paused:
+		_is_paused = false
+		_pause_panel.visible = false
+		var tree := get_tree()
+		if tree:
+			tree.paused = false
+	if AudioManager:
+		AudioManager.set_paused_duck(false)
+		AudioManager.play_sfx("ui_confirm")
+	get_tree().change_scene_to_file("res://scenes/ui/BossSelect.tscn")
 
 
 func _toggle_pause() -> void:
