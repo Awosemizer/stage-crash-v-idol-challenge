@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3 uid="uid://belectzigzag01"]
+
+[ext_resource type="Script" path="res://scripts/combat/ElectricZigzagShot.gd" id="1_ez"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ez"]
+size = Vector2(9, 7)
+
+[node name="ElectricZigzagShot" type="Area2D"]
+collision_layer = 0
+collision_mask = 3
+monitoring = true
+monitorable = true
+script = ExtResource("1_ez")
+
+[node name="Visual" type="ColorRect" parent="."]
+offset_left = -4.5
+offset_top = -3.5
+offset_right = 4.5
+offset_bottom = 3.5
+color = Color(0.95, 0.95, 0.35, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_ez")

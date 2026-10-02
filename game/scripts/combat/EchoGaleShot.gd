@@ -94,7 +94,11 @@ func _try_hit(target: Node) -> void:
 		return
 	if target.is_in_group("enemies") or target.has_method("take_damage"):
 		if target.has_method("take_damage"):
-			var result = target.take_damage(damage)
+			var dmg := damage
+			# Debilidad Neon Volt (weak_to_echo_gale): ×3
+			if target.is_in_group("weak_to_echo_gale"):
+				dmg = damage * 3
+			var result = target.take_damage(dmg)
 			if result == false:
 				queue_free()
 				return

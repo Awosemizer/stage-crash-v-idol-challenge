@@ -12,7 +12,9 @@ const ARMOR_SET_FLIGHT := "flight"
 const ARMOR_PIECE_HEAD := "head"
 const ARMOR_PIECE_TORSO := "torso"
 const ARMOR_PIECE_LEGS := "legs"
-const ARMOR_SLOT_ORDER := [ARMOR_PIECE_HEAD, ARMOR_PIECE_TORSO, ARMOR_PIECE_LEGS]
+const ARMOR_PIECE_ARMS := "arms"
+## Slot 3 = brazos Stage Flight (weapon+); "legs" queda como alias legacy.
+const ARMOR_SLOT_ORDER := [ARMOR_PIECE_HEAD, ARMOR_PIECE_TORSO, ARMOR_PIECE_ARMS]
 
 const COLOR_FLIGHT := Color(0.35, 0.85, 1.0, 1.0)
 
@@ -38,7 +40,7 @@ var _armor_owned: Dictionary = {}
 ## equipped[set_id][piece_id] = true (proto: auto-equip on pickup)
 var _armor_equipped: Dictionary = {}
 
-## Progreso de jefes — proto: Beatfire + Echo Wind jugables.
+## Progreso de jefes — proto: Beatfire + Echo Wind + Neon Volt jugables.
 var beatfire_defeated: bool = false
 var _bosses_defeated: Dictionary = {}
 
@@ -141,6 +143,10 @@ func has_flight_torso_equipped() -> bool:
 	return is_armor_equipped(ARMOR_SET_FLIGHT, ARMOR_PIECE_TORSO)
 
 
+func has_flight_arms_equipped() -> bool:
+	return is_armor_equipped(ARMOR_SET_FLIGHT, ARMOR_PIECE_ARMS)
+
+
 func get_flight_armor_color() -> Color:
 	return COLOR_FLIGHT
 
@@ -164,6 +170,8 @@ func mark_boss_defeated(boss_id: String) -> void:
 		_bosses_defeated[boss_id] = true
 		if boss_id == BOSS_ECHO_WIND:
 			unlock_weapon("echo_gale")
+		elif boss_id == BOSS_NEON_VOLT:
+			unlock_weapon("neon_arc")
 	boss_defeated.emit(boss_id)
 	print("GameState: jefe derrotado → %s" % boss_id)
 
@@ -177,11 +185,13 @@ func is_beatfire_defeated() -> bool:
 
 
 func has_pending_armor_secret(boss_id: String) -> bool:
-	## Stub: Beatfire → torso; Echo Wind → casco Stage Flight.
+	## Stub: Beatfire → torso; Echo Wind → casco; Neon Volt → brazos Stage Flight.
 	if boss_id == BOSS_BEATFIRE:
 		return not has_armor_piece(ARMOR_SET_FLIGHT, ARMOR_PIECE_TORSO)
 	if boss_id == BOSS_ECHO_WIND:
 		return not has_armor_piece(ARMOR_SET_FLIGHT, ARMOR_PIECE_HEAD)
+	if boss_id == BOSS_NEON_VOLT:
+		return not has_armor_piece(ARMOR_SET_FLIGHT, ARMOR_PIECE_ARMS)
 	return false
 
 

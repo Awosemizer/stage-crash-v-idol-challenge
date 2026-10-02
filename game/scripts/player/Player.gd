@@ -31,6 +31,7 @@ const RESPAWN_Y := 400.0         # fall death threshold (level-relative)
 # Buster charge (Mega Man–style)
 const CHARGE_LV2 := 0.45
 const CHARGE_LV3 := 1.15
+const CHARGE_LV4 := 1.85  # Stage Flight arms unlock
 const MAX_SHOTS := 3
 const SHOT_SPAWN_X := 12.0
 const SHOT_SPAWN_Y := -8.0
@@ -45,6 +46,7 @@ const WEAPON_BUSTER := "buster"
 const WEAPON_SABER := "saber"
 const WEAPON_BEAT_BLAZE := "beat_blaze"
 const WEAPON_ECHO_GALE := "echo_gale"
+const WEAPON_NEON_ARC := "neon_arc"
 
 const SABER_DURATION := 0.18
 const SABER_DAMAGE := 2
@@ -62,6 +64,7 @@ const HOVER_LIFT := -12.0            # slight upward assist when falling
 const BusterShotScene := preload("res://scenes/combat/BusterShot.tscn")
 const BeatBlazeShotScene := preload("res://scenes/combat/BeatBlazeShot.tscn")
 const EchoGaleShotScene := preload("res://scenes/combat/EchoGaleShot.tscn")
+const NeonArcShotScene := preload("res://scenes/combat/NeonArcShot.tscn")
 
 signal hp_changed(current: int, maximum: int)
 signal weapon_changed(weapon_id: String, display_name: String, ammo: int, max_ammo: int)
@@ -113,9 +116,11 @@ var _hover_fuel := HOVER_DURATION
 var _hover_cd := 0.0
 var _is_hovering := false
 var _has_flight_torso := false
+var _has_flight_arms := false
 var _thruster: ColorRect = null
 var _wind_force := Vector2.ZERO
 var _key3_held := false
+var _key4_held := false
 
 
 func _ready() -> void:
@@ -238,19 +243,23 @@ func _handle_weapon_switch() -> void:
 		_cycle_weapon(1)
 	elif Input.is_action_just_pressed("weapon_prev"):
 		_cycle_weapon(-1)
-	# Number keys 1–3 as fallback (edge-triggered)
+	# Number keys 1–4 as fallback (edge-triggered)
 	var k1 := Input.is_physical_key_pressed(KEY_1)
 	var k2 := Input.is_physical_key_pressed(KEY_2)
 	var k3 := Input.is_physical_key_pressed(KEY_3)
+	var k4 := Input.is_physical_key_pressed(KEY_4)
 	if k1 and not _key1_held:
 		_select_weapon_by_id(WEAPON_SABER if _is_teto else WEAPON_BUSTER)
 	if k2 and not _key2_held and _has_weapon(WEAPON_BEAT_BLAZE):
 		_select_weapon_by_id(WEAPON_BEAT_BLAZE)
 	if k3 and not _key3_held and _has_weapon(WEAPON_ECHO_GALE):
 		_select_weapon_by_id(WEAPON_ECHO_GALE)
+	if k4 and not _key4_held and _has_weapon(WEAPON_NEON_ARC):
+		_select_weapon_by_id(WEAPON_NEON_ARC)
 	_key1_held = k1
 	_key2_held = k2
 	_key3_held = k3
+	_key4_held = k4
 
 
 func _cycle_weapon(dir: int) -> void:
@@ -296,7 +305,7 @@ func get_weapon_id() -> String:
 
 
 func grant_weapon(weapon_id: String) -> void:
-	## Otorga arma robada de jefe (Beat Blaze / Echo Gale).
+	## Otorga arma robada de jefe (Beat Blaze / Echo Gale / Neon Arc).
 	var gs := _game_state()
 	if gs != null and gs.has_method("unlock_weapon"):
 		gs.unlock_weapon(weapon_id)
@@ -337,6 +346,19 @@ func grant_weapon(weapon_id: String) -> void:
 		_charge_time = 0.0
 		_emit_weapon()
 		print("Player: arma otorgada Echo Gale")
+	elif weapon_id == WEAPON_NEON_ARC:
+		_weapons.append({
+			"id": WEAPON_NEON_ARC,
+			"name": "Neon Arc",
+			"ammo": 28,
+			"max_ammo": 28,
+			"cost": 1,
+		})
+		_weapon_index = _weapons.size() - 1
+		_charging = false
+		_charge_time = 0.0
+		_emit_weapon()
+		print("Player: arma otorgada Neon Arc")
 
 
 func _emit_weapon() -> void:
@@ -362,6 +384,8 @@ func _handle_attack(delta: float) -> void:
 		_handle_beat_blaze()
 	elif wid == WEAPON_ECHO_GALE:
 		_handle_echo_gale()
+	elif wid == WEAPON_NEON_ARC:
+		_handle_neon_arc()
 	elif wid == WEAPON_SABER:
 		_handle_saber()
 	else:
@@ -399,7 +423,7 @@ func _apply_character_from_state() -> void:
 
 
 func _restore_unlocked_weapons() -> void:
-	## Otorga armas ya desbloqueadas en GameState (Beat Blaze / Echo Gale).
+	## Otorga armas ya desbloqueadas en GameState (Beat Blaze / Echo Gale / Neon Arc).
 	var gs := _game_state()
 	if gs == null or not gs.has_method("get_unlocked_weapons"):
 		return
@@ -586,6 +610,36 @@ func _fire_echo_gale() -> void:
 		shot.setup(facing)
 
 
+func _handle_neon_arc() -> void:
+	if _charging:
+		_charging = false
+		_charge_time = 0.0
+	if Input.is_action_just_pressed("attack"):
+		_fire_neon_arc()
+
+
+func _fire_neon_arc() -> void:
+	var w := get_current_weapon()
+	var ammo: int = int(w.get("ammo", 0))
+	var cost: int = int(w.get("cost", 1))
+	if ammo < cost:
+		return
+	var live := get_tree().get_nodes_in_group("player_shots")
+	if live.size() >= MAX_SHOTS:
+		return
+	ammo -= cost
+	_weapons[_weapon_index]["ammo"] = ammo
+	_emit_weapon()
+	var shot: Area2D = NeonArcShotScene.instantiate()
+	var parent_node := get_parent()
+	if parent_node == null:
+		parent_node = get_tree().current_scene
+	parent_node.add_child(shot)
+	shot.global_position = global_position + Vector2(facing * SHOT_SPAWN_X, SHOT_SPAWN_Y)
+	if shot.has_method("setup"):
+		shot.setup(facing)
+
+
 func _handle_buster(delta: float) -> void:
 	if Input.is_action_just_pressed("attack"):
 		_charging = true
@@ -602,6 +656,8 @@ func _handle_buster(delta: float) -> void:
 
 
 func _charge_level_from_time(t: float) -> int:
+	if _has_flight_arms and t >= CHARGE_LV4:
+		return 4
 	if t >= CHARGE_LV3:
 		return 3
 	if t >= CHARGE_LV2:
@@ -621,6 +677,9 @@ func _fire_buster(level: int) -> void:
 	shot.global_position = global_position + Vector2(facing * SHOT_SPAWN_X, SHOT_SPAWN_Y)
 	if shot.has_method("setup"):
 		shot.setup(facing, level)
+	# Stage Flight arms: +1 damage stub (weapon+)
+	if _has_flight_arms and "damage" in shot:
+		shot.damage = int(shot.damage) + 1
 
 
 func _tick_timers(delta: float) -> void:
@@ -745,7 +804,12 @@ func _update_visual() -> void:
 			var aura_sz := visual.size + Vector2(6, 6) if lv == 2 else visual.size + Vector2(10, 10)
 			charge_aura.size = aura_sz
 			charge_aura.position = visual.position - Vector2(3, 3) if lv == 2 else visual.position - Vector2(5, 5)
-			if lv >= 3:
+			if lv >= 4:
+				# Nv4 stub (brazos): pulso violeta-dorado
+				var pulse4 := 0.6 + 0.4 * absf(sin(_charge_time * 16.0))
+				charge_aura.color = Color(0.85, 0.45, 1.0, pulse4)
+				base_col = Color(0.9, 0.7, 1.0, 1.0)
+			elif lv >= 3:
 				# Parpadeo blanco-dorado Nv3
 				var pulse := 0.55 + 0.45 * absf(sin(_charge_time * 12.0))
 				charge_aura.color = Color(1.0, 0.92, 0.35, pulse)
@@ -760,6 +824,8 @@ func _update_visual() -> void:
 				base_col = Color(0.35, 0.95, 1.0, 1.0)
 			elif get_weapon_id() == WEAPON_BEAT_BLAZE:
 				base_col = Color(0.95, 0.55, 0.25, 1.0)
+			elif get_weapon_id() == WEAPON_NEON_ARC:
+				base_col = Color(0.95, 0.9, 0.25, 1.0)
 
 	if _is_hovering:
 		base_col = base_col.lerp(Color(0.45, 0.9, 1.0, 1.0), 0.35)
@@ -846,11 +912,16 @@ func _on_armor_changed(_set_id: String) -> void:
 
 func _sync_armor_from_state() -> void:
 	_has_flight_torso = false
+	_has_flight_arms = false
 	var gs := _game_state()
 	if gs != null and gs.has_method("has_flight_torso_equipped"):
 		_has_flight_torso = bool(gs.has_flight_torso_equipped())
 	elif gs != null and gs.has_method("is_armor_equipped"):
 		_has_flight_torso = bool(gs.is_armor_equipped("flight", "torso"))
+	if gs != null and gs.has_method("has_flight_arms_equipped"):
+		_has_flight_arms = bool(gs.has_flight_arms_equipped())
+	elif gs != null and gs.has_method("is_armor_equipped"):
+		_has_flight_arms = bool(gs.is_armor_equipped("flight", "arms"))
 
 
 func on_armor_pickup(set_id: String, piece_id: String, _display_name: String = "") -> void:
@@ -860,10 +931,16 @@ func on_armor_pickup(set_id: String, piece_id: String, _display_name: String = "
 		_hover_fuel = HOVER_DURATION
 		_hover_cd = 0.0
 		print("Player: Stage Flight torso equipado — hover listo")
+	elif set_id == "flight" and piece_id == "arms":
+		print("Player: Stage Flight brazos — carga Nv4 + daño+")
 
 
 func has_flight_hover() -> bool:
 	return _has_flight_torso
+
+
+func has_flight_arms() -> bool:
+	return _has_flight_arms
 
 
 func is_hovering() -> bool:

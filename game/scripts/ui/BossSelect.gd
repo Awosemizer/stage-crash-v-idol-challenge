@@ -1,9 +1,10 @@
 extends Control
 ## Selector 3×3 de jefes — cartelera SynthoCorp / concierto.
-## Centro = CORE-9 (bloqueado). Beatfire + Echo Wind jugables.
+## Centro = CORE-9 (bloqueado). Beatfire + Echo Wind + Neon Volt jugables.
 
 const LEVEL_BEATFIRE := "res://scenes/levels/Level01.tscn"
 const LEVEL_ECHO_WIND := "res://scenes/levels/LevelEchoWind.tscn"
+const LEVEL_NEON_VOLT := "res://scenes/levels/LevelNeonVolt.tscn"
 const CHAR_SELECT := "res://scenes/ui/CharacterSelect.tscn"
 const TITLE_SCENE := "res://scenes/ui/TitleScreen.tscn"
 
@@ -18,7 +19,7 @@ const BOSS_SLOTS: Array = [
 	{"id": "bassquake", "name": "Bassquake", "playable": false, "accent": Color(0.75, 0.55, 0.25)},
 	{"id": "echo_wind", "name": "Echo Wind", "playable": true, "accent": Color(0.55, 0.95, 0.75)},
 	{"id": "core9", "name": "CORE-9", "playable": false, "is_core": true, "accent": Color(0.85, 0.3, 0.95)},
-	{"id": "neon_volt", "name": "Neon Volt", "playable": false, "accent": Color(0.95, 0.95, 0.35)},
+	{"id": "neon_volt", "name": "Neon Volt", "playable": true, "accent": Color(0.95, 0.95, 0.35)},
 	{"id": "metronome", "name": "Metronome", "playable": false, "accent": Color(0.7, 0.75, 0.85)},
 	{"id": "chorus_bloom", "name": "Chorus Bloom", "playable": false, "accent": Color(0.85, 0.45, 0.75)},
 	{"id": "static_shadow", "name": "Static Shadow", "playable": false, "accent": Color(0.4, 0.35, 0.55)},
@@ -97,7 +98,7 @@ func _build_ui() -> void:
 
 	var footer := Label.new()
 	footer.name = "Footer"
-	footer.text = "Beatfire + Echo Wind disponibles · resto: Pronto"
+	footer.text = "Beatfire · Echo Wind · Neon Volt · resto: Pronto"
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	footer.add_theme_font_size_override("font_size", 6)
 	footer.modulate = Color(0.6, 0.65, 0.75, 0.75)
@@ -168,6 +169,8 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 	else:
 		if id == "echo_wind":
 			bg_col = Color(0.08, 0.16, 0.16, 0.95)
+		elif id == "neon_volt":
+			bg_col = Color(0.16, 0.14, 0.06, 0.95)
 		else:
 			bg_col = Color(0.18, 0.1, 0.08, 0.95)
 		border_col = accent
@@ -299,6 +302,9 @@ func _on_boss_pressed(boss_id: String) -> void:
 	elif boss_id == "echo_wind":
 		print("BossSelect: entrando etapa Echo Wind")
 		get_tree().change_scene_to_file(LEVEL_ECHO_WIND)
+	elif boss_id == "neon_volt":
+		print("BossSelect: entrando etapa Neon Volt")
+		get_tree().change_scene_to_file(LEVEL_NEON_VOLT)
 	elif boss_id == "core9":
 		print("BossSelect: CORE-9 aún bloqueado")
 	else:

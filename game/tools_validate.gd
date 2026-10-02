@@ -44,6 +44,16 @@ func _initialize() -> void:
 		"res://scenes/combat/WindGust.tscn",
 		"res://scenes/combat/EchoGaleShot.tscn",
 		"res://scenes/hazards/WindCurrent.tscn",
+		"res://scripts/levels/LevelNeonVolt.gd",
+		"res://scripts/bosses/NeonVolt.gd",
+		"res://scripts/combat/ElectricZigzagShot.gd",
+		"res://scripts/combat/NeonArcShot.gd",
+		"res://scripts/hazards/ElectricFloor.gd",
+		"res://scenes/levels/LevelNeonVolt.tscn",
+		"res://scenes/bosses/NeonVolt.tscn",
+		"res://scenes/combat/ElectricZigzagShot.tscn",
+		"res://scenes/combat/NeonArcShot.tscn",
+		"res://scenes/hazards/ElectricFloor.tscn",
 	]
 	for p in paths:
 		if not ResourceLoader.exists(p):
@@ -151,12 +161,16 @@ func _initialize() -> void:
 	else:
 		print("OK CharacterSelect → BossSelect")
 
-	# BossSelect must route Echo Wind to LevelEchoWind
+	# BossSelect must route Echo Wind / Neon Volt
 	var bsel_src = FileAccess.get_file_as_string("res://scripts/ui/BossSelect.gd")
 	if "LevelEchoWind.tscn" not in bsel_src:
 		errors.append("BossSelect should load LevelEchoWind for echo_wind")
 	else:
 		print("OK BossSelect → LevelEchoWind")
+	if "LevelNeonVolt.tscn" not in bsel_src:
+		errors.append("BossSelect should load LevelNeonVolt for neon_volt")
+	else:
+		print("OK BossSelect → LevelNeonVolt")
 
 	# Boss select UI
 	var boss_sel_packed: PackedScene = load("res://scenes/ui/BossSelect.tscn")
@@ -223,12 +237,32 @@ func _initialize() -> void:
 				errors.append("Echo Wind missing SecretStub for pending helmet")
 			elif esecret:
 				print("OK Echo Wind SecretStub present")
+		# Neon Volt playable cell
+		var neon_cell = null
+		if grid:
+			for c in grid.get_children():
+				if str(c.get_meta("boss_id", "")) == "neon_volt":
+					neon_cell = c
+					break
+		if neon_cell == null:
+			errors.append("BossSelect missing Neon Volt cell")
+		else:
+			var nst = neon_cell.get_node_or_null("SelectButton/StatusLabel")
+			if nst and "Pronto" in nst.text:
+				errors.append("Neon Volt should be playable, got: " + nst.text)
+			elif nst:
+				print("OK Neon Volt status=", nst.text)
+			var nsecret = neon_cell.get_node_or_null("SelectButton/SecretStub")
+			if nsecret == null and gs != null and gs.has_pending_armor_secret("neon_volt"):
+				errors.append("Neon Volt missing SecretStub for pending arms")
+			elif nsecret:
+				print("OK Neon Volt SecretStub present")
 		# Greyed Pronto on a locked boss
 		var pronto_ok := false
 		if grid:
 			for c in grid.get_children():
 				var bid2 = str(c.get_meta("boss_id", ""))
-				if bid2 in ["glitch_ice", "neon_volt", "bassquake"]:
+				if bid2 in ["glitch_ice", "bassquake", "metronome"]:
 					var st2 = c.get_node_or_null("SelectButton/StatusLabel")
 					if st2 and "Pronto" in st2.text:
 						pronto_ok = true
@@ -933,6 +967,272 @@ func _initialize() -> void:
 		await process_frame
 	else:
 		errors.append("LevelEchoWind.tscn failed to load")
+
+	# --- Neon Volt boss / weapon / level ---
+	var nv_boss_packed: PackedScene = load("res://scenes/bosses/NeonVolt.tscn")
+	if nv_boss_packed:
+		var nvb = nv_boss_packed.instantiate()
+		root.add_child(nvb)
+		await process_frame
+		if not nvb.is_in_group("weak_to_echo_gale"):
+			errors.append("NeonVolt missing weak_to_echo_gale group")
+		else:
+			print("OK NeonVolt weak_to_echo_gale")
+		if int(nvb.hp) != 28:
+			errors.append("NeonVolt HP expected 28, got %d" % int(nvb.hp))
+		else:
+			print("OK NeonVolt HP=28")
+		if nvb.has_method("activate"):
+			nvb.activate()
+		# Echo Gale ×3 weakness: base damage 2 → 6
+		nvb.hp = 26
+		var gale = load("res://scenes/combat/EchoGaleShot.tscn").instantiate()
+		root.add_child(gale)
+		gale.global_position = nvb.global_position
+		# Echo Gale delays launch; force moving so _try_hit applies
+		if "_moving" in gale:
+			gale._moving = true
+		if gale.has_method("_try_hit"):
+			gale._try_hit(nvb)
+		await process_frame
+		if int(nvb.hp) != 20:
+			errors.append("Echo Gale weakness expected hp 20 (26-6), got %d" % int(nvb.hp))
+		else:
+			print("OK Echo Gale ×3 vs NeonVolt hp=", nvb.hp)
+		if is_instance_valid(gale):
+			gale.queue_free()
+		nvb.queue_free()
+		await process_frame
+	else:
+		errors.append("NeonVolt.tscn failed to load")
+
+	# Neon Arc weapon smoke
+	var na_player_packed: PackedScene = load("res://scenes/player/Player.tscn")
+	if na_player_packed:
+		if gs:
+			gs.select_miku()
+		var nap = na_player_packed.instantiate()
+		root.add_child(nap)
+		await process_frame
+		nap.grant_weapon("neon_arc")
+		await process_frame
+		if str(nap.get_weapon_id()) != "neon_arc":
+			errors.append("grant_weapon neon_arc failed")
+		else:
+			print("OK grant_weapon neon_arc")
+		var naw: Dictionary = nap.get_current_weapon()
+		if int(naw.get("ammo", 0)) != 28:
+			errors.append("Neon Arc ammo expected 28")
+		else:
+			print("OK Neon Arc ammo=", naw.get("ammo"))
+		if nap.has_method("_fire_neon_arc"):
+			nap._fire_neon_arc()
+			await process_frame
+			var na_shots = root.get_tree().get_nodes_in_group("player_shots")
+			var found_na := false
+			for s in na_shots:
+				if s.get_script() and "NeonArc" in str(s.get_script().resource_path):
+					found_na = true
+				elif "damage" in s and int(s.damage) == 2:
+					found_na = true
+			if not found_na and na_shots.is_empty():
+				errors.append("NeonArcShot not spawned")
+			else:
+				print("OK NeonArcShot spawned count=", na_shots.size())
+				naw = nap.get_current_weapon()
+				if int(naw.get("ammo", 28)) != 27:
+					errors.append("Neon Arc ammo not consumed")
+				else:
+					print("OK Neon Arc ammo consumed=", naw.get("ammo"))
+				for sh in na_shots:
+					sh.queue_free()
+		# Arms armor → charge Nv4 stub
+		if gs:
+			gs.grant_armor_piece("flight", "arms", true)
+		if nap.has_method("on_armor_pickup"):
+			nap.on_armor_pickup("flight", "arms", "Brazos Stage Flight")
+		await process_frame
+		if nap.has_method("has_flight_arms") and not nap.has_flight_arms():
+			errors.append("Player missing flight arms after pickup")
+		else:
+			print("OK Player flight arms equipped")
+		# Simulate charge time past LV4 (select buster first — switch clears charge)
+		nap._select_weapon_by_id("buster")
+		nap._has_flight_arms = true
+		nap._charging = true
+		nap._charge_time = 2.0
+		var clv = int(nap.get_charge_level()) if nap.has_method("get_charge_level") else 0
+		if clv < 4:
+			errors.append("Expected charge Nv4 with arms, got %d" % clv)
+		else:
+			print("OK charge Nv4 stub level=", clv)
+		nap.queue_free()
+		await process_frame
+	else:
+		errors.append("Player.tscn failed for Neon Arc test")
+
+	# ElectricFloor smoke
+	var ef_packed: PackedScene = load("res://scenes/hazards/ElectricFloor.tscn")
+	if ef_packed:
+		var ef = ef_packed.instantiate()
+		root.add_child(ef)
+		await process_frame
+		if not ef.is_in_group("electric_floors"):
+			errors.append("ElectricFloor not in electric_floors group")
+		else:
+			print("OK ElectricFloor group")
+		ef.queue_free()
+		await process_frame
+	else:
+		errors.append("ElectricFloor.tscn failed to load")
+
+	# GameState neon_volt defeat + weapon unlock
+	if gs:
+		gs.mark_boss_defeated("neon_volt")
+		if not gs.is_boss_defeated("neon_volt"):
+			errors.append("mark neon_volt defeated failed")
+		else:
+			print("OK neon_volt defeated in GameState")
+		if not gs.has_weapon_unlocked("neon_arc"):
+			errors.append("neon_arc should unlock on neon_volt defeat")
+		else:
+			print("OK neon_arc unlocked")
+		# BossSelect defeated checkmark for neon
+		var bsel2_packed: PackedScene = load("res://scenes/ui/BossSelect.tscn")
+		if bsel2_packed:
+			var bsel2 = bsel2_packed.instantiate()
+			root.add_child(bsel2)
+			await process_frame
+			var grid2 = bsel2.get_node_or_null("BossGrid")
+			var neon_def = null
+			if grid2:
+				for c in grid2.get_children():
+					if str(c.get_meta("boss_id", "")) == "neon_volt":
+						neon_def = c
+						break
+			if neon_def:
+				var stn = neon_def.get_node_or_null("SelectButton/StatusLabel")
+				if stn and "VENCIDO" in stn.text:
+					print("OK Neon Volt VENCIDO status")
+				elif stn:
+					print("OK Neon Volt status after defeat=", stn.text)
+			bsel2.queue_free()
+			await process_frame
+
+	# Instantiate LevelNeonVolt
+	var neon_level_packed: PackedScene = load("res://scenes/levels/LevelNeonVolt.tscn")
+	if neon_level_packed:
+		if gs:
+			gs._armor_owned.clear()
+			gs._armor_equipped.clear()
+		var nlvl = neon_level_packed.instantiate()
+		root.add_child(nlvl)
+		print("OK instantiate LevelNeonVolt, children=", nlvl.get_child_count())
+		await process_frame
+		await process_frame
+		var nent = nlvl.get_node_or_null("Entities")
+		if nent == null:
+			errors.append("LevelNeonVolt Entities missing")
+		else:
+			var np = nent.get_node_or_null("Player")
+			if np == null:
+				errors.append("Player not spawned in LevelNeonVolt")
+			else:
+				print("OK NeonVolt level player spawned")
+			var nboss = 0
+			var nmet = 0
+			for c in nent.get_children():
+				if c.is_in_group("bosses") or str(c.name).begins_with("Neon"):
+					nboss += 1
+				elif c.is_in_group("enemies") or str(c.name).begins_with("Met"):
+					nmet += 1
+			if nmet < 2:
+				errors.append("Expected >=2 MetBeat in LevelNeonVolt, got %d" % nmet)
+			else:
+				print("OK MetBeat in LevelNeonVolt=", nmet)
+			if nboss < 1:
+				errors.append("Expected NeonVolt boss in level")
+			else:
+				print("OK NeonVolt boss in level")
+			if nent.get_node_or_null("ArenaTrigger") == null:
+				errors.append("LevelNeonVolt ArenaTrigger missing")
+			else:
+				print("OK LevelNeonVolt ArenaTrigger")
+			var arms = nent.get_node_or_null("FlightArmsPickup")
+			if arms == null:
+				errors.append("FlightArmsPickup missing in LevelNeonVolt")
+			else:
+				print("OK FlightArmsPickup at ", arms.position)
+		var nhaz = nlvl.get_node_or_null("Hazards")
+		var elec_n := 0
+		if nhaz:
+			for c in nhaz.get_children():
+				if c.is_in_group("electric_floors") or str(c.name).begins_with("Electric"):
+					elec_n += 1
+		if elec_n < 3:
+			errors.append("Expected >=3 ElectricFloor in LevelNeonVolt, got %d" % elec_n)
+		else:
+			print("OK ElectricFloor count=", elec_n)
+		if nlvl.get_node_or_null("HUD") == null:
+			errors.append("HUD missing in LevelNeonVolt")
+		else:
+			print("OK HUD in LevelNeonVolt")
+		if nlvl.get_node_or_null("TouchControls") == null:
+			errors.append("TouchControls missing in LevelNeonVolt")
+		else:
+			print("OK TouchControls in LevelNeonVolt")
+		# Arms pickup → armor 3/3 if head+torso granted
+		if gs:
+			gs.grant_armor_piece("flight", "torso", true)
+			gs.grant_armor_piece("flight", "head", true)
+		var arms2 = nent.get_node_or_null("FlightArmsPickup") if nent else null
+		var np2 = nent.get_node_or_null("Player") if nent else null
+		if arms2 and np2 and arms2.has_method("_collect"):
+			arms2._collect(np2)
+			await process_frame
+			if gs and not gs.has_armor_piece("flight", "arms"):
+				errors.append("Arms pickup did not grant arms")
+			else:
+				print("OK flight arms owned count=", gs.get_armor_owned_count("flight") if gs else -1)
+			if gs and int(gs.get_armor_owned_count("flight")) < 3:
+				errors.append("Expected armor 3/3 after torso+head+arms")
+			else:
+				print("OK Stage Flight armor 3/3")
+		# Boss kill path
+		if nlvl.has_method("_start_boss_fight"):
+			nlvl._start_boss_fight()
+			await process_frame
+			var boss_n = nent.get_node_or_null("NeonVolt") if nent else null
+			if boss_n and boss_n.has_method("take_damage"):
+				while is_instance_valid(boss_n) and int(boss_n.hp) > 0:
+					boss_n.take_damage(7)
+					await process_frame
+				await process_frame
+				await process_frame
+				var np3 = nent.get_node_or_null("Player") if nent else null
+				if np3 and np3.has_method("_has_weapon"):
+					if not np3._has_weapon("neon_arc"):
+						errors.append("Neon Volt defeat did not grant Neon Arc")
+					else:
+						print("OK Neon Volt defeat granted Neon Arc")
+				if gs and not gs.is_boss_defeated("neon_volt"):
+					errors.append("Neon Volt defeat did not set GameState")
+				else:
+					print("OK GameState neon_volt defeated after win")
+				var win_n = nlvl.get_node_or_null("WinBanner")
+				if win_n == null:
+					print("WARN Neon Volt WinBanner not found immediately")
+				else:
+					print("OK Neon Volt WinBanner")
+					var ret_n = win_n.get_node_or_null("Root/Panel/ReturnBossSelect")
+					if ret_n == null:
+						errors.append("Neon Volt WinBanner missing ReturnBossSelect")
+					else:
+						print("OK Neon Volt ReturnBossSelect")
+		nlvl.queue_free()
+		await process_frame
+	else:
+		errors.append("LevelNeonVolt.tscn failed to load")
 
 	# Instantiate main scene briefly
 	var packed: PackedScene = load("res://scenes/levels/Level01.tscn")

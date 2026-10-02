@@ -19,7 +19,9 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 /workspace/tools/godot --headless --path /workspace/miku-teto-megaman/game --quit-after 2
 ```
 
-Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind.
+Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt.
+
+**v0.7:** etapa **Neon Volt** (pisos eléctricos a tempo, jefe, Neon Arc, brazos Stage Flight).
 
 ## Controls
 
@@ -30,7 +32,7 @@ Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → 
 | Move | Arrow keys or WASD |
 | Jump | **Z** or Space |
 | Attack / charge Buster | **X** (hold to charge) |
-| Weapon prev / next | **Q** / **E** (also **1** Buster/Sable, **2** Beat Blaze, **3** Echo Gale) |
+| Weapon prev / next | **Q** / **E** (also **1** Buster/Sable, **2** Beat Blaze, **3** Echo Gale, **4** Neon Arc) |
 | Slide | **C** |
 
 **Wall-jump:** press Jump while sliding down / touching a wall (always available).
@@ -62,7 +64,7 @@ CanvasLayer **layer 50** (below touch @ 100). Spanish UI.
 | Top-left | Cyan portrait stub (Miku) + HP bar (28 units, `PV x/28`) |
 | Top-left | Weapon label (`Arma: Buster` o `Beat Blaze n/28`) + 4 empty Energy Tank icons |
 | Top-right | Pause (`II` → panel **PAUSA** / **Continuar**, freezes tree) |
-| Top-right | 3 armor slots (Stage Flight torso = 1/3 cyan) |
+| Top-right | 3 armor slots (Stage Flight head/torso/arms) |
 
 Spikes call `Player.take_damage(4)` → `hp_changed` → bar updates. Walk onto the spike pit (~x=288) to see HP drop.
 
