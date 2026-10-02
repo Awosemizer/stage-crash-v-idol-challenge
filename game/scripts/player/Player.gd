@@ -460,7 +460,7 @@ func grant_weapon(weapon_id: String) -> void:
 		# Refill ammo if already owned and select it
 		for i in _weapons.size():
 			if str(_weapons[i].get("id", "")) == weapon_id:
-				_weapons[i]["ammo"] = int(_weapons[i].get("max_ammo", 28))
+				_weapons[i]["ammo"] = _scaled_ammo(int(_weapons[i].get("max_ammo", 28)))
 				_weapon_index = i
 				_charging = false
 				_charge_time = 0.0
@@ -476,6 +476,7 @@ func grant_weapon(weapon_id: String) -> void:
 			"cost": 1,
 		})
 		_weapon_index = _weapons.size() - 1
+		_apply_hard_ammo()
 		_charging = false
 		_charge_time = 0.0
 		_emit_weapon()
@@ -489,6 +490,7 @@ func grant_weapon(weapon_id: String) -> void:
 			"cost": 1,
 		})
 		_weapon_index = _weapons.size() - 1
+		_apply_hard_ammo()
 		_charging = false
 		_charge_time = 0.0
 		_emit_weapon()
@@ -502,6 +504,7 @@ func grant_weapon(weapon_id: String) -> void:
 			"cost": 1,
 		})
 		_weapon_index = _weapons.size() - 1
+		_apply_hard_ammo()
 		_charging = false
 		_charge_time = 0.0
 		_emit_weapon()
@@ -515,6 +518,7 @@ func grant_weapon(weapon_id: String) -> void:
 			"cost": 2,
 		})
 		_weapon_index = _weapons.size() - 1
+		_apply_hard_ammo()
 		_charging = false
 		_charge_time = 0.0
 		_emit_weapon()
@@ -528,6 +532,7 @@ func grant_weapon(weapon_id: String) -> void:
 			"cost": 1,
 		})
 		_weapon_index = _weapons.size() - 1
+		_apply_hard_ammo()
 		_charging = false
 		_charge_time = 0.0
 		_emit_weapon()
@@ -541,6 +546,7 @@ func grant_weapon(weapon_id: String) -> void:
 			"cost": 2,
 		})
 		_weapon_index = _weapons.size() - 1
+		_apply_hard_ammo()
 		_charging = false
 		_charge_time = 0.0
 		_emit_weapon()
@@ -554,6 +560,7 @@ func grant_weapon(weapon_id: String) -> void:
 			"cost": 2,
 		})
 		_weapon_index = _weapons.size() - 1
+		_apply_hard_ammo()
 		_charging = false
 		_charge_time = 0.0
 		_emit_weapon()
@@ -567,11 +574,28 @@ func grant_weapon(weapon_id: String) -> void:
 			"cost": 3,
 		})
 		_weapon_index = _weapons.size() - 1
+		_apply_hard_ammo()
 		_charging = false
 		_charge_time = 0.0
 		_emit_weapon()
 		print("Player: arma otorgada Static Veil")
 
+
+
+func _scaled_ammo(full: int) -> int:
+	var gs := _game_state()
+	if gs != null and gs.has_method("scale_pickup_ammo"):
+		return int(gs.scale_pickup_ammo(full))
+	return full
+
+
+func _apply_hard_ammo() -> void:
+	if _weapon_index < 0 or _weapon_index >= _weapons.size():
+		return
+	var full := int(_weapons[_weapon_index].get("max_ammo", -1))
+	if full <= 0:
+		return
+	_weapons[_weapon_index]["ammo"] = _scaled_ammo(full)
 
 
 func _ping_ammo_empty() -> void:

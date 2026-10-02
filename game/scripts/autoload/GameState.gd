@@ -63,7 +63,8 @@ var difficulty: Difficulty = Difficulty.NORMAL
 
 const HURT_INVULN_NORMAL := 1.0
 const HURT_INVULN_HARD := 0.6
-const HARD_CONTACT_BONUS := 2  # +2 daño de contacto en Hard
+const HARD_CONTACT_BONUS := 1  # +1 en Difícil; no triplica un roce
+const HARD_HIT_CAP := 10  # un golpe no llega a media barra (28)
 
 ## --- Logros ---
 const ACH_EIGHT_MASTERS := "eight_masters"
@@ -698,6 +699,8 @@ func set_difficulty_hard(on: bool) -> void:
 	difficulty = Difficulty.HARD if on else Difficulty.NORMAL
 	difficulty_changed.emit(is_hard())
 	print("GameState: dificultad → %s" % ("Hard" if on else "Normal"))
+	if active_slot >= 0:
+		save_to_slot(active_slot)
 
 
 func set_difficulty_id(id: String) -> void:
@@ -768,12 +771,17 @@ func get_hurt_invuln_time() -> float:
 
 
 func scale_incoming_damage(amount: int) -> int:
-	## Hard: +2 al daño de contacto / golpes (mín. amount).
-	if amount <= 0:
+	## Difícil: +1, con tope. Normal no cambia.
+	if amount <= 0 or not is_hard():
 		return amount
-	if is_hard():
-		return amount + HARD_CONTACT_BONUS
-	return amount
+	return mini(amount + HARD_CONTACT_BONUS, HARD_HIT_CAP)
+
+
+func scale_pickup_ammo(full: int) -> int:
+	## Difícil: el arma robada entra al 75%. Normal: llena.
+	if full <= 0 or not is_hard():
+		return full
+	return maxi(4, int(round(float(full) * 0.75)))
 
 
 ## --- Logros ---

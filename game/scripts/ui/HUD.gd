@@ -466,7 +466,7 @@ func _layout() -> void:
 	_hp_bg.position = Vector2(left + PORTRAIT_SIZE + 3.0, top + 2.0)
 
 	_hp_label.position = Vector2(_hp_bg.position.x, top + HP_BAR_H + 3.0)
-	_hp_label.size = Vector2(HP_BAR_W + 20.0, 10.0)
+	_hp_label.size = Vector2(150.0, 10.0)
 
 	_weapon_label.position = Vector2(left, top + PORTRAIT_SIZE + 1.0)
 	_weapon_label.size = Vector2(176.0, 12.0)
@@ -615,7 +615,15 @@ func _refresh_hp_bar() -> void:
 	else:
 		_hp_fill.color = Color(0.95, 0.3, 0.35, 1.0)
 	if _hp_label:
-		_hp_label.text = "PV %d/%d" % [_hp, _max_hp]
+		var diff := ""
+		var gs_d := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+		if gs_d != null and gs_d.has_method("get_difficulty_display_name"):
+			diff = " · " + str(gs_d.get_difficulty_display_name())
+		_hp_label.text = "PV %d/%d%s" % [_hp, _max_hp, diff]
+		if gs_d != null and gs_d.has_method("is_hard") and gs_d.is_hard():
+			_hp_label.modulate = Color(1.0, 0.72, 0.72, 0.95)
+		else:
+			_hp_label.modulate = Color(1, 1, 1, 0.9)
 
 
 
@@ -828,6 +836,13 @@ func _toggle_pause() -> void:
 		Engine.time_scale = 1.0
 	if tree:
 		tree.paused = _is_paused
+	if _pause_title:
+		var gs_p := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+		var name := "Normal"
+		if gs_p != null and gs_p.has_method("get_difficulty_display_name"):
+			name = str(gs_p.get_difficulty_display_name())
+		_pause_title.text = "PAUSA · " + name
+		_pause_title.modulate = Color(1.0, 0.55, 0.55, 1.0) if name == "Difícil" else Color(0.4, 0.95, 1.0, 1.0)
 	print("HUD: pausa=%s" % str(_is_paused))
 	if _is_paused:
 		_rebuild_weapon_strip()
