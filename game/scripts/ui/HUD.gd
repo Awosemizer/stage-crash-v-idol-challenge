@@ -38,6 +38,7 @@ var _is_paused := false
 var _weapon_ammo := -1
 var _weapon_max_ammo := -1
 var _weapon_id := "buster"
+var _weakness_label: Label = null
 
 
 func _ready() -> void:
@@ -59,6 +60,7 @@ func _ready() -> void:
 		if not gs.energy_tanks_changed.is_connected(_on_energy_tanks_changed):
 			gs.energy_tanks_changed.connect(_on_energy_tanks_changed)
 	sync_energy_tanks_from_state()
+	call_deferred("refresh_weakness_hint")
 	# Auto-bind if player already in tree
 	call_deferred("_try_auto_bind")
 
@@ -205,6 +207,14 @@ func _build_ui() -> void:
 	_weapon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(_weapon_label)
 
+	_weakness_label = Label.new()
+	_weakness_label.name = "WeaknessHint"
+	_weakness_label.add_theme_font_size_override("font_size", 5)
+	_weakness_label.modulate = Color(0.95, 0.7, 0.4, 0.9)
+	_weakness_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_weakness_label.visible = false
+	_root.add_child(_weakness_label)
+
 	for i in MAX_ENERGY_TANKS:
 		var tank := ColorRect.new()
 		tank.name = "EnergyTank%d" % i
@@ -295,6 +305,10 @@ func _layout() -> void:
 	_weapon_label.position = Vector2(SAFE, SAFE + PORTRAIT_SIZE + 2.0)
 	_weapon_label.size = Vector2(120.0, 10.0)
 
+	if _weakness_label:
+		_weakness_label.position = Vector2(SAFE, SAFE + PORTRAIT_SIZE + 22.0)
+		_weakness_label.size = Vector2(140.0, 10.0)
+
 	var tank_y := SAFE + PORTRAIT_SIZE + 12.0
 	for i in _tank_icons.size():
 		_tank_icons[i].size = Vector2(TANK_SIZE, TANK_SIZE)
@@ -367,6 +381,7 @@ func _refresh_weapon() -> void:
 
 func _on_armor_changed(_set_id: String = "") -> void:
 	_refresh_armor()
+	refresh_weakness_hint()
 
 
 func _refresh_armor() -> void:
@@ -433,3 +448,50 @@ func _unhandled_input(event: InputEvent) -> void:
 		if k.keycode == KEY_ESCAPE or k.physical_keycode == KEY_ESCAPE:
 			_toggle_pause()
 			get_viewport().set_input_as_handled()
+
+
+func refresh_weakness_hint() -> void:
+	## Encore Guard casco: muestra debilidad del jefe activo en escena.
+	if _weakness_label == null:
+		return
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	var has_helm := false
+	if gs != null and gs.has_method("has_encore_head_equipped"):
+		has_helm = bool(gs.has_encore_head_equipped())
+	elif gs != null and gs.has_method("is_armor_equipped"):
+		has_helm = bool(gs.is_armor_equipped("encore", "head"))
+	if not has_helm:
+		_weakness_label.visible = false
+		_weakness_label.text = ""
+		return
+	var hint := _detect_boss_weakness()
+	if hint == "":
+		_weakness_label.text = "◆ Debilidad: —"
+		_weakness_label.visible = true
+	else:
+		_weakness_label.text = "◆ Debilidad: %s" % hint
+		_weakness_label.visible = true
+
+
+func _detect_boss_weakness() -> String:
+	var tree := get_tree()
+	if tree == null:
+		return ""
+	var bosses := tree.get_nodes_in_group("bosses")
+	if bosses.is_empty():
+		return ""
+	var b: Node = bosses[0]
+	var map := {
+		"weak_to_petal_chorus": "Petal Chorus",
+		"weak_to_beat_blaze": "Beat Blaze",
+		"weak_to_echo_gale": "Echo Gale",
+		"weak_to_neon_arc": "Neon Arc",
+		"weak_to_freeze_sample": "Freeze Sample",
+		"weak_to_quake_drop": "Quake Drop",
+		"weak_to_tempo_spike": "Tempo Spike",
+		"weak_to_static_veil": "Static Veil",
+	}
+	for g in map.keys():
+		if b.is_in_group(str(g)):
+			return str(map[g])
+	return ""

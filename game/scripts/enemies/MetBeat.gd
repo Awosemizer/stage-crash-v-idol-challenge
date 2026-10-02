@@ -15,6 +15,7 @@ var _open := false
 var _timer := 0.0
 var _flash := 0.0
 var _alive := true
+var _stealth := false
 
 @onready var visual: ColorRect = $Visual
 @onready var eye: ColorRect = $Eye
@@ -65,10 +66,26 @@ func _refresh_look() -> void:
 			shell_hint.color = Color(0.65, 0.7, 0.78, 1.0)
 	if _flash > 0.0:
 		visual.color = Color(1.0, 1.0, 1.0, 1.0)
+	if _stealth:
+		# Nearly invisible when closed; faint when open
+		var a := 0.55 if _open else 0.12
+		modulate = Color(1, 1, 1, a)
+	else:
+		modulate = Color(1, 1, 1, 1)
 
 
 func is_open() -> bool:
 	return _open
+
+
+func set_stealth(enabled: bool) -> void:
+	## Invisible entre beats (Static Shadow): casi invisible cerrado, visible al abrir.
+	_stealth = enabled
+	_refresh_look()
+
+
+func is_stealth() -> bool:
+	return _stealth
 
 
 func take_damage(amount: int) -> bool:

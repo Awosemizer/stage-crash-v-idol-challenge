@@ -19,9 +19,11 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 /workspace/tools/godot --headless --path /workspace/miku-teto-megaman/game --quit-after 2
 ```
 
-Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome.
+Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome / LevelStaticShadow.
 
 **v0.11:** etapa **Metronome** (púas a tempo, jefe, Tempo Spike, piernas Encore Guard).
+
+**v0.12:** etapa **Static Shadow** (oscuridad, Static Veil, casco Encore, CORE-9 stub).
 **v0.10:** etapa **Bassquake** (temblores, suelos colapsables, jefe, Quake Drop, torso Encore Guard).
 **v0.9:** etapa **Chorus Bloom** (enredaderas, pétalos, jefe, Petal Chorus, Energy Tank).
 **v0.8:** etapa **Glitch Ice** (plataformas frame-skip, jefe, Freeze Sample, Energy Tank).
@@ -95,7 +97,7 @@ Bound at runtime by TouchControls (same actions):
 - `MetBeat` — enemigo caparazón a ritmo (HP 2, contacto 2)
 - `TouchControls` — mobile overlay + joypad InputMap wiring (CanvasLayer 100)
 - `HUD` — life bar, portrait, weapon label, energy tanks, armor stubs, pause (CanvasLayer 50; Spanish strings)
-- `TitleScreen` / `CharacterSelect` / **`BossSelect`** — flujo de menú (grilla 3×3, CORE-9 bloqueado)
+- `TitleScreen` / `CharacterSelect` / **`BossSelect`** — flujo de menú (grilla 3×3, CORE-9 tras 8 jefes → stub fortaleza)
 - `Level01` — platforms, wall-jump, spikes, slide tunnel, **3 Met-Beat**, arena **Beatfire Man**
 - `LevelEchoWind` — torres, corrientes de viento, secreto **casco Stage Flight**, arena **Echo Wind**
 - Victoria jefe → `GameState.beatfire_defeated` + botón/auto a Boss Select
@@ -147,7 +149,7 @@ Expect `VALIDATE_PASS`.
 
 ## Next recommended step
 
-Static Shadow + fortaleza CORE-9, arte definitivo.
+Fortaleza CORE-9 jugable, arte definitivo.
 
 ## Android debug APK
 

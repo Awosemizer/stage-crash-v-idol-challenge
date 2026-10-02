@@ -45,7 +45,7 @@ En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
 
 Archivo listo (debug, un solo archivo, ~27 MB):
 
-**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.8 — Glitch Ice)
+**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.12 — Static Shadow)
 
 1. Descarga el APK desde este repo (botón Raw / Download).
 2. En el teléfono: permite **orígenes desconocidos** / instalar apps desconocidas para el navegador o gestor de archivos.

@@ -44,7 +44,7 @@ var _armor_owned: Dictionary = {}
 ## equipped[set_id][piece_id] = true (proto: auto-equip on pickup)
 var _armor_equipped: Dictionary = {}
 
-## Progreso de jefes — proto: Beatfire + Echo + Neon + Glitch Ice + Chorus Bloom + Bassquake + Metronome jugables.
+## Progreso de jefes — proto: 8 Robot Masters jugables (Static Shadow incluido).
 var beatfire_defeated: bool = false
 var _bosses_defeated: Dictionary = {}
 
@@ -165,6 +165,13 @@ func has_encore_legs_equipped() -> bool:
 	return is_armor_equipped(ARMOR_SET_ENCORE, ARMOR_PIECE_LEGS)
 
 
+func has_encore_head_equipped() -> bool:
+	return is_armor_equipped(ARMOR_SET_ENCORE, ARMOR_PIECE_HEAD)
+
+
+func has_flight_head_equipped() -> bool:
+	return is_armor_equipped(ARMOR_SET_FLIGHT, ARMOR_PIECE_HEAD)
+
 
 func get_encore_armor_color() -> Color:
 	return COLOR_ENCORE
@@ -203,6 +210,8 @@ func mark_boss_defeated(boss_id: String) -> void:
 			unlock_weapon("quake_drop")
 		elif boss_id == BOSS_METRONOME:
 			unlock_weapon("tempo_spike")
+		elif boss_id == BOSS_STATIC_SHADOW:
+			unlock_weapon("static_veil")
 	boss_defeated.emit(boss_id)
 	print("GameState: jefe derrotado → %s" % boss_id)
 
@@ -227,6 +236,8 @@ func has_pending_armor_secret(boss_id: String) -> bool:
 		return not has_armor_piece(ARMOR_SET_ENCORE, ARMOR_PIECE_TORSO)
 	if boss_id == BOSS_METRONOME:
 		return not has_armor_piece(ARMOR_SET_ENCORE, ARMOR_PIECE_LEGS)
+	if boss_id == BOSS_STATIC_SHADOW:
+		return not has_armor_piece(ARMOR_SET_ENCORE, ARMOR_PIECE_HEAD)
 	return false
 
 

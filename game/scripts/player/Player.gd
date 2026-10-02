@@ -51,6 +51,7 @@ const WEAPON_FREEZE_SAMPLE := "freeze_sample"
 const WEAPON_PETAL_CHORUS := "petal_chorus"
 const WEAPON_QUAKE_DROP := "quake_drop"
 const WEAPON_TEMPO_SPIKE := "tempo_spike"
+const WEAPON_STATIC_VEIL := "static_veil"
 
 const SABER_DURATION := 0.18
 const SABER_DAMAGE := 2
@@ -73,6 +74,7 @@ const FreezeSampleShotScene := preload("res://scenes/combat/FreezeSampleShot.tsc
 const PetalChorusShotScene := preload("res://scenes/combat/PetalChorusShot.tscn")
 const QuakeDropShotScene := preload("res://scenes/combat/QuakeDropShot.tscn")
 const TempoSpikeShotScene := preload("res://scenes/combat/TempoSpikeShot.tscn")
+const StaticVeilShotScene := preload("res://scenes/combat/StaticVeilShot.tscn")
 
 signal hp_changed(current: int, maximum: int)
 signal weapon_changed(weapon_id: String, display_name: String, ammo: int, max_ammo: int)
@@ -135,6 +137,7 @@ var _key5_held := false
 var _key6_held := false
 var _key7_held := false
 var _key8_held := false
+var _key9_held := false
 
 
 func _ready() -> void:
@@ -282,8 +285,12 @@ func _handle_weapon_switch() -> void:
 	var k8 := Input.is_physical_key_pressed(KEY_8)
 	if k8 and not _key8_held and _has_weapon(WEAPON_TEMPO_SPIKE):
 		_select_weapon_by_id(WEAPON_TEMPO_SPIKE)
+	var k9 := Input.is_physical_key_pressed(KEY_9)
+	if k9 and not _key9_held and _has_weapon(WEAPON_STATIC_VEIL):
+		_select_weapon_by_id(WEAPON_STATIC_VEIL)
 	_key7_held = k7
 	_key8_held = k8
+	_key9_held = k9
 	_key1_held = k1
 	_key2_held = k2
 	_key3_held = k3
@@ -335,7 +342,7 @@ func get_weapon_id() -> String:
 
 
 func grant_weapon(weapon_id: String) -> void:
-	## Otorga arma robada de jefe (Beat Blaze / Echo Gale / Neon Arc / Freeze Sample / Petal Chorus / Quake Drop / Tempo Spike).
+	## Otorga arma robada de jefe (… / Tempo Spike / Static Veil).
 	var gs := _game_state()
 	if gs != null and gs.has_method("unlock_weapon"):
 		gs.unlock_weapon(weapon_id)
@@ -441,6 +448,19 @@ func grant_weapon(weapon_id: String) -> void:
 		_charge_time = 0.0
 		_emit_weapon()
 		print("Player: arma otorgada Tempo Spike")
+	elif weapon_id == WEAPON_STATIC_VEIL:
+		_weapons.append({
+			"id": WEAPON_STATIC_VEIL,
+			"name": "Static Veil",
+			"ammo": 14,
+			"max_ammo": 14,
+			"cost": 3,
+		})
+		_weapon_index = _weapons.size() - 1
+		_charging = false
+		_charge_time = 0.0
+		_emit_weapon()
+		print("Player: arma otorgada Static Veil")
 
 
 func _emit_weapon() -> void:
@@ -476,6 +496,8 @@ func _handle_attack(delta: float) -> void:
 		_handle_quake_drop()
 	elif wid == WEAPON_TEMPO_SPIKE:
 		_handle_tempo_spike()
+	elif wid == WEAPON_STATIC_VEIL:
+		_handle_static_veil()
 	elif wid == WEAPON_SABER:
 		_handle_saber()
 	else:
@@ -513,7 +535,7 @@ func _apply_character_from_state() -> void:
 
 
 func _restore_unlocked_weapons() -> void:
-	## Otorga armas ya desbloqueadas en GameState (incl. Tempo Spike).
+	## Otorga armas ya desbloqueadas en GameState (incl. Tempo Spike / Static Veil).
 	var gs := _game_state()
 	if gs == null or not gs.has_method("get_unlocked_weapons"):
 		return
@@ -853,6 +875,36 @@ func _fire_tempo_spike() -> void:
 		shot.setup(facing)
 
 
+func _handle_static_veil() -> void:
+	if _charging:
+		_charging = false
+		_charge_time = 0.0
+	if Input.is_action_just_pressed("attack"):
+		_fire_static_veil()
+
+
+func _fire_static_veil() -> void:
+	var w := get_current_weapon()
+	var ammo: int = int(w.get("ammo", 0))
+	var cost: int = int(w.get("cost", 3))
+	if ammo < cost:
+		return
+	var live := get_tree().get_nodes_in_group("player_shots")
+	if live.size() >= MAX_SHOTS:
+		return
+	ammo -= cost
+	_weapons[_weapon_index]["ammo"] = ammo
+	_emit_weapon()
+	var shot: Area2D = StaticVeilShotScene.instantiate()
+	var parent_node := get_parent()
+	if parent_node == null:
+		parent_node = get_tree().current_scene
+	parent_node.add_child(shot)
+	shot.global_position = global_position + Vector2(facing * SHOT_SPAWN_X, SHOT_SPAWN_Y)
+	if shot.has_method("setup"):
+		shot.setup(facing)
+
+
 func heal(amount: int) -> void:
 	## Cura PV (Petal Chorus / tanques). Cap a max_hp.
 	if not _alive or amount <= 0:
@@ -1176,6 +1228,8 @@ func on_armor_pickup(set_id: String, piece_id: String, _display_name: String = "
 		print("Player: Encore Guard torso — defensa + hyper armor slide")
 	elif set_id == "encore" and piece_id == "legs":
 		print("Player: Encore Guard piernas — más i-frames en slide")
+	elif set_id == "encore" and piece_id == "head":
+		print("Player: Encore Guard casco — revelación de debilidades")
 
 
 func has_flight_hover() -> bool:

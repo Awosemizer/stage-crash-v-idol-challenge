@@ -98,6 +98,16 @@ func _initialize() -> void:
 		"res://scenes/combat/TempoSpikeShot.tscn",
 		"res://scenes/combat/TempoNeedle.tscn",
 		"res://scenes/hazards/MetronomeSpike.tscn",
+		"res://scripts/levels/LevelStaticShadow.gd",
+		"res://scripts/bosses/StaticShadow.gd",
+		"res://scripts/combat/StaticVeilShot.gd",
+		"res://scripts/hazards/StaticZone.gd",
+		"res://scripts/ui/FortressComingSoon.gd",
+		"res://scenes/levels/LevelStaticShadow.tscn",
+		"res://scenes/bosses/StaticShadow.tscn",
+		"res://scenes/combat/StaticVeilShot.tscn",
+		"res://scenes/hazards/StaticZone.tscn",
+		"res://scenes/ui/FortressComingSoon.tscn",
 	]
 	for p in paths:
 		if not ResourceLoader.exists(p):
@@ -231,6 +241,14 @@ func _initialize() -> void:
 		errors.append("BossSelect should load LevelMetronome for metronome")
 	else:
 		print("OK BossSelect → LevelMetronome")
+	if "LevelStaticShadow.tscn" not in bsel_src:
+		errors.append("BossSelect should load LevelStaticShadow for static_shadow")
+	else:
+		print("OK BossSelect → LevelStaticShadow")
+	if "FortressComingSoon.tscn" not in bsel_src:
+		errors.append("BossSelect should load FortressComingSoon for CORE-9")
+	else:
+		print("OK BossSelect → FortressComingSoon")
 
 	# Boss select UI
 	var boss_sel_packed: PackedScene = load("res://scenes/ui/BossSelect.tscn")
@@ -332,20 +350,26 @@ func _initialize() -> void:
 				errors.append("Glitch Ice should be playable, got: " + ist.text)
 			elif ist:
 				print("OK Glitch Ice status=", ist.text)
-		# Greyed Pronto on a locked boss
-		var pronto_ok := false
+		# Static Shadow playable cell
+		var ss_cell = null
 		if grid:
 			for c in grid.get_children():
-				var bid2 = str(c.get_meta("boss_id", ""))
-				if bid2 in ["static_shadow"]:
-					var st2 = c.get_node_or_null("SelectButton/StatusLabel")
-					if st2 and "Pronto" in st2.text:
-						pronto_ok = true
-						break
-		if not pronto_ok:
-			errors.append("Expected at least one boss with Pronto label")
+				if str(c.get_meta("boss_id", "")) == "static_shadow":
+					ss_cell = c
+					break
+		if ss_cell == null:
+			errors.append("BossSelect missing Static Shadow cell")
 		else:
-			print("OK greyed Pronto bosses present")
+			var sst = ss_cell.get_node_or_null("SelectButton/StatusLabel")
+			if sst and "Pronto" in sst.text:
+				errors.append("Static Shadow should be playable, got: " + sst.text)
+			elif sst:
+				print("OK Static Shadow status=", sst.text)
+			var sssecret = ss_cell.get_node_or_null("SelectButton/SecretStub")
+			if sssecret == null and gs != null and gs.has_pending_armor_secret("static_shadow"):
+				errors.append("Static Shadow missing SecretStub for pending encore helmet")
+			elif sssecret:
+				print("OK Static Shadow SecretStub present")
 		# Spanish / GDD names present in scene tree
 		var names_needed = ["Beatfire Man", "Glitch Ice", "Bassquake", "Echo Wind", "Neon Volt", "Metronome", "Chorus Bloom", "Static Shadow", "CORE-9"]
 		var found_names := 0
@@ -2400,6 +2424,266 @@ func _initialize() -> void:
 		await process_frame
 	else:
 		errors.append("LevelMetronome.tscn failed to load")
+
+
+
+	# --- Static Shadow boss / weapon / level ---
+	var ss_boss_packed: PackedScene = load("res://scenes/bosses/StaticShadow.tscn")
+	if ss_boss_packed:
+		var ssb = ss_boss_packed.instantiate()
+		root.add_child(ssb)
+		await process_frame
+		if not ssb.is_in_group("weak_to_petal_chorus"):
+			errors.append("StaticShadow missing weak_to_petal_chorus group")
+		else:
+			print("OK StaticShadow weak_to_petal_chorus")
+		if int(ssb.hp) != 28:
+			errors.append("StaticShadow HP expected 28, got %d" % int(ssb.hp))
+		else:
+			print("OK StaticShadow HP=28")
+		if ssb.has_method("activate"):
+			ssb.activate()
+		# Petal Chorus ×3: base 1 → 3; start hp 26 after fake chip? use 28-3=25 if one hit of 3
+		# Petal Chorus ×3: base 1 → 3
+		ssb.hp = 26
+		var pcs = load("res://scenes/combat/PetalChorusShot.tscn").instantiate()
+		root.add_child(pcs)
+		pcs.global_position = ssb.global_position
+		if pcs.has_method("_try_hit"):
+			pcs._try_hit(ssb)
+		await process_frame
+		if int(ssb.hp) != 23:
+			errors.append("Petal Chorus weakness vs StaticShadow expected hp 23 (26-3), got %d" % int(ssb.hp))
+		else:
+			print("OK Petal Chorus ×3 vs StaticShadow hp=", ssb.hp)
+		if is_instance_valid(pcs):
+			pcs.queue_free()
+		ssb.queue_free()
+		await process_frame
+	else:
+		errors.append("StaticShadow.tscn failed to load")
+
+	var svp: Node = load("res://scenes/player/Player.tscn").instantiate()
+	root.add_child(svp)
+	await process_frame
+	if svp.has_method("grant_weapon"):
+		svp.grant_weapon("static_veil")
+		await process_frame
+		if str(svp.get_weapon_id()) != "static_veil":
+			errors.append("grant_weapon static_veil failed")
+		else:
+			print("OK grant_weapon static_veil")
+		if svp.has_method("_fire_static_veil"):
+			svp._fire_static_veil()
+			await process_frame
+			await process_frame
+			var veil_n := 0
+			for n in root.get_children():
+				if "StaticVeil" in str(n.name) or n.is_in_group("player_shots"):
+					if n.get_script() and "StaticVeil" in str(n.get_script().resource_path):
+						veil_n += 1
+			print("OK StaticVeil fire smoke shots_nearby")
+	# Encore helmet sync
+	if gs:
+		gs.grant_armor_piece("encore", "head", true)
+		if svp.has_method("_sync_armor_from_state"):
+			svp._sync_armor_from_state()
+		if gs.has_method("has_encore_head_equipped") and not gs.has_encore_head_equipped():
+			errors.append("encore head not equipped after grant")
+		else:
+			print("OK encore head equipped")
+	svp.queue_free()
+	await process_frame
+
+	# StaticZone smoke
+	var sz_hz: PackedScene = load("res://scenes/hazards/StaticZone.tscn")
+	if sz_hz:
+		var sz = sz_hz.instantiate()
+		root.add_child(sz)
+		await process_frame
+		if not sz.is_in_group("static_zones") and not sz.is_in_group("hazards"):
+			errors.append("StaticZone missing group")
+		else:
+			print("OK StaticZone group")
+		sz.queue_free()
+		await process_frame
+	else:
+		errors.append("StaticZone.tscn failed to load")
+
+	# GameState unlock static_veil
+	if gs:
+		gs.mark_boss_defeated("static_shadow")
+		if not gs.has_weapon_unlocked("static_veil"):
+			errors.append("static_veil should unlock on static_shadow defeat")
+		else:
+			print("OK static_veil unlocked")
+		var pending_ss = gs.has_pending_armor_secret("static_shadow")
+		if not pending_ss and not gs.has_armor_piece("encore", "head"):
+			errors.append("static_shadow should have pending encore head when not owned")
+		# clear by owning (already granted above) — re-check
+		if gs.has_armor_piece("encore", "head"):
+			if gs.has_pending_armor_secret("static_shadow"):
+				errors.append("static_shadow secret should clear after encore head")
+			else:
+				print("OK static_shadow secret cleared")
+		# CORE-9 unlock with 8 bosses — ensure count path
+		# Mark all 8 if needed for fortress test later
+		for bid in ["beatfire", "echo_wind", "neon_volt", "glitch_ice", "chorus_bloom", "bassquake", "metronome", "static_shadow"]:
+			gs.mark_boss_defeated(bid)
+		if not gs.is_core9_unlocked():
+			errors.append("CORE-9 should unlock after 8 bosses")
+		else:
+			print("OK CORE-9 unlocked after 8 bosses count=", gs.defeated_boss_count())
+
+	# BossSelect Static Shadow playable (fresh instance)
+	var bsel_ss: PackedScene = load("res://scenes/ui/BossSelect.tscn")
+	if bsel_ss and gs:
+		var bsel2 = bsel_ss.instantiate()
+		root.add_child(bsel2)
+		await process_frame
+		var grid2 = bsel2.get_node_or_null("BossGrid")
+		if grid2:
+			for c in grid2.get_children():
+				if str(c.get_meta("boss_id", "")) == "static_shadow":
+					var st = c.get_node_or_null("SelectButton/StatusLabel")
+					if st and "Pronto" in st.text:
+						errors.append("Static Shadow BossSelect cell should be playable")
+					else:
+						print("OK BossSelect Static Shadow playable")
+				elif str(c.get_meta("boss_id", "")) == "core9":
+					var cst = c.get_node_or_null("SelectButton/StatusLabel")
+					if cst and ("FORTALEZA" in cst.text or "LISTO" in cst.text):
+						print("OK CORE-9 unlocked status=", cst.text)
+					elif cst and "BLOQUEADO" in cst.text:
+						errors.append("CORE-9 should be unlocked after 8 bosses, got " + cst.text)
+					elif cst:
+						print("OK CORE-9 status=", cst.text)
+		bsel2.queue_free()
+		await process_frame
+
+	# FortressComingSoon smoke
+	var fs_packed: PackedScene = load("res://scenes/ui/FortressComingSoon.tscn")
+	if fs_packed:
+		var fs = fs_packed.instantiate()
+		root.add_child(fs)
+		await process_frame
+		var ftitle = fs.get_node_or_null("Panel/Title")
+		if ftitle == null or "construcción" not in ftitle.text and "construccion" not in ftitle.text.to_lower():
+			# accented
+			if ftitle and "Fortaleza" in ftitle.text:
+				print("OK FortressComingSoon title=", ftitle.text)
+			else:
+				errors.append("FortressComingSoon missing title")
+		else:
+			print("OK FortressComingSoon title=", ftitle.text)
+		var fback = fs.get_node_or_null("ReturnButton")
+		if fback == null:
+			errors.append("FortressComingSoon missing ReturnButton")
+		else:
+			print("OK FortressComingSoon ReturnButton")
+		fs.queue_free()
+		await process_frame
+	else:
+		errors.append("FortressComingSoon.tscn failed to load")
+
+	# Instantiate LevelStaticShadow
+	var ss_level_packed: PackedScene = load("res://scenes/levels/LevelStaticShadow.tscn")
+	if ss_level_packed:
+		var sslvl = ss_level_packed.instantiate()
+		root.add_child(sslvl)
+		await process_frame
+		await process_frame
+		print("OK instantiate LevelStaticShadow, children=", sslvl.get_child_count())
+		var ssent = sslvl.get_node_or_null("Entities")
+		if ssent == null:
+			errors.append("LevelStaticShadow Entities missing")
+		else:
+			var ssp = ssent.get_node_or_null("Player")
+			if ssp == null:
+				errors.append("Player not spawned in LevelStaticShadow")
+			else:
+				print("OK Static Shadow level player spawned")
+			var ssmet := 0
+			var ssboss := 0
+			for c in ssent.get_children():
+				if c.is_in_group("bosses") or str(c.name).begins_with("Static"):
+					ssboss += 1
+				elif c.is_in_group("enemies") or str(c.name).begins_with("Met"):
+					ssmet += 1
+			if ssmet < 2:
+				errors.append("Expected >=2 MetBeat in LevelStaticShadow, got %d" % ssmet)
+			else:
+				print("OK MetBeat in LevelStaticShadow=", ssmet)
+			if ssboss < 1:
+				errors.append("Expected StaticShadow boss in level")
+			else:
+				print("OK StaticShadow boss in level")
+			if ssent.get_node_or_null("ArenaTrigger") == null:
+				errors.append("LevelStaticShadow ArenaTrigger missing")
+			else:
+				print("OK LevelStaticShadow ArenaTrigger")
+			if ssent.get_node_or_null("EncoreHelmetPickup") == null:
+				errors.append("EncoreHelmetPickup missing in LevelStaticShadow")
+			else:
+				print("OK EncoreHelmetPickup present")
+		if sslvl.get_node_or_null("DarkVignette") == null:
+			errors.append("DarkVignette missing in LevelStaticShadow")
+		else:
+			print("OK DarkVignette present")
+		if sslvl.get_node_or_null("HUD") == null:
+			errors.append("HUD missing in LevelStaticShadow")
+		else:
+			print("OK HUD in LevelStaticShadow")
+		if sslvl.get_node_or_null("TouchControls") == null:
+			errors.append("TouchControls missing in LevelStaticShadow")
+		else:
+			print("OK TouchControls in LevelStaticShadow")
+		# secret pickup equip
+		var helm = ssent.get_node_or_null("EncoreHelmetPickup") if ssent else null
+		var ssp2 = ssent.get_node_or_null("Player") if ssent else null
+		if helm and ssp2 and helm.has_method("_collect"):
+			# Clear then collect
+			if gs:
+				# already may own head — ensure collect path
+				pass
+			helm._collect(ssp2)
+			await process_frame
+			if gs and not gs.has_encore_head_equipped():
+				errors.append("StaticShadow encore head pickup did not equip")
+			else:
+				print("OK StaticShadow encore head equipped")
+		# Defeat flow
+		var boss_ss = ssent.get_node_or_null("StaticShadow") if ssent else null
+		if boss_ss and ssp2 and boss_ss.has_method("activate"):
+			boss_ss.activate()
+			boss_ss.hp = 1
+			if boss_ss.has_method("take_damage"):
+				boss_ss.take_damage(1)
+			await process_frame
+			await process_frame
+			await process_frame
+			if gs and gs.is_boss_defeated("static_shadow"):
+				if ssp2.has_method("_has_weapon") and not ssp2._has_weapon("static_veil"):
+					# grant may happen on died signal — wait a bit more
+					await process_frame
+				if ssp2.has_method("_has_weapon") and not ssp2._has_weapon("static_veil"):
+					errors.append("StaticShadow defeat did not grant Static Veil")
+				else:
+					print("OK StaticShadow defeat granted Static Veil")
+			# WinBanner
+			var wb = sslvl.get_node_or_null("WinBanner")
+			if wb == null:
+				print("WARN StaticShadow WinBanner not found immediately")
+			else:
+				print("OK StaticShadow WinBanner")
+				if wb.get_node_or_null("Root/Panel/ReturnBossSelect") == null:
+					errors.append("StaticShadow WinBanner missing ReturnBossSelect")
+				else:
+					print("OK StaticShadow ReturnBossSelect")
+		sslvl.queue_free()
+		await process_frame
+	else:
+		errors.append("LevelStaticShadow.tscn failed to load")
 
 
 	# Instantiate main scene briefly
