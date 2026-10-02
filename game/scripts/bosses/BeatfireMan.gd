@@ -13,9 +13,9 @@ const GRAVITY := 900.0
 const JUMP_V := -260.0
 const JUMP_H := 110.0
 const POUND_V := 420.0
-const BEAT_NORMAL := 0.70
-const BEAT_RAGE := 0.42
-const TELEGRAPH := 0.55
+const BEAT_NORMAL := 0.78
+const BEAT_RAGE := 0.50
+const TELEGRAPH := 0.78
 const HIT_FLASH := 0.12
 const INVULN_ON_HIT := 0.08
 
@@ -160,17 +160,17 @@ func _do_shoot() -> void:
 
 func _start_telegraph() -> void:
 	_state = State.TELEGRAPH
-	_telegraph_t = TELEGRAPH if hp > HP_MAX / 2 else TELEGRAPH * 0.7
+	_telegraph_t = TELEGRAPH if hp > HP_MAX / 2 else TELEGRAPH * 0.82
 	if telegraph:
 		telegraph.visible = true
-		telegraph.color = Color(1.0, 0.2, 0.05, 0.55)
+		telegraph.color = Color(1.0, 0.35, 0.05, 0.72)
 	velocity.x = 0.0
 
 
 func _tick_telegraph(delta: float) -> void:
 	_telegraph_t -= delta
 	if telegraph:
-		telegraph.color.a = 0.35 + 0.35 * absf(sin(Time.get_ticks_msec() * 0.02))
+		telegraph.color.a = 0.45 + 0.40 * absf(sin(Time.get_ticks_msec() * 0.018))
 	if _telegraph_t <= 0.0:
 		_do_pound()
 

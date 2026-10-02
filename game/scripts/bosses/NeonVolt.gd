@@ -10,8 +10,8 @@ const HP_MAX := 28
 const CONTACT_DAMAGE := 4
 const GRAVITY := 520.0
 const DASH_H := 170.0
-const BEAT_NORMAL := 0.7
-const BEAT_RAGE := 0.4
+const BEAT_NORMAL := 0.78
+const BEAT_RAGE := 0.50
 const HIT_FLASH := 0.12
 const INVULN_ON_HIT := 0.08
 

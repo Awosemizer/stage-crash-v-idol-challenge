@@ -12,8 +12,8 @@ const GRAVITY := 420.0
 const FLOAT_AMP := 18.0
 const FLOAT_SPEED := 2.2
 const DASH_H := 160.0
-const BEAT_NORMAL := 0.75
-const BEAT_RAGE := 0.45
+const BEAT_NORMAL := 0.82
+const BEAT_RAGE := 0.55
 const HIT_FLASH := 0.12
 const INVULN_ON_HIT := 0.08
 

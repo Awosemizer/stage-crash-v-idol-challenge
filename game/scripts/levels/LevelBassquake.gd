@@ -150,10 +150,10 @@ func _build_course() -> void:
 		_add_spike(256.0 + i * 12.0, 200.0)
 
 	# Collapsing floors over gaps
-	_add_collapse(Vector2(728, 176), Vector2(48, 12), 0.55, 0.85, 2.2)
-	_add_collapse(Vector2(720, 144), Vector2(40, 12), 0.5, 0.8, 2.0)
-	_add_collapse(Vector2(440, 160), Vector2(48, 12), 0.55, 0.85, 2.5)
-	_add_collapse(Vector2(1000, 148), Vector2(48, 12), 0.5, 0.8, 2.3)
+	_add_collapse(Vector2(728, 176), Vector2(48, 12), 0.70, 0.95, 2.2)
+	_add_collapse(Vector2(720, 144), Vector2(40, 12), 0.65, 0.90, 2.0)
+	_add_collapse(Vector2(440, 160), Vector2(48, 12), 0.70, 0.95, 2.5)
+	_add_collapse(Vector2(1000, 148), Vector2(48, 12), 0.65, 0.90, 2.3)
 
 	_build_secret_encore_torso()
 
@@ -186,7 +186,7 @@ func _build_boss_arena() -> void:
 	_add_rect_platform(LEVEL_RIGHT - 16.0, 0.0, 32.0, 224.0, COL_WALL)
 	_add_rect_platform(ARENA_LEFT + 20.0, 112.0, 56.0, 12.0, COL_METAL)
 	_add_rect_platform(ARENA_LEFT + 244.0, 112.0, 56.0, 12.0, COL_ACCENT)
-	_add_collapse(Vector2(ARENA_LEFT + 150.0, 140.0), Vector2(44, 12), 0.4, 0.7, 1.8)
+	_add_collapse(Vector2(ARENA_LEFT + 150.0, 140.0), Vector2(44, 12), 0.60, 0.85, 1.8)
 
 	_gate_visual = ColorRect.new()
 	_gate_visual.name = "GateVisual"
@@ -491,10 +491,10 @@ func _spawn_player() -> void:
 	cam.limit_top = 0
 	cam.limit_right = int(LEVEL_RIGHT)
 	cam.limit_bottom = 224
-	cam.drag_left_margin = 0.28
-	cam.drag_right_margin = 0.28
-	cam.drag_top_margin = 0.22
-	cam.drag_bottom_margin = 0.35
+	cam.drag_left_margin = 0.22
+	cam.drag_right_margin = 0.22
+	cam.drag_top_margin = 0.18
+	cam.drag_bottom_margin = 0.45
 	cam.make_current()
 
 

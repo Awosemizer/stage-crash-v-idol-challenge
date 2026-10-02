@@ -12,18 +12,20 @@ const _SafeArea := preload("res://scripts/ui/SafeArea.gd")
 
 ## When true, overlay stays up even if a joypad is connected.
 @export var show_touch_always: bool = false
-@export_range(0.2, 1.0, 0.05) var opacity: float = 0.42
-@export_range(0.15, 0.6, 0.05) var stick_deadzone: float = 0.32
+@export_range(0.2, 1.0, 0.05) var opacity: float = 0.50
+@export_range(0.15, 0.6, 0.05) var stick_deadzone: float = 0.28
 
 # Larger hit targets for thumbs on phone landscape
 const STICK_R := 44.0
 const KNOB_R := 16.0
 const BTN_JUMP := 34.0
 const BTN_ATTACK := 30.0
-const BTN_SLIDE := 24.0
+const BTN_SLIDE := 26.0
 const BTN_WEAPON := 22.0
-const CLUSTER_GAP := 8.0
-const WEAPON_GAP := 6.0
+## Minimum clear gap between face-button hit rects (no overlap on thumbs).
+const CLUSTER_GAP := 16.0
+const SLIDE_GAP := 16.0
+const WEAPON_GAP := 8.0
 ## Keep weapon switch clear of pause (28) + armor row (~15) + margin.
 const WEAPON_TOP_CLEAR := 48.0
 
@@ -146,19 +148,19 @@ func _build_ui() -> void:
 	_btn_jump.name = "JumpBtn"
 	_btn_jump.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(_btn_jump)
-	_lbl_a = _make_btn_label(_btn_jump, "A")
+	_lbl_a = _make_btn_label(_btn_jump, "JMP")
 
 	_btn_attack = _make_round_panel(Color(0.9, 0.35, 0.4, 1.0))
 	_btn_attack.name = "AttackBtn"
 	_btn_attack.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(_btn_attack)
-	_lbl_b = _make_btn_label(_btn_attack, "B")
+	_lbl_b = _make_btn_label(_btn_attack, "ATK")
 
 	_btn_slide = _make_round_panel(Color(0.55, 0.45, 0.85, 1.0))
 	_btn_slide.name = "SlideBtn"
 	_btn_slide.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(_btn_slide)
-	_lbl_s = _make_btn_label(_btn_slide, "SL")
+	_lbl_s = _make_btn_label(_btn_slide, "DASH")
 
 	# Weapon prev/next — small, upper-right (away from jump/attack cluster)
 	_btn_wprev = _make_round_panel(Color(0.25, 0.55, 0.75, 1.0))
@@ -231,48 +233,73 @@ func _layout() -> void:
 	_stick_knob.size = Vector2(KNOB_R * 2.0, KNOB_R * 2.0)
 	_reset_knob()
 
-	# Buttons — bottom-right cluster, tucked into corner so arena center stays visible
+	# Face buttons — bottom-right fan, NO overlapping hit rects (≥16px gaps).
+	# Layout (phone landscape):
+	#   [SL Slide]   [B Attack]   [A Jump]
+	# Slide further left; Attack left of Jump; Jump in the corner.
 	var j := BTN_JUMP * 2.0
 	var a := BTN_ATTACK * 2.0
 	var s := BTN_SLIDE * 2.0
 	_btn_jump.size = Vector2(j, j)
 	_btn_jump.position = Vector2(right - j, bottom - j)
 
+	# Attack — clearly left of Jump (same vertical band), CLUSTER_GAP between rects
 	_btn_attack.size = Vector2(a, a)
 	_btn_attack.position = Vector2(
 		_btn_jump.position.x - a - CLUSTER_GAP,
-		_btn_jump.position.y + (j - a) * 0.4
+		_btn_jump.position.y + (j - a) * 0.5
 	)
 
+	# Slide — further left of Attack, bottom-aligned, SLIDE_GAP between rects
 	_btn_slide.size = Vector2(s, s)
 	_btn_slide.position = Vector2(
-		_btn_attack.position.x + (a - s) * 0.5,
-		minf(_btn_jump.position.y + j - s, bottom - s)
+		_btn_attack.position.x - s - SLIDE_GAP,
+		bottom - s
 	)
 
-	# Weapon prev/next — upper-right, clear of pause/armor and of jump/attack
+	# Weapon prev/next — upper-right, clear of pause/armor and of face-button cluster
 	var w := BTN_WEAPON * 2.0
 	_btn_wnext.size = Vector2(w, w)
 	_btn_wprev.size = Vector2(w, w)
 	var weapon_y := top + WEAPON_TOP_CLEAR
-	# Stay well above the attack cluster
-	var attack_top := minf(_btn_jump.position.y, _btn_attack.position.y)
-	weapon_y = minf(weapon_y, attack_top - w - 16.0)
+	var cluster_top := minf(_btn_jump.position.y, minf(_btn_attack.position.y, _btn_slide.position.y))
+	weapon_y = minf(weapon_y, cluster_top - w - 16.0)
 	weapon_y = maxf(weapon_y, top)
 	_btn_wnext.position = Vector2(right - w, weapon_y)
 	_btn_wprev.position = Vector2(right - w * 2.0 - WEAPON_GAP, weapon_y)
 
+	# Debug-assert: face buttons must not overlap (dev builds / VALIDATE)
+	_assert_no_overlap(_btn_jump, _btn_attack, "Jump/Attack")
+	_assert_no_overlap(_btn_attack, _btn_slide, "Attack/Slide")
+	_assert_no_overlap(_btn_jump, _btn_slide, "Jump/Slide")
+	_assert_no_overlap(_btn_wprev, _btn_jump, "WeaponPrev/Jump")
+	_assert_no_overlap(_btn_wnext, _btn_jump, "WeaponNext/Jump")
+	_assert_no_overlap(_btn_wprev, _btn_attack, "WeaponPrev/Attack")
+	_assert_no_overlap(_btn_wnext, _btn_attack, "WeaponNext/Attack")
+
 	# Keep labels readable
 	if _lbl_a:
-		_lbl_a.add_theme_font_size_override("font_size", 10)
+		_lbl_a.add_theme_font_size_override("font_size", 8)
 	if _lbl_b:
-		_lbl_b.add_theme_font_size_override("font_size", 10)
+		_lbl_b.add_theme_font_size_override("font_size", 8)
 	if _lbl_s:
-		_lbl_s.add_theme_font_size_override("font_size", 8)
+		_lbl_s.add_theme_font_size_override("font_size", 7)
 	if _lbl_wp:
 		_lbl_wp.add_theme_font_size_override("font_size", 12)
 	if _lbl_wn:
 		_lbl_wn.add_theme_font_size_override("font_size", 12)
+
+
+
+func _panel_rect(p: Panel) -> Rect2:
+	return Rect2(p.position, p.size)
+
+
+func _assert_no_overlap(a: Panel, b: Panel, label: String) -> void:
+	var ra := _panel_rect(a)
+	var rb := _panel_rect(b)
+	if ra.intersects(rb):
+		push_warning("TouchControls overlap: %s  %s vs %s" % [label, ra, rb])
 
 
 func _reset_knob() -> void:

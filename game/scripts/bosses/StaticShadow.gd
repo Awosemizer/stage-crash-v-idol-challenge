@@ -10,10 +10,10 @@ const CONTACT_DAMAGE := 4
 const GRAVITY := 560.0
 const DASH_H := 120.0
 const BEAT_NORMAL := 0.85
-const BEAT_RAGE := 0.48
+const BEAT_RAGE := 0.55
 const HIT_FLASH := 0.12
 const INVULN_ON_HIT := 0.08
-const TELEGRAPH := 0.32
+const TELEGRAPH := 0.58
 
 enum State { IDLE, TELEGRAPH, ZONE, DASH, BURST, DEAD }
 
@@ -129,7 +129,7 @@ func _tick_idle(delta: float) -> void:
 
 func _start_telegraph() -> void:
 	_state = State.TELEGRAPH
-	_telegraph_t = TELEGRAPH if hp > HP_MAX / 2 else TELEGRAPH * 0.7
+	_telegraph_t = TELEGRAPH if hp > HP_MAX / 2 else TELEGRAPH * 0.82
 	velocity.x = 0.0
 	if telegraph:
 		telegraph.visible = true

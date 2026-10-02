@@ -172,6 +172,7 @@ var _key9_held := false
 
 
 func _ready() -> void:
+	apply_touch_camera_feel()
 	add_to_group("player")
 	_spawn_pos = global_position
 	_apply_stand_shape()
@@ -1307,6 +1308,22 @@ func _update_visual() -> void:
 		base_mod.a = 1.0
 	visual.modulate = base_mod
 
+
+
+
+func apply_touch_camera_feel() -> void:
+	## Bias view upward so the player sits above the on-screen touch cluster.
+	if camera == null:
+		return
+	camera.offset = Vector2(0, -22)
+	camera.position_smoothing_enabled = true
+	camera.position_smoothing_speed = 10.0
+	camera.drag_horizontal_enabled = true
+	camera.drag_vertical_enabled = true
+	camera.drag_left_margin = 0.22
+	camera.drag_right_margin = 0.22
+	camera.drag_top_margin = 0.18
+	camera.drag_bottom_margin = 0.45
 
 
 func _check_hazards_and_pits() -> void:

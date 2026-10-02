@@ -273,10 +273,12 @@ func _spawn_player() -> void:
 	cam.limit_top = 0
 	cam.limit_right = int(LEVEL_RIGHT)
 	cam.limit_bottom = int(LEVEL_BOTTOM + 80)
-	cam.drag_left_margin = 0.28
-	cam.drag_right_margin = 0.28
-	cam.drag_top_margin = 0.22
-	cam.drag_bottom_margin = 0.35
+	cam.drag_left_margin = 0.22
+	cam.drag_right_margin = 0.22
+	cam.drag_top_margin = 0.18
+	cam.drag_bottom_margin = 0.45
+	cam.offset = Vector2(0, -22)
+	cam.position_smoothing_speed = 10.0
 	cam.make_current()
 
 
