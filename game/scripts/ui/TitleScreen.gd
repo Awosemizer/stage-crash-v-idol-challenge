@@ -147,7 +147,7 @@ func _build_ui() -> void:
 
 	var ver := Label.new()
 	ver.name = "Version"
-	ver.text = "v0.19.0-proto · art+audio pro"
+	ver.text = "v0.20.0-proto · landscape+Beatfire"
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ver.add_theme_font_size_override("font_size", 6)
 	ver.modulate = Color(0.55, 0.6, 0.7, 0.7)
@@ -175,6 +175,35 @@ func _build_ui() -> void:
 	mute_btn.pressed.connect(_on_mute_pressed)
 	add_child(mute_btn)
 	_refresh_mute_label(mute_btn)
+
+	# Center the 256-wide design cluster on wide landscape viewports
+	get_viewport().size_changed.connect(_center_design_cluster)
+	call_deferred("_center_design_cluster")
+
+
+func _center_design_cluster() -> void:
+	var vp := get_viewport().get_visible_rect().size
+	var design_w := 256.0
+	var ox := maxf((vp.x - design_w) * 0.5, 0.0)
+	for child in get_children():
+		if child is Control and child.name != "BG":
+			# Shift from original 256-wide layout into centered cluster
+			if child.has_meta("title_ox"):
+				child.position.x = float(child.get_meta("title_base_x")) + ox
+			else:
+				child.set_meta("title_base_x", child.position.x)
+				child.set_meta("title_ox", true)
+				child.position.x = float(child.get_meta("title_base_x")) + ox
+		if child.name in ["AccentBar", "AccentBar2", "BG"]:
+			if child is ColorRect and child.name != "BG":
+				child.position.x = 0
+				child.size.x = vp.x
+	# Full-width labels
+	for n in ["Title", "Subtitle", "Tagline"]:
+		var lbl := get_node_or_null(n) as Label
+		if lbl:
+			lbl.position.x = 0
+			lbl.size.x = vp.x
 
 
 func _style_button(btn: Button, bg: Color, border: Color) -> void:

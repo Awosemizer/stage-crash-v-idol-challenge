@@ -2,23 +2,25 @@ extends CanvasLayer
 ## Touch HUD overlay — virtual 8-dir stick + Jump / Attack / Slide.
 ## Presses the same InputMap actions Player.gd already reads
 ## (move_left/right/up/down, jump, attack, slide). Also binds joypad.
-## Screen-space UI (anchors); stays readable on the 256×224 viewport.
+## Layout uses SafeArea insets so notches / bezels don't eat controls.
+## Sized for phone landscape (16:9 / 20:9) with canvas_items + expand.
 
 signal visibility_changed_for_pad(visible_now: bool)
 
-## When true, overlay stays up even if a joypad is connected.
-## Default false; on mobile we set it true in _ready (pad still can hide
-## only when this is false — see _refresh_visibility).
-@export var show_touch_always: bool = false
-@export_range(0.2, 1.0, 0.05) var opacity: float = 0.55
-@export_range(0.15, 0.6, 0.05) var stick_deadzone: float = 0.35
+const _SafeArea := preload("res://scripts/ui/SafeArea.gd")
 
-const SAFE := 8.0
-const STICK_R := 36.0
-const KNOB_R := 14.0
-const BTN_JUMP := 28.0
-const BTN_ATTACK := 26.0
-const BTN_SLIDE := 18.0
+## When true, overlay stays up even if a joypad is connected.
+@export var show_touch_always: bool = false
+@export_range(0.2, 1.0, 0.05) var opacity: float = 0.42
+@export_range(0.15, 0.6, 0.05) var stick_deadzone: float = 0.32
+
+# Larger hit targets for thumbs on phone landscape
+const STICK_R := 44.0
+const KNOB_R := 16.0
+const BTN_JUMP := 34.0
+const BTN_ATTACK := 30.0
+const BTN_SLIDE := 24.0
+const CLUSTER_GAP := 8.0
 
 var _root: Control
 var _stick_base: Panel
@@ -34,6 +36,7 @@ var _stick_touch_idx := -1
 var _stick_center := Vector2.ZERO
 var _move_held := {"move_left": false, "move_right": false, "move_up": false, "move_down": false}
 var _btn_touches: Dictionary = {}  # touch_index -> action name
+var _stick_r := STICK_R
 
 
 func _ready() -> void:
@@ -69,7 +72,6 @@ func _setup_joypad_bindings() -> void:
 	_add_joy_axis("move_right", JOY_AXIS_LEFT_X, 1.0)
 	_add_joy_axis("move_up", JOY_AXIS_LEFT_Y, -1.0)
 	_add_joy_axis("move_down", JOY_AXIS_LEFT_Y, 1.0)
-	# Soft triggers as slide (LT / RT)
 	_add_joy_axis("slide", JOY_AXIS_TRIGGER_LEFT, 1.0)
 	_add_joy_axis("slide", JOY_AXIS_TRIGGER_RIGHT, 1.0)
 
@@ -106,7 +108,7 @@ func _build_ui() -> void:
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_root)
 
-	_stick_base = _make_round_panel(Color(0.15, 0.2, 0.28, 1.0))
+	_stick_base = _make_round_panel(Color(0.12, 0.16, 0.22, 1.0))
 	_stick_base.name = "StickBase"
 	_stick_base.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(_stick_base)
@@ -149,7 +151,7 @@ func _make_round_panel(col: Color) -> Panel:
 	sb.corner_radius_bottom_left = 64
 	sb.corner_radius_bottom_right = 64
 	sb.set_border_width_all(1)
-	sb.border_color = Color(1, 1, 1, 0.35)
+	sb.border_color = Color(1, 1, 1, 0.28)
 	p.add_theme_stylebox_override("panel", sb)
 	return p
 
@@ -160,7 +162,7 @@ func _make_btn_label(parent: Panel, text: String) -> Label:
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	lbl.add_theme_font_size_override("font_size", 8)
+	lbl.add_theme_font_size_override("font_size", 9)
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	lbl.modulate = Color(1, 1, 1, 0.95)
 	parent.add_child(lbl)
@@ -175,37 +177,51 @@ func _apply_opacity() -> void:
 func _layout() -> void:
 	if _root == null:
 		return
-	var vp := get_viewport().get_visible_rect().size
-	# Stick — bottom-left safe area
-	var stick_d := STICK_R * 2.0
+	var area: Rect2 = _SafeArea.content_rect()
+	var left: float = area.position.x
+	var top: float = area.position.y
+	var right: float = area.end.x
+	var bottom: float = area.end.y
+
+	# Stick — bottom-left inside safe area (keeps mid-screen clear for play)
+	_stick_r = STICK_R
+	var stick_d := _stick_r * 2.0
 	_stick_base.size = Vector2(stick_d, stick_d)
-	_stick_base.position = Vector2(SAFE, vp.y - stick_d - SAFE)
-	_stick_center = _stick_base.position + Vector2(STICK_R, STICK_R)
+	_stick_base.position = Vector2(left, bottom - stick_d)
+	_stick_center = _stick_base.position + Vector2(_stick_r, _stick_r)
 	_stick_knob.size = Vector2(KNOB_R * 2.0, KNOB_R * 2.0)
 	_reset_knob()
 
-	# Buttons — bottom-right cluster (Jump primary, Attack left of it, Slide below)
+	# Buttons — bottom-right cluster, tucked into corner so arena center stays visible
 	var j := BTN_JUMP * 2.0
 	var a := BTN_ATTACK * 2.0
 	var s := BTN_SLIDE * 2.0
 	_btn_jump.size = Vector2(j, j)
-	_btn_jump.position = Vector2(vp.x - j - SAFE, vp.y - j - SAFE)
+	_btn_jump.position = Vector2(right - j, bottom - j)
 
 	_btn_attack.size = Vector2(a, a)
 	_btn_attack.position = Vector2(
-		_btn_jump.position.x - a - 6.0,
-		_btn_jump.position.y + (j - a) * 0.35
+		_btn_jump.position.x - a - CLUSTER_GAP,
+		_btn_jump.position.y + (j - a) * 0.4
 	)
 
 	_btn_slide.size = Vector2(s, s)
 	_btn_slide.position = Vector2(
 		_btn_attack.position.x + (a - s) * 0.5,
-		_btn_jump.position.y + j - s + 2.0
+		minf(_btn_jump.position.y + j - s, bottom - s)
 	)
+
+	# Keep labels readable
+	if _lbl_a:
+		_lbl_a.add_theme_font_size_override("font_size", 10)
+	if _lbl_b:
+		_lbl_b.add_theme_font_size_override("font_size", 10)
+	if _lbl_s:
+		_lbl_s.add_theme_font_size_override("font_size", 8)
 
 
 func _reset_knob() -> void:
-	_stick_knob.position = Vector2(STICK_R - KNOB_R, STICK_R - KNOB_R)
+	_stick_knob.position = Vector2(_stick_r - KNOB_R, _stick_r - KNOB_R)
 
 
 func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
@@ -252,7 +268,6 @@ func _on_stick_gui_input(event: InputEvent) -> void:
 		var sd := event as InputEventScreenDrag
 		if sd.index == _stick_touch_idx:
 			_update_stick_from_local(sd.position)
-	# Mouse fallback (desktop playtest)
 	elif event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
 		var mb := event as InputEventMouseButton
 		if mb.pressed:
@@ -267,17 +282,16 @@ func _on_stick_gui_input(event: InputEvent) -> void:
 
 
 func _update_stick_from_local(local_pos: Vector2) -> void:
-	var delta := local_pos - Vector2(STICK_R, STICK_R)
-	var max_len := STICK_R - 4.0
+	var delta := local_pos - Vector2(_stick_r, _stick_r)
+	var max_len := _stick_r - 4.0
 	if delta.length() > max_len:
 		delta = delta.normalized() * max_len
-	_stick_knob.position = Vector2(STICK_R - KNOB_R, STICK_R - KNOB_R) + delta
+	_stick_knob.position = Vector2(_stick_r - KNOB_R, _stick_r - KNOB_R) + delta
 	var strength := delta / max_len
 	_set_move_actions(strength)
 
 
 func _set_move_actions(v: Vector2) -> void:
-	# 8-dir digital after deadzone (Mega Man–style)
 	var want := {"move_left": false, "move_right": false, "move_up": false, "move_down": false}
 	if v.length() >= stick_deadzone:
 		var angle := snappedf(v.angle() / (PI * 0.25), 1.0) * (PI * 0.25)

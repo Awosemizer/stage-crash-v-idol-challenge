@@ -1,18 +1,20 @@
 extends CanvasLayer
 ## In-game HUD — portrait, HP (28), energy tanks, weapon, armor stubs, pause.
-## Layer 50 (below TouchControls @ 100). Spanish UI strings. 256×224 friendly.
+## Layer 50 (below TouchControls @ 100). Spanish UI strings.
+## Layout uses SafeArea for phone landscape notches / bezels.
 
 signal pause_toggled(paused_now: bool)
 
+const _SafeArea := preload("res://scripts/ui/SafeArea.gd")
+
 const MAX_ENERGY_TANKS := 4
 const ARMOR_SLOTS := 3
-const SAFE := 4.0
 const PORTRAIT_SIZE := 16.0
 const HP_BAR_W := 56.0
 const HP_BAR_H := 6.0
 const TANK_SIZE := 6.0
 const ARMOR_SIZE := 10.0
-const PAUSE_BTN := 14.0
+const PAUSE_BTN := 18.0
 
 @export var weapon_name: String = "Buster"
 @export var energy_tanks: int = 0  # 0–4 owned; icons empty until filled later
@@ -290,53 +292,58 @@ func _make_panel(col: Color) -> Panel:
 func _layout() -> void:
 	if _root == null:
 		return
-	var vp := get_viewport().get_visible_rect().size
+	var area: Rect2 = _SafeArea.content_rect()
+	var left: float = area.position.x
+	var top: float = area.position.y
+	var right: float = area.end.x
+	var bottom: float = area.end.y
+	var vp: Vector2 = get_viewport().get_visible_rect().size
 
 	_portrait.size = Vector2(PORTRAIT_SIZE, PORTRAIT_SIZE)
-	_portrait.position = Vector2(SAFE, SAFE)
+	_portrait.position = Vector2(left, top)
 	_portrait.color = portrait_color
 
 	_hp_bg.size = Vector2(HP_BAR_W, HP_BAR_H)
-	_hp_bg.position = Vector2(SAFE + PORTRAIT_SIZE + 3.0, SAFE + 2.0)
+	_hp_bg.position = Vector2(left + PORTRAIT_SIZE + 3.0, top + 2.0)
 
-	_hp_label.position = Vector2(_hp_bg.position.x, SAFE + HP_BAR_H + 3.0)
+	_hp_label.position = Vector2(_hp_bg.position.x, top + HP_BAR_H + 3.0)
 	_hp_label.size = Vector2(HP_BAR_W + 20.0, 10.0)
 
-	_weapon_label.position = Vector2(SAFE, SAFE + PORTRAIT_SIZE + 2.0)
-	_weapon_label.size = Vector2(120.0, 10.0)
+	_weapon_label.position = Vector2(left, top + PORTRAIT_SIZE + 2.0)
+	_weapon_label.size = Vector2(140.0, 10.0)
 
 	if _weakness_label:
-		_weakness_label.position = Vector2(SAFE, SAFE + PORTRAIT_SIZE + 22.0)
-		_weakness_label.size = Vector2(140.0, 10.0)
+		_weakness_label.position = Vector2(left, top + PORTRAIT_SIZE + 22.0)
+		_weakness_label.size = Vector2(160.0, 10.0)
 
-	var tank_y := SAFE + PORTRAIT_SIZE + 12.0
+	var tank_y: float = top + PORTRAIT_SIZE + 12.0
 	for i in _tank_icons.size():
 		_tank_icons[i].size = Vector2(TANK_SIZE, TANK_SIZE)
-		_tank_icons[i].position = Vector2(SAFE + i * (TANK_SIZE + 2.0), tank_y)
+		_tank_icons[i].position = Vector2(left + i * (TANK_SIZE + 2.0), tank_y)
 
 	_pause_btn.size = Vector2(PAUSE_BTN, PAUSE_BTN)
-	_pause_btn.position = Vector2(vp.x - PAUSE_BTN - SAFE, SAFE)
+	_pause_btn.position = Vector2(right - PAUSE_BTN, top)
 
-	var armor_y := SAFE + PAUSE_BTN + 3.0
+	var armor_y: float = top + PAUSE_BTN + 3.0
 	for i in _armor_slots.size():
 		var slot := _armor_slots[i]
 		slot.size = Vector2(ARMOR_SIZE, ARMOR_SIZE)
-		slot.position = Vector2(vp.x - ARMOR_SIZE - SAFE - i * (ARMOR_SIZE + 2.0), armor_y)
+		slot.position = Vector2(right - ARMOR_SIZE - i * (ARMOR_SIZE + 2.0), armor_y)
 		if slot.get_child_count() > 0:
 			var border: ColorRect = slot.get_child(0)
 			border.position = Vector2(1, 1)
 			border.size = Vector2(ARMOR_SIZE - 2, ARMOR_SIZE - 2)
 			border.color = Color(0.12, 0.14, 0.18, 0.9)
 
-	# Centered pause panel
-	var pw := 120.0
-	var ph := 56.0
+	# Centered pause panel within safe content
+	var pw := 140.0
+	var ph := 60.0
 	_pause_panel.size = Vector2(pw, ph)
 	_pause_panel.position = Vector2((vp.x - pw) * 0.5, (vp.y - ph) * 0.5)
 	_pause_title.position = Vector2(0, 6)
 	_pause_title.size = Vector2(pw, 16)
-	_resume_btn.size = Vector2(72, 16)
-	_resume_btn.position = Vector2((pw - 72) * 0.5, 30)
+	_resume_btn.size = Vector2(80, 18)
+	_resume_btn.position = Vector2((pw - 80) * 0.5, 32)
 
 	_refresh_hp_bar()
 	_refresh_armor()

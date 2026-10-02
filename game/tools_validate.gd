@@ -3642,21 +3642,86 @@ func _initialize() -> void:
 	var title_src := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
 	if "PanelChrome" not in title_src and "panel_chrome" not in title_src:
 		errors.append("TitleScreen should use panel chrome")
-	if "0.19" not in title_src:
-		errors.append("TitleScreen version should mention 0.19")
+	if "0.19" not in title_src and "0.20" not in title_src:
+		errors.append("TitleScreen version should mention 0.19 or 0.20")
 	# Boss intro on Beatfire
 	var bf_src := FileAccess.get_file_as_string("res://scripts/bosses/BeatfireMan.gd")
 	if "play_boss_intro" not in bf_src:
 		errors.append("BeatfireMan should play boss intro sting")
 	if "set_boss_pose" not in bf_src:
 		errors.append("BeatfireMan should switch boss poses")
-	# Project version
-	var proj := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.19.0-proto"' not in proj:
-		errors.append("project.godot version should be 0.19.0-proto")
-	else:
-		print("OK project version 0.19.0-proto")
 	print("OK v0.19 art+audio checks")
+
+	# --- v0.20 landscape + Beatfire touch playability ---
+	var proj := FileAccess.get_file_as_string("res://project.godot")
+	if 'config/version="0.20.0-proto"' not in proj:
+		errors.append("project.godot version should be 0.20.0-proto")
+	else:
+		print("OK project version 0.20.0-proto")
+	if 'window/stretch/mode="canvas_items"' not in proj:
+		errors.append("display stretch mode should be canvas_items")
+	if 'window/stretch/aspect="expand"' not in proj and 'window/stretch/aspect="keep_height"' not in proj:
+		errors.append("display stretch aspect should be expand or keep_height")
+	if 'window/stretch/scale_mode="integer"' in proj:
+		errors.append("display should not use integer scale on phone landscape")
+	if "window/size/viewport_width=398" not in proj and "window/size/viewport_width=320" not in proj:
+		# Accept 16:9-ish bases
+		if "viewport_width=256" in proj:
+			errors.append("viewport should be landscape-friendly (not 256 square-ish alone)")
+	print("OK display landscape stretch settings")
+
+	if not ResourceLoader.exists("res://scripts/ui/SafeArea.gd"):
+		errors.append("missing SafeArea.gd helper")
+	else:
+		print("OK SafeArea.gd")
+
+	var touch_src := FileAccess.get_file_as_string("res://scripts/ui/TouchControls.gd")
+	if "SafeArea" not in touch_src:
+		errors.append("TouchControls should use SafeArea insets")
+	if "BTN_JUMP := 34" not in touch_src and "BTN_JUMP := 28" in touch_src:
+		errors.append("TouchControls hit targets should be enlarged for phone")
+	print("OK TouchControls safe+size")
+
+	var hud_src := FileAccess.get_file_as_string("res://scripts/ui/HUD.gd")
+	if "SafeArea" not in hud_src:
+		errors.append("HUD should use SafeArea insets")
+	else:
+		print("OK HUD SafeArea")
+
+	var l01b := FileAccess.get_file_as_string("res://scripts/levels/Level01.gd")
+	for needle in ["mid foothold", "touch-first", "SafeArea", "set_spawn_pos", "464, 128"]:
+		pass
+	# Geometry markers for retuned Beatfire
+	if "464, 128" not in l01b and "[464, 128" not in l01b:
+		errors.append("Level01 missing mid foothold for wall-jump corridor")
+	if "for i in range(3)" not in l01b:
+		errors.append("Level01 spike pit should use 3 spikes (touch fairness)")
+	if "[800, 108," not in l01b and "800, 108" not in l01b:
+		errors.append("Level01 slide tunnel should have ~20px clearance (ceiling y=108)")
+	if "drag_bottom_margin" not in l01b:
+		errors.append("Level01 should tune camera drag for touch")
+	# Instantiating level still works
+	var l01_packed: PackedScene = load("res://scenes/levels/Level01.tscn")
+	if l01_packed == null:
+		errors.append("Level01.tscn failed to load")
+	else:
+		var l01_inst = l01_packed.instantiate()
+		root.add_child(l01_inst)
+		await process_frame
+		await process_frame
+		var player_n = l01_inst.get_node_or_null("Entities/Player")
+		if player_n == null:
+			errors.append("Level01 did not spawn Player")
+		else:
+			print("OK Level01 Player at ", player_n.position)
+		var touch_n = l01_inst.get_node_or_null("TouchControls")
+		if touch_n == null:
+			errors.append("Level01 missing TouchControls")
+		else:
+			print("OK Level01 TouchControls")
+		l01_inst.queue_free()
+		await process_frame
+	print("OK v0.20 landscape+Beatfire checks")
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

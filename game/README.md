@@ -21,6 +21,7 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 
 Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome / LevelStaticShadow.
 
+**v0.20:** Android landscape real (canvas_items+expand, 398×224, SafeArea HUD/touch) + Beatfire touch-playable retune.
 **v0.19:** art+audio pro pass — 8-frame run, boss poses, parallax, hit FX, longer BGM, layered SFX.
 **v0.18:** armaduras GDD — Sonic Slash (Teto), Barrier Pulse (Miku), Counter Guard, hover+ set completo.
 
@@ -54,7 +55,7 @@ Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → 
 
 ### Touch HUD (`scenes/ui/TouchControls.tscn`)
 
-CanvasLayer (layer 100) over the **256×224** viewport — screen-space anchors, not world-scaled.
+CanvasLayer (layer 100) over the viewport — SafeArea insets for notches; larger hit targets for thumbs.
 
 | Zone | Control | InputMap action(s) |
 |------|---------|-------------------|
@@ -110,7 +111,7 @@ Bound at runtime by TouchControls (same actions):
 - `Level01` — platforms, wall-jump, spikes, slide tunnel, **3 Met-Beat**, arena **Beatfire Man**
 - `LevelEchoWind` — torres, corrientes de viento, secreto **casco Stage Flight**, arena **Echo Wind**
 - Victoria jefe → `GameState.beatfire_defeated` + botón/auto a Boss Select
-- Viewport **256×224**, integer stretch, pixel snap, physics 60 Hz
+- Viewport **398×224** (16:9 base), canvas_items + expand + fractional scale, pixel snap, physics 60 Hz
 - Placeholder ColorRect / Polygon2D art (Miku cyan player; no Capcom assets)
 
 ## Project layout
