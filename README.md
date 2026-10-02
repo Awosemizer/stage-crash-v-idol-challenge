@@ -1,6 +1,7 @@
 # Stage Crash: V-Idol Challenge
 
 
+**v0.40:** sprites de Miku y Teto a 32 px — idle, correr, salto, pared, desliz, disparo y sable. Alas de Stage Flight y hombreras de Encore si llevas la pieza. Sin cambiar el combate.
 **v0.38:** Difícil más justo — +1 de daño con tope 10 (no media barra), i-frames 0.6 s, arma robada al 75%. Normal igual. La pausa y los PV dicen Normal o Difícil.
 **v0.37:** audio — aviso del jefe en el beat, debilidad con un golpe distinto, armadura con sonido de activar, música un poco más rápida bajo 50% de vida, pausa baja el tema y lo devuelve.
 **v0.36:** CORE-9 en tres fases — aviso ámbar 0.30 s, tiros que no hieren al nacer, el núcleo solo recibe Nv4 / Sonic Slash / Counter (un chip lento si no tienes golpe fuerte), transiciones con pausa y texto.
@@ -24,7 +25,7 @@ Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.38.0-proto`
+- Versión demo: `0.40.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)

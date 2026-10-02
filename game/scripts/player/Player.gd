@@ -145,6 +145,10 @@ var _weapon_index := 0
 var _is_teto := false
 var _anim_time := 0.0
 var _tex_idle: Texture2D
+var _tex_action: Texture2D
+var _pose_t := 0.0
+var _wings: Sprite2D
+var _pads: Sprite2D
 var _tex_run: Texture2D
 var _tex_jump: Texture2D
 var _tex_slide: Texture2D
@@ -681,6 +685,8 @@ func _load_character_sprites() -> void:
 	_tex_run = load("res://assets/sprites/player/%s_run.png" % prefix) as Texture2D
 	_tex_jump = load("res://assets/sprites/player/%s_jump.png" % prefix) as Texture2D
 	_tex_slide = load("res://assets/sprites/player/%s_slide.png" % prefix) as Texture2D
+	var action_name := "saber" if _is_teto else "shoot"
+	_tex_action = load("res://assets/sprites/player/%s_%s.png" % [prefix, action_name]) as Texture2D
 	if visual:
 		visual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		visual.centered = true
@@ -689,8 +695,9 @@ func _load_character_sprites() -> void:
 		if _tex_idle:
 			visual.texture = _tex_idle
 			visual.region_enabled = true
-			visual.region_rect = Rect2(0, 0, 16, 32)
+			visual.region_rect = Rect2(0, 0, 32, 32)
 		visual.modulate = Color.WHITE
+	_ensure_armor_overlays()
 	if _charge_rings.is_empty():
 		_charge_rings = ArtKit.make_charge_aura_layers(self)
 
@@ -776,6 +783,7 @@ func _swing_saber() -> void:
 		return
 	_saber_hit_ids.clear()
 	_saber_timer = SABER_DURATION
+	_pose_t = 0.16
 	if AudioManager:
 		AudioManager.play_sfx("shoot", 0.92)
 	_saber_cd = SABER_COOLDOWN
@@ -1206,6 +1214,7 @@ func _fire_buster(level: int) -> void:
 		return
 	if AudioManager:
 		AudioManager.play_sfx("shoot", 1.0 + 0.06 * float(level - 1))
+	_pose_t = 0.12
 	var shot: Area2D = BusterShotScene.instantiate()
 	var parent_node := get_parent()
 	if parent_node == null:
@@ -1393,10 +1402,16 @@ func _update_visual() -> void:
 	if visual == null:
 		return
 	_anim_time += 1.0 / 60.0
+	_pose_t = maxf(_pose_t - 1.0 / 60.0, 0.0)
 	visual.flip_h = facing < 0
+	var acting := (_pose_t > 0.0 or _saber_timer > 0.0) and _tex_action != null
 
 	var moving := absf(velocity.x) > 12.0
-	if _is_sliding and _tex_slide:
+	if acting and not _is_sliding:
+		visual.region_enabled = false
+		visual.texture = _tex_action
+		visual.position = Vector2(0, -2)
+	elif _is_sliding and _tex_slide:
 		visual.region_enabled = false
 		visual.texture = _tex_slide
 		visual.position = Vector2(0, 4)
@@ -1404,20 +1419,23 @@ func _update_visual() -> void:
 		visual.texture = _tex_jump
 		visual.region_enabled = true
 		var jf := 0 if velocity.y < -40.0 else 1
-		visual.region_rect = Rect2(jf * 16, 0, 16, 32)
+		if _is_on_wall_solid() and velocity.y > 0.0:
+			jf = 2
+		visual.region_rect = Rect2(jf * 32, 0, 32, 32)
 		visual.position = Vector2(0, -2)
 	elif moving and is_on_floor() and _tex_run:
 		visual.texture = _tex_run
 		visual.region_enabled = true
 		_run_frame = int(_anim_time * 12.0) % ArtKit.RUN_FRAMES
-		visual.region_rect = Rect2(_run_frame * 16, 0, 16, 32)
+		visual.region_rect = Rect2(_run_frame * 32, 0, 32, 32)
 		visual.position = Vector2(0, -2)
 	elif _tex_idle:
 		visual.texture = _tex_idle
 		visual.region_enabled = true
 		_idle_frame = int(_anim_time * 2.0) % 2
-		visual.region_rect = Rect2(_idle_frame * 16, 0, 16, 32)
+		visual.region_rect = Rect2(_idle_frame * 32, 0, 32, 32)
 		visual.position = Vector2(0, -2)
+	_sync_armor_overlays()
 
 	var base_mod := Color.WHITE
 	if not is_on_floor() and _is_on_wall_solid() and velocity.y > 0.0:
@@ -1770,6 +1788,42 @@ func get_hover_fuel_ratio() -> float:
 	return clampf(_hover_fuel / mx, 0.0, 1.0)
 
 
+func _ensure_armor_overlays() -> void:
+	if _wings == null:
+		_wings = Sprite2D.new()
+		_wings.name = "FlightWings"
+		_wings.centered = true
+		_wings.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_wings.texture = load("res://assets/sprites/player/armor_wings.png")
+		_wings.position = Vector2(0, -6)
+		_wings.z_index = -1
+		_wings.visible = false
+		add_child(_wings)
+	if _pads == null:
+		_pads = Sprite2D.new()
+		_pads.name = "EncorePads"
+		_pads.centered = true
+		_pads.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_pads.texture = load("res://assets/sprites/player/armor_shoulders.png")
+		_pads.position = Vector2(0, -8)
+		_pads.z_index = 1
+		_pads.visible = false
+		add_child(_pads)
+
+
+func _sync_armor_overlays() -> void:
+	var flight := _has_flight_torso or _has_flight_arms or _has_flight_head
+	var guard := _has_encore_torso or _has_encore_legs or _has_encore_head
+	if _wings:
+		_wings.visible = flight and not _is_sliding
+		_wings.flip_h = facing < 0
+		_wings.position = visual.position + Vector2(0, -4) if visual else Vector2(0, -6)
+	if _pads:
+		_pads.visible = guard and not _is_sliding
+		_pads.flip_h = facing < 0
+		_pads.position = visual.position + Vector2(0, -6) if visual else Vector2(0, -8)
+
+
 func _ensure_thruster() -> void:
 	if _thruster != null and is_instance_valid(_thruster):
 		return
@@ -1892,6 +1946,7 @@ func _swing_saber_counter() -> void:
 		return
 	_saber_hit_ids.clear()
 	_saber_timer = SABER_DURATION * 1.25
+	_pose_t = 0.18
 	_saber_cd = SABER_COOLDOWN * 0.85
 	_position_saber()
 	saber_hitbox.monitoring = true
