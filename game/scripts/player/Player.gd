@@ -50,8 +50,11 @@ const STAND_SIZE := Vector2(14, 28)
 const STAND_OFFSET := Vector2(0, -2)
 const SLIDE_SIZE := Vector2(22, 14)
 const SLIDE_OFFSET := Vector2(0, 5)
-const FRAME := 64
-const VISUAL_SCALE := 0.5
+const FRAME_W := 270
+const FRAME_H := 253
+# Idle opaque height -> ~32px on screen. Feet stay at the old sprite bottom (y=14).
+const MIKU_VISUAL_SCALE := 32.0 / 240.0
+const TETO_VISUAL_SCALE := 32.0 / 230.0
 
 const WEAPON_BUSTER := "buster"
 const WEAPON_SABER := "saber"
@@ -145,6 +148,7 @@ var _key2_held := false
 var _weapons: Array[Dictionary] = []
 var _weapon_index := 0
 var _is_teto := false
+var _visual_scale := MIKU_VISUAL_SCALE
 var _anim_time := 0.0
 var _tex_idle: Texture2D
 var _tex_action: Texture2D
@@ -688,16 +692,16 @@ func _load_character_sprites() -> void:
 	_tex_jump = load("res://assets/sprites/player/%s_jump.png" % prefix) as Texture2D
 	_tex_slide = load("res://assets/sprites/player/%s_slide.png" % prefix) as Texture2D
 	var action_name := "saber" if _is_teto else "shoot"
+	_visual_scale = TETO_VISUAL_SCALE if _is_teto else MIKU_VISUAL_SCALE
 	_tex_action = load("res://assets/sprites/player/%s_%s.png" % [prefix, action_name]) as Texture2D
 	if visual:
 		visual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		visual.centered = true
-		visual.position = Vector2(0, -2)
 		visual.region_enabled = false
 		if _tex_idle:
 			visual.texture = _tex_idle
 			visual.region_enabled = true
-			visual.region_rect = Rect2(0, 0, FRAME, FRAME)
+			visual.region_rect = Rect2(0, 0, FRAME_W, FRAME_H)
 		visual.modulate = Color.WHITE
 	_ensure_armor_overlays()
 	if _charge_rings.is_empty():
@@ -1384,8 +1388,7 @@ func _apply_stand_shape() -> void:
 	shape.size = STAND_SIZE
 	collision.position = STAND_OFFSET
 	if visual:
-		visual.position = Vector2(0, -2)
-		visual.scale = Vector2(VISUAL_SCALE, VISUAL_SCALE)
+		_place_visual()
 
 
 func _apply_slide_shape() -> void:
@@ -1396,8 +1399,16 @@ func _apply_slide_shape() -> void:
 	shape.size = SLIDE_SIZE
 	collision.position = SLIDE_OFFSET
 	if visual:
-		visual.position = Vector2(0, -2)
-		visual.scale = Vector2(VISUAL_SCALE, VISUAL_SCALE)
+		_place_visual()
+
+
+func _place_visual() -> void:
+	if visual == null:
+		return
+	visual.scale = Vector2(_visual_scale, _visual_scale)
+	var half := float(FRAME_H) * _visual_scale * 0.5
+	# Bottom of the cell (the feet) matches the v0.46 sprite bottom.
+	visual.position = Vector2(0.0, 14.0 - half)
 
 
 func _update_visual() -> void:
@@ -1411,33 +1422,32 @@ func _update_visual() -> void:
 
 	var moving := absf(velocity.x) > 12.0
 	if acting and not _is_sliding:
-		visual.region_enabled = false
+		visual.region_enabled = true
 		visual.texture = _tex_action
-		visual.position = Vector2(0, -2)
+		visual.region_rect = Rect2(0, 0, FRAME_W, FRAME_H)
 	elif _is_sliding and _tex_slide:
-		visual.region_enabled = false
+		visual.region_enabled = true
 		visual.texture = _tex_slide
-		visual.position = Vector2(0, -2)
+		visual.region_rect = Rect2(0, 0, FRAME_W, FRAME_H)
 	elif not is_on_floor() and _tex_jump:
 		visual.texture = _tex_jump
 		visual.region_enabled = true
 		var jf := 0 if velocity.y < -40.0 else 1
 		if _is_on_wall_solid() and velocity.y > 0.0:
 			jf = 2
-		visual.region_rect = Rect2(jf * FRAME, 0, FRAME, FRAME)
-		visual.position = Vector2(0, -2)
+		visual.region_rect = Rect2(jf * FRAME_W, 0, FRAME_W, FRAME_H)
 	elif moving and is_on_floor() and _tex_run:
 		visual.texture = _tex_run
 		visual.region_enabled = true
-		_run_frame = int(_anim_time * 12.0) % ArtKit.RUN_FRAMES
-		visual.region_rect = Rect2(_run_frame * FRAME, 0, FRAME, FRAME)
-		visual.position = Vector2(0, -2)
+		# ArtKit.RUN_FRAMES was the 8-frame cycle. This sheet is walk + run.
+		_run_frame = int(_anim_time * 8.0) % 2
+		visual.region_rect = Rect2(_run_frame * FRAME_W, 0, FRAME_W, FRAME_H)
 	elif _tex_idle:
 		visual.texture = _tex_idle
 		visual.region_enabled = true
-		_idle_frame = int(_anim_time * 2.0) % 2
-		visual.region_rect = Rect2(_idle_frame * FRAME, 0, FRAME, FRAME)
-		visual.position = Vector2(0, -2)
+		_idle_frame = 0
+		visual.region_rect = Rect2(0, 0, FRAME_W, FRAME_H)
+	_place_visual()
 	_sync_armor_overlays()
 
 	var base_mod := Color.WHITE
@@ -1815,18 +1825,12 @@ func _ensure_armor_overlays() -> void:
 
 
 func _sync_armor_overlays() -> void:
-	var flight := _has_flight_torso or _has_flight_arms or _has_flight_head
-	var guard := _has_encore_torso or _has_encore_legs or _has_encore_head
+	# 64px wing/shoulder art was drawn for the procedural sprites and would cover these sheets.
 	if _wings:
-		_wings.visible = flight and not _is_sliding
-		_wings.flip_h = facing < 0
-		_wings.scale = Vector2(VISUAL_SCALE, VISUAL_SCALE)
-		_wings.position = visual.position if visual else Vector2(0, -2)
+		_wings.visible = false
 	if _pads:
-		_pads.visible = guard and not _is_sliding
-		_pads.flip_h = facing < 0
-		_pads.scale = Vector2(VISUAL_SCALE, VISUAL_SCALE)
-		_pads.position = visual.position if visual else Vector2(0, -2)
+		_pads.visible = false
+
 
 
 func _ensure_thruster() -> void:

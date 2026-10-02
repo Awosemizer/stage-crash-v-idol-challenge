@@ -55,6 +55,7 @@ func _build_ui() -> void:
 	var miku_swatch: Control
 	if miku_tex:
 		miku_swatch = ArtKit.make_texture_rect(miku_tex, Vector2(48, 48), Vector2(28, 6))
+		(miku_swatch as TextureRect).stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		miku_swatch.name = "MikuSwatch"
 	else:
 		miku_swatch = ColorRect.new()
@@ -94,6 +95,7 @@ func _build_ui() -> void:
 	var teto_swatch: Control
 	if teto_tex:
 		teto_swatch = ArtKit.make_texture_rect(teto_tex, Vector2(48, 48), Vector2(28, 6))
+		(teto_swatch as TextureRect).stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		teto_swatch.name = "TetoSwatch"
 	else:
 		teto_swatch = ColorRect.new()
@@ -146,7 +148,7 @@ func _idle_frame(is_teto: bool) -> Texture2D:
 		return ArtKit.char_portrait_tex(is_teto)
 	var atlas := AtlasTexture.new()
 	atlas.atlas = tex
-	atlas.region = Rect2(0, 0, 64, 64)
+	atlas.region = Rect2(0, 0, tex.get_width(), tex.get_height())
 	return atlas
 
 

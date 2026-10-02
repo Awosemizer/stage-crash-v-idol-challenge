@@ -23,6 +23,7 @@ Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → 
 
 **v0.40:** Player pixel pass — 32px Miku (cyan twin-tails, buster pose) and Teto (red drills, saber pose): idle, 8-frame run, jump, wall, slide. Flight wings and Encore shoulders overlay when a piece is owned. Hitboxes unchanged.
 **v0.41:** Robot Master pixel pass — 48×64 idle + attack for the 8 stages (fire, ice, quake, wind, neon, metronome, bloom, static), CORE-9 hologram, 16×16 stage floors. Combat numbers and hitboxes unchanged.
+**v0.47:** Miku and Teto use the hand-drawn sheets (idle, walk+run, jump, fall, shoot/saber, dash on walls, crouch). On-screen height stays about 32px and the hitbox stays 14×28. The old wing and shoulder overlays are hidden so they don't cover the new art.
 **v0.46:** Miku and Teto redrawn at 64px and scaled by 0.5 so the on-screen body (and 14×28 hitbox) stay put. Eight-frame run, jump, wall, slide, buster, and saber, with a dark outline and more shades. Flight wings and Encore shoulders stay overlays. Combat numbers unchanged.
 **v0.45:** Menu art — concert backdrop and pixel Stage Crash logo on the title, billboard behind boss select, larger idle sprites on character select. Button hit targets unchanged.
 **v0.44:** Stage scenery — distinct parallax strips and sky tints for the eight Robot Master stages plus SynthoCorp fortress. Camera and collision unchanged.
