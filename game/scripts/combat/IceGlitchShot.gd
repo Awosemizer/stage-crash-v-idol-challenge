@@ -11,6 +11,7 @@ const GLITCH_AMP := 18.0
 var damage := DAMAGE
 var velocity := Vector2.ZERO
 var _life := LIFETIME
+var _arm := 0.22
 var _t := 0.0
 var _base_y := 0.0
 
@@ -54,22 +55,32 @@ func _apply_look() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	var arm_was := _arm > 0.0
+	_arm = maxf(_arm - delta, 0.0)
 	_t += delta
 	position += velocity * delta
-	# Frame-skip stutter: occasional vertical snaps
-	if int(_t * 12.0) % 5 == 0:
-		global_position.y = _base_y + (1.0 if int(_t * 20.0) % 2 == 0 else -1.0) * GLITCH_AMP
+	# Stutter only after the windup, and smaller so it can't snap onto the player.
+	if _arm <= 0.0 and int(_t * 12.0) % 5 == 0:
+		global_position.y = _base_y + (1.0 if int(_t * 20.0) % 2 == 0 else -1.0) * 8.0
 	else:
 		global_position.y = move_toward(global_position.y, _base_y, 80.0 * delta)
 	if visual:
-		visual.color = COLOR if int(Time.get_ticks_msec() / 50) % 2 == 0 else Color(0.95, 0.55, 1.0, 0.85)
+		if _arm > 0.0:
+			visual.color = Color(1.0, 0.82, 0.3, 0.7)
+			visual.scale = Vector2(0.65, 0.65)
+		else:
+			visual.scale = Vector2.ONE
+			visual.color = COLOR if int(Time.get_ticks_msec() / 50) % 2 == 0 else Color(0.95, 0.55, 1.0, 0.85)
 	_life -= delta
+	if arm_was and _arm <= 0.0:
+		for b in get_overlapping_bodies():
+			_on_body_entered(b)
 	if _life <= 0.0:
 		queue_free()
 
 
 func _on_body_entered(body: Node) -> void:
-	if body == null:
+	if _arm > 0.0 or body == null:
 		return
 	if body.is_in_group("player"):
 		if body.has_method("try_block_projectile") and body.try_block_projectile(self):

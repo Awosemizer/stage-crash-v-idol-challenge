@@ -74,15 +74,16 @@ const TETO_ACCEL_MULT := 0.85
 # Stage Flight torso — short air hover (45 frames @ 60fps)
 const HOVER_DURATION := 45.0 / 60.0  # 0.75 s fuel
 const HOVER_DURATION_FULL := 60.0 / 60.0  # full Stage Flight set bonus
-const HOVER_COOLDOWN := 0.40
+const HOVER_COOLDOWN := 1.50          # DISENO: no hover permanente
+const HOVER_COOLDOWN_FULL := 1.00
 const HOVER_HOLD_Y := 18.0           # max fall while hovering
 const HOVER_LIFT := -12.0            # slight upward assist when falling
 
 # Encore Guard specials
-const BARRIER_DURATION := 0.50
-const BARRIER_COOLDOWN := 0.85
-const DOUBLE_SLIDE_WINDOW := 0.30
-const PARRY_WINDOW := 0.16
+const BARRIER_DURATION := 0.55
+const BARRIER_COOLDOWN := 1.40
+const DOUBLE_SLIDE_WINDOW := 0.42
+const PARRY_WINDOW := 0.28
 const COUNTER_DAMAGE := 4
 const SONIC_CHARGE := 0.45  # hold attack for Sonic Slash (Flight arms)
 
@@ -271,7 +272,7 @@ func _physics_process(delta: float) -> void:
 			else:
 				velocity.y = move_toward(velocity.y, HOVER_LIFT, 600.0 * delta)
 			if _hover_fuel <= 0.0:
-				_hover_cd = HOVER_COOLDOWN
+				_hover_cd = HOVER_COOLDOWN_FULL if _has_full_flight else HOVER_COOLDOWN
 		elif on_wall and velocity.y > 0.0 and _holding_into_wall(wall_dir):
 			# Cling only while pushing into the wall — grazing a corner no longer sticks.
 			velocity.y = minf(velocity.y + GRAVITY * delta * 0.45, WALL_SLIDE_SPEED)
@@ -714,6 +715,8 @@ func _setup_saber_hitbox() -> void:
 func _handle_saber() -> void:
 	## Teto: tap = sable (+ Counter Guard con Encore torso).
 	## Hold con Flight arms = Sonic Slash al soltar.
+	if _saber_cd > 0.0 and not _charging:
+		return
 	if Input.is_action_just_pressed("attack"):
 		# Encore Counter Guard: brief parry window before swing
 		if _has_encore_torso and _saber_timer <= 0.0 and _parry_window <= 0.0:
@@ -1903,6 +1906,7 @@ func _fire_sonic_slash() -> void:
 		return
 	if AudioManager:
 		AudioManager.play_sfx("shoot", 0.85)
+	_saber_cd = 0.40
 	var shot: Area2D = SonicSlashShotScene.instantiate()
 	var parent_node := get_parent()
 	if parent_node == null:

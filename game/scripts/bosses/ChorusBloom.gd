@@ -28,6 +28,11 @@ var _invuln := 0.0
 var _alive := true
 var _active := false
 var _facing := -1
+var _contact_grace := 0.0
+var _posing := false
+var _windup := 0.0
+var _queued := ""
+const WINDUP := 0.28
 
 @onready var visual: ColorRect = $Visual
 var _sprite_art: Sprite2D
@@ -73,6 +78,7 @@ func _physics_process(delta: float) -> void:
 
 	_flash = maxf(_flash - delta, 0.0)
 	_invuln = maxf(_invuln - delta, 0.0)
+	_contact_grace = maxf(_contact_grace - delta, 0.0)
 	_update_facing()
 
 	if _active:
@@ -97,27 +103,55 @@ func _physics_process(delta: float) -> void:
 	_check_contact_overlap()
 
 
+
+func _queue_attack(kind: String) -> void:
+	_posing = true
+	_queued = kind
+	_windup = WINDUP if hp > HP_MAX / 2 else WINDUP * 0.9
+	velocity = Vector2.ZERO
+
+
+func _tick_pose(delta: float) -> bool:
+	if not _posing:
+		return false
+	_windup -= delta
+	velocity.x = move_toward(velocity.x, 0.0, 800.0 * delta)
+	if _windup <= 0.0:
+		_posing = false
+		_release_pose()
+	return true
+
+
 func _beat_interval() -> float:
 	return BEAT_RAGE if hp <= HP_MAX / 2 else BEAT_NORMAL
 
 
 func _tick_idle(delta: float) -> void:
+	if _tick_pose(delta):
+		return
 	_beat -= delta
 	velocity.x = move_toward(velocity.x, 0.0, 420.0 * delta)
 	if _beat > 0.0:
 		return
 	match _phase % 3:
 		0, 1:
-			_do_fan()
+			_queue_attack("fan")
 		2:
-			_start_jump()
+			_queue_attack("jump")
 	_phase += 1
+
+
+func _release_pose() -> void:
+	if _queued == "jump":
+		_start_jump()
+	else:
+		_do_fan()
 
 
 func _do_fan() -> void:
 	_state = State.FAN
 	_update_facing()
-	var count := 5 if hp <= HP_MAX / 2 else 4
+	var count := 4 if hp <= HP_MAX / 2 else 3
 	var spread := 50.0 if hp <= HP_MAX / 2 else 40.0
 	var start := -spread * 0.5
 	for i in count:
@@ -138,12 +172,12 @@ func _start_jump() -> void:
 func _tick_jump(_delta: float) -> void:
 	if is_on_floor() and velocity.y >= 0.0:
 		# Landing petal burst
-		_spawn_petal(Vector2(-1, -0.3), 130.0)
-		_spawn_petal(Vector2(1, -0.3), 130.0)
-		_spawn_petal(Vector2(0, -1), 100.0)
+		_spawn_petal(Vector2(-1, -0.25), 115.0)
+		_spawn_petal(Vector2(1, -0.25), 115.0)
 		velocity.x = 0.0
 		_state = State.IDLE
-		_beat = _beat_interval() * 0.4
+		_contact_grace = 0.18
+		_beat = maxf(_beat_interval() * 0.7, 0.48)
 
 
 func _spawn_petal(dir: Vector2, spd: float = 115.0) -> void:
@@ -227,6 +261,10 @@ func _refresh_look() -> void:
 	else:
 		visual.color = base
 		_sync_sprite_art(base)
+	if _posing and visual:
+		var pose_pulse := 0.55 + 0.45 * absf(sin(Time.get_ticks_msec() * 0.02))
+		visual.color = Color(1.0, 0.78, 0.22, pose_pulse)
+		_sync_sprite_art(visual.color)
 	if trim:
 		trim.position.x = (-14.0 if _facing > 0 else 2.0)
 
@@ -243,6 +281,8 @@ func _check_contact_overlap() -> void:
 
 
 func _hurt_player(body: Node) -> void:
+	if _posing or _contact_grace > 0.0:
+		return
 	if body == null or not body.is_in_group("player"):
 		return
 	if body.has_method("is_invulnerable") and body.is_invulnerable():

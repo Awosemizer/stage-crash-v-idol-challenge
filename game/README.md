@@ -21,6 +21,8 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 
 Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome / LevelStaticShadow.
 
+**v0.35:** Remaining bosses + armor — 0.28s amber windup on Glitch Ice / Echo Wind / Neon Volt / Chorus Bloom, shots arm 0.22s, hover cooldown 1.5s (1.0s full Flight), parry window 0.28s, Sonic Slash recovery.
+
 **v0.34:** Common enemies — Met-Beat amber open telegraph + one slow pellet (contact 1 only while open, HP 2), stage hazards share a ~0.28s amber windup, petal damage 2, knockback/wind won't fling you into a pit.
 
 **v0.33:** Weapon balance — DISENO weakness cycle (×3, boss i-frames 0.45s), Freeze Sample cost 2, buster Nv3=4 / Nv4=8, Static Veil hits once, pause E-Tank spends a tank for 28 HP.

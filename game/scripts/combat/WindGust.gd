@@ -10,6 +10,7 @@ const LIFETIME := 2.4
 var damage := DAMAGE
 var velocity := Vector2.ZERO
 var _life := LIFETIME
+var _arm := 0.22
 
 @onready var visual: ColorRect = $Visual
 @onready var collision: CollisionShape2D = $CollisionShape2D
@@ -46,16 +47,28 @@ func _apply_look() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	var arm_was := _arm > 0.0
+	_arm = maxf(_arm - delta, 0.0)
 	position += velocity * delta
-	# Slight sine drift for "float" feel
-	position.y += sin(Time.get_ticks_msec() * 0.012 + position.x * 0.02) * 18.0 * delta
+	if _arm <= 0.0:
+		position.y += sin(Time.get_ticks_msec() * 0.012 + position.x * 0.02) * 18.0 * delta
+	if visual:
+		if _arm > 0.0:
+			visual.color = Color(1.0, 0.82, 0.3, 0.65)
+			visual.scale = Vector2(0.65, 0.65)
+		else:
+			visual.scale = Vector2.ONE
+			visual.color = COLOR
 	_life -= delta
+	if arm_was and _arm <= 0.0:
+		for b in get_overlapping_bodies():
+			_on_body_entered(b)
 	if _life <= 0.0:
 		queue_free()
 
 
 func _on_body_entered(body: Node) -> void:
-	if body == null:
+	if _arm > 0.0 or body == null:
 		return
 	if body.is_in_group("player"):
 		if body.has_method("try_block_projectile") and body.try_block_projectile(self):

@@ -12,6 +12,7 @@ const ZIG_FREQ := 10.0
 var damage := DAMAGE
 var velocity := Vector2.ZERO
 var _life := LIFETIME
+var _arm := 0.22
 var _base_y := 0.0
 var _t := 0.0
 var _dir_sign := -1.0
@@ -59,20 +60,32 @@ func _apply_look() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	var arm_was := _arm > 0.0
+	_arm = maxf(_arm - delta, 0.0)
 	_t += delta
 	position.x += velocity.x * delta
-	# Zigzag vertical around base
-	var zig := sin(_t * ZIG_FREQ) * ZIG_AMP
+	# Straight during the windup, then a smaller zigzag (not a full-body hitbox).
+	var ramp := 0.0 if _arm > 0.0 else clampf((_t - 0.22) / 0.2, 0.0, 1.0)
+	var zig := sin(_t * ZIG_FREQ) * 26.0 * ramp
 	global_position.y = _base_y + zig
 	if visual:
-		visual.color.a = 0.7 + 0.3 * absf(sin(_t * 14.0))
+		if _arm > 0.0:
+			visual.color = Color(1.0, 0.82, 0.3, 0.7)
+			visual.scale = Vector2(0.65, 0.65)
+		else:
+			visual.scale = Vector2.ONE
+			visual.color = COLOR
+			visual.color.a = 0.7 + 0.3 * absf(sin(_t * 14.0))
 	_life -= delta
+	if arm_was and _arm <= 0.0:
+		for b in get_overlapping_bodies():
+			_on_body_entered(b)
 	if _life <= 0.0:
 		queue_free()
 
 
 func _on_body_entered(body: Node) -> void:
-	if body == null:
+	if _arm > 0.0 or body == null:
 		return
 	if body.is_in_group("player"):
 		if body.has_method("try_block_projectile") and body.try_block_projectile(self):

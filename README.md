@@ -1,6 +1,7 @@
 # Stage Crash: V-Idol Challenge
 
 
+**v0.35:** jefes restantes y armadura — aviso ámbar 0.28 s antes de atacar (Glitch Ice, Echo Wind, Neon Volt, Chorus Bloom), tiros que no hieren al aparecer, hover con enfriamiento de 1.5 s, parry más legible.
 **v0.34:** enemigos comunes — Met-Beat avisa antes de abrir y disparar, peligros con destello ámbar (~0.28 s), pétalos a 2 de daño, el golpe ya no te lanza al pozo.
 **v0.33:** balance de armas — ciclo de debilidades ×3 (sin derretir al jefe), Freeze cuesta 2, buster Nv3/Nv4, Static Veil un golpe, E-Tank usable en pausa.
 **v0.32:** menús/HUD — botones más altos, panel Datos, jefes y munición más legibles, pausa sin pisar el cambio de arma.
@@ -20,7 +21,7 @@ Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.34.0-proto`
+- Versión demo: `0.35.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)
@@ -59,7 +60,7 @@ En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
 
 Archivo listo (debug, un solo archivo, ~27 MB):
 
-**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.34 — enemigos)
+**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.35 — jefes/armadura)
 
 1. Descarga el APK desde este repo (botón Raw / Download).
 2. En el teléfono: permite **orígenes desconocidos** / instalar apps desconocidas para el navegador o gestor de archivos.
