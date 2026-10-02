@@ -236,13 +236,24 @@ static func skin_projectile(visual: CanvasItem, path: String, frame: int = 0, fr
 
 
 static func set_boss_pose(sprite: Sprite2D, pose: int = 0) -> void:
-	## pose 0 = idle, 1 = attack/telegraph (sheet is 96×64).
+	## pose 0 = idle, 1 = attack. Sheet is two equal frames side by side.
+	## On-screen height stays BOSS_FRAME_H (64). Feet stay at y=0. Hitboxes unchanged.
 	if sprite == null or sprite.texture == null:
 		return
+	var tw := sprite.texture.get_width()
+	var th := sprite.texture.get_height()
+	var fw := int(tw / 2)
+	var fh := th
+	if fw < 1 or fh < 1:
+		return
 	sprite.region_enabled = true
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var p := clampi(pose, 0, 1)
-	sprite.region_rect = Rect2(p * BOSS_FRAME_W, 0, BOSS_FRAME_W, BOSS_FRAME_H)
-	# Keep feet on the collision origin if an older 36px offset was cached.
+	sprite.region_rect = Rect2(p * fw, 0, fw, fh)
+	var s := float(BOSS_FRAME_H) / float(fh)
+	var sign_x := -1.0 if sprite.scale.x < 0.0 else 1.0
+	sprite.scale = Vector2(sign_x * s, s)
+	# Centered sprite, feet at the bottom of the frame, so the center sits at -32.
 	sprite.position.y = -float(BOSS_FRAME_H) * 0.5
 
 
