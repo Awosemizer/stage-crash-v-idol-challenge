@@ -36,6 +36,22 @@ func _build_ui() -> void:
 	accent2.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(accent2)
 
+	var banner_tex := ArtKit.title_banner_tex()
+	if banner_tex:
+		var banner := ArtKit.make_texture_rect(banner_tex, Vector2(160, 20), Vector2(48, 94))
+		banner.name = "TitleBanner"
+		add_child(banner)
+	var miku_p := ArtKit.char_portrait_tex(false)
+	var teto_p := ArtKit.char_portrait_tex(true)
+	if miku_p:
+		var mp := ArtKit.make_texture_rect(miku_p, Vector2(28, 28), Vector2(8, 112))
+		mp.name = "PortraitMiku"
+		add_child(mp)
+	if teto_p:
+		var tp := ArtKit.make_texture_rect(teto_p, Vector2(28, 28), Vector2(220, 112))
+		tp.name = "PortraitTeto"
+		add_child(tp)
+
 	var title := Label.new()
 	title.name = "Title"
 	title.text = "Stage Crash:"
@@ -106,7 +122,7 @@ func _build_ui() -> void:
 
 	var ver := Label.new()
 	ver.name = "Version"
-	ver.text = "v0.16.0-proto · Android · logros"
+	ver.text = "v0.17.0-proto · pixel art pass"
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ver.add_theme_font_size_override("font_size", 6)
 	ver.modulate = Color(0.55, 0.6, 0.7, 0.7)

@@ -49,15 +49,19 @@ func _build_ui() -> void:
 	miku_btn.pressed.connect(_on_miku)
 	add_child(miku_btn)
 
-	var miku_swatch := ColorRect.new()
-	miku_swatch.name = "MikuSwatch"
-	miku_swatch.color = GameState.COLOR_MIKU
-	miku_swatch.position = Vector2(48, 72)
-	miku_swatch.size = Vector2(40, 40)
-	miku_swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Swatch sits above button visually but won't block if we put it as child
+	var miku_tex := ArtKit.char_portrait_tex(false)
+	var miku_swatch: Control
+	if miku_tex:
+		miku_swatch = ArtKit.make_texture_rect(miku_tex, Vector2(48, 48), Vector2(28, 6))
+		miku_swatch.name = "MikuSwatch"
+	else:
+		miku_swatch = ColorRect.new()
+		miku_swatch.name = "MikuSwatch"
+		(miku_swatch as ColorRect).color = GameState.COLOR_MIKU
+		miku_swatch.position = Vector2(32, 12)
+		miku_swatch.size = Vector2(40, 40)
+		miku_swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	miku_btn.add_child(miku_swatch)
-	miku_swatch.position = Vector2(32, 12)
 	# Rebuild button text layout: clear default and use labels
 	miku_btn.text = ""
 	var miku_name := Label.new()
@@ -99,12 +103,18 @@ func _build_ui() -> void:
 	teto_btn.pressed.connect(_on_teto)
 	add_child(teto_btn)
 
-	var teto_swatch := ColorRect.new()
-	teto_swatch.name = "TetoSwatch"
-	teto_swatch.color = GameState.COLOR_TETO
-	teto_swatch.position = Vector2(32, 12)
-	teto_swatch.size = Vector2(40, 40)
-	teto_swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var teto_tex := ArtKit.char_portrait_tex(true)
+	var teto_swatch: Control
+	if teto_tex:
+		teto_swatch = ArtKit.make_texture_rect(teto_tex, Vector2(48, 48), Vector2(28, 6))
+		teto_swatch.name = "TetoSwatch"
+	else:
+		teto_swatch = ColorRect.new()
+		teto_swatch.name = "TetoSwatch"
+		(teto_swatch as ColorRect).color = GameState.COLOR_TETO
+		teto_swatch.position = Vector2(32, 12)
+		teto_swatch.size = Vector2(40, 40)
+		teto_swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	teto_btn.add_child(teto_swatch)
 
 	var teto_name := Label.new()

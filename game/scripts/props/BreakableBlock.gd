@@ -20,7 +20,12 @@ func _ready() -> void:
 	add_to_group("enemies")  # so saber / shots that check enemies can hit
 	hp = max_hp
 	if visual:
-		visual.color = block_color
+		visual.visible = false
+		var spr := ArtKit.make_tile_sprite(ArtKit.theme_from_color(block_color), 1)
+		spr.name = "SpriteArt"
+		spr.position = Vector2.ZERO
+		add_child(spr)
+		move_child(spr, 0)
 	if crack:
 		crack.visible = false
 

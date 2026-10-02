@@ -17,9 +17,9 @@ var _flash := 0.0
 var _alive := true
 var _stealth := false
 
-@onready var visual: ColorRect = $Visual
-@onready var eye: ColorRect = $Eye
-@onready var shell_hint: ColorRect = $ShellHint
+@onready var visual: Sprite2D = $Visual
+@onready var eye: Sprite2D = $Eye
+@onready var shell_hint: Sprite2D = $ShellHint
 
 
 func _ready() -> void:
@@ -48,26 +48,30 @@ func _process(delta: float) -> void:
 func _refresh_look() -> void:
 	if visual == null:
 		return
+	var open_tex: Texture2D = load("res://assets/sprites/enemies/met_open.png") as Texture2D
+	var closed_tex: Texture2D = load("res://assets/sprites/enemies/met_closed.png") as Texture2D
+	visual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	visual.centered = true
+	visual.position = Vector2(0, -8)
 	if _open:
-		# Abierto: cuerpo rosa-rojo, ojo visible
-		visual.color = Color(0.85, 0.35, 0.4, 1.0)
-		if eye:
-			eye.visible = true
-			eye.color = Color(1.0, 0.95, 0.2, 1.0)
-		if shell_hint:
-			shell_hint.visible = false
-	else:
-		# Cerrado: caparazón metálico
-		visual.color = Color(0.45, 0.5, 0.58, 1.0)
+		if open_tex:
+			visual.texture = open_tex
+		visual.modulate = Color.WHITE
 		if eye:
 			eye.visible = false
 		if shell_hint:
-			shell_hint.visible = true
-			shell_hint.color = Color(0.65, 0.7, 0.78, 1.0)
+			shell_hint.visible = false
+	else:
+		if closed_tex:
+			visual.texture = closed_tex
+		visual.modulate = Color.WHITE
+		if eye:
+			eye.visible = false
+		if shell_hint:
+			shell_hint.visible = false
 	if _flash > 0.0:
-		visual.color = Color(1.0, 1.0, 1.0, 1.0)
+		visual.modulate = Color(2.0, 2.0, 2.0, 1.0)
 	if _stealth:
-		# Nearly invisible when closed; faint when open
 		var a := 0.55 if _open else 0.12
 		modulate = Color(1, 1, 1, a)
 	else:

@@ -459,17 +459,7 @@ func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) ->
 	body.collision_mask = 0
 	body.position = Vector2(x + w * 0.5, y + h * 0.5)
 
-	var visual := ColorRect.new()
-	visual.size = Vector2(w, h)
-	visual.position = Vector2(-w * 0.5, -h * 0.5)
-	visual.color = color
-	body.add_child(visual)
-
-	var edge := ColorRect.new()
-	edge.size = Vector2(w, 2)
-	edge.position = Vector2(-w * 0.5, -h * 0.5)
-	edge.color = color.lightened(0.25)
-	body.add_child(edge)
+	ArtKit.add_tiled_platform_visuals(body, w, h, color)
 
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(w, h)

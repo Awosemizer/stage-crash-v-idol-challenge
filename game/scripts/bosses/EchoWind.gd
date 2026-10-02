@@ -35,6 +35,7 @@ var _home_y := 0.0
 var _dash_t := 0.0
 
 @onready var visual: ColorRect = $Visual
+var _sprite_art: Sprite2D
 @onready var scarf: ColorRect = $Scarf
 @onready var contact: Area2D = $ContactArea
 @onready var hp_bar_bg: ColorRect = $HpBarBg
@@ -43,10 +44,12 @@ var _dash_t := 0.0
 
 
 func _ready() -> void:
+	_sprite_art = ArtKit.skin_boss_visual(visual, "echo_wind")
 	add_to_group("enemies")
 	add_to_group("bosses")
 	add_to_group("weak_to_beat_blaze")
 	visual.color = Color(0.35, 0.85, 0.7, 1.0)
+	_sync_sprite_art(Color(0.35, 0.85, 0.7, 1.0))
 	if scarf:
 		scarf.color = Color(0.55, 0.95, 0.85, 0.85)
 	if contact:
@@ -226,6 +229,7 @@ func _die() -> void:
 	velocity = Vector2.ZERO
 	died.emit()
 	visual.color = Color(1, 1, 1, 1)
+	_sync_sprite_art(Color(1, 1, 1, 1))
 	await get_tree().create_timer(0.45).timeout
 	queue_free()
 
@@ -253,8 +257,10 @@ func _refresh_look() -> void:
 		base = Color(0.2, 0.7, 0.65, 1.0)
 	if _flash > 0.0:
 		visual.color = Color(1, 1, 1, 1)
+		_sync_sprite_art(Color(1, 1, 1, 1))
 	else:
 		visual.color = base
+		_sync_sprite_art(base)
 	if scarf:
 		scarf.position.x = (-14.0 if _facing > 0 else 2.0)
 
@@ -277,3 +283,15 @@ func _hurt_player(body: Node) -> void:
 		return
 	if body.has_method("take_damage"):
 		body.take_damage(CONTACT_DAMAGE)
+
+func _sync_sprite_art(col: Color) -> void:
+	var spr := get_node_or_null("SpriteArt") as Sprite2D
+	if spr == null:
+		return
+	# White/near-white = hit flash
+	if col.r >= 0.95 and col.g >= 0.95 and col.b >= 0.95:
+		spr.modulate = Color(2.2, 2.2, 2.2, 1.0)
+	else:
+		# Subtle tint from legacy color toward white sprite
+		spr.modulate = Color(0.85 + col.r * 0.2, 0.85 + col.g * 0.2, 0.85 + col.b * 0.2, col.a)
+

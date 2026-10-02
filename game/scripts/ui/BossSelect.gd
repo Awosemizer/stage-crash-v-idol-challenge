@@ -232,16 +232,21 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 
 	root.add_child(btn)
 
-	# Portrait stub swatch
-	var swatch := ColorRect.new()
-	swatch.name = "Portrait"
-	swatch.size = Vector2(18, 18)
-	swatch.position = Vector2(4, 4)
-	if greyed:
-		swatch.color = Color(0.3, 0.3, 0.35, 0.9)
+	# Pixel portrait
+	var ptex := ArtKit.boss_portrait_tex(id)
+	var swatch: Control
+	if ptex:
+		swatch = ArtKit.make_texture_rect(ptex, Vector2(22, 22), Vector2(3, 3))
+		swatch.name = "Portrait"
+		if greyed:
+			swatch.modulate = Color(0.45, 0.45, 0.5, 0.9)
 	else:
-		swatch.color = accent
-	swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		swatch = ColorRect.new()
+		swatch.name = "Portrait"
+		swatch.size = Vector2(18, 18)
+		swatch.position = Vector2(4, 4)
+		(swatch as ColorRect).color = Color(0.3, 0.3, 0.35, 0.9) if greyed else accent
+		swatch.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	btn.add_child(swatch)
 
 	var name_lbl := Label.new()

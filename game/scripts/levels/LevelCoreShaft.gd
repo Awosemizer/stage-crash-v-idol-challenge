@@ -240,11 +240,7 @@ func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) ->
 	var body := StaticBody2D.new()
 	body.collision_layer = 1
 	body.position = Vector2(x + w * 0.5, y + h * 0.5)
-	var visual := ColorRect.new()
-	visual.size = Vector2(w, h)
-	visual.position = Vector2(-w * 0.5, -h * 0.5)
-	visual.color = color
-	body.add_child(visual)
+	ArtKit.add_tiled_platform_visuals(body, w, h, color, "fortress")
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(w, h)
 	var col := CollisionShape2D.new()

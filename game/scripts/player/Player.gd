@@ -79,7 +79,7 @@ const StaticVeilShotScene := preload("res://scenes/combat/StaticVeilShot.tscn")
 signal hp_changed(current: int, maximum: int)
 signal weapon_changed(weapon_id: String, display_name: String, ammo: int, max_ammo: int)
 
-@onready var visual: ColorRect = $Visual
+@onready var visual: Sprite2D = $Visual
 @onready var charge_aura: ColorRect = $ChargeAura
 @onready var collision: CollisionShape2D = $CollisionShape2D
 @onready var wall_ray_l: RayCast2D = $WallRayL
@@ -112,6 +112,12 @@ var _key2_held := false
 var _weapons: Array[Dictionary] = []
 var _weapon_index := 0
 var _is_teto := false
+var _anim_time := 0.0
+var _tex_idle: Texture2D
+var _tex_run: Texture2D
+var _tex_jump: Texture2D
+var _tex_slide: Texture2D
+var _run_frame := 0
 var _saber_timer := 0.0
 var _saber_cd := 0.0
 var _saber_hit_ids: Dictionary = {}  # instance_id -> true this swing
@@ -529,9 +535,25 @@ func _apply_character_from_state() -> void:
 			{"id": WEAPON_BUSTER, "name": "Buster", "ammo": -1, "max_ammo": -1, "cost": 0},
 		]
 	_weapon_index = 0
-	if visual:
-		visual.color = _body_color
+	_load_character_sprites()
 	_restore_unlocked_weapons()
+
+
+
+func _load_character_sprites() -> void:
+	var prefix := "teto" if _is_teto else "miku"
+	_tex_idle = load("res://assets/sprites/player/%s_idle.png" % prefix) as Texture2D
+	_tex_run = load("res://assets/sprites/player/%s_run.png" % prefix) as Texture2D
+	_tex_jump = load("res://assets/sprites/player/%s_jump.png" % prefix) as Texture2D
+	_tex_slide = load("res://assets/sprites/player/%s_slide.png" % prefix) as Texture2D
+	if visual:
+		visual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		visual.centered = true
+		visual.position = Vector2(0, -2)
+		visual.region_enabled = false
+		if _tex_idle:
+			visual.texture = _tex_idle
+		visual.modulate = Color.WHITE
 
 
 func _restore_unlocked_weapons() -> void:
@@ -1063,8 +1085,9 @@ func _apply_stand_shape() -> void:
 		collision.shape = shape
 	shape.size = STAND_SIZE
 	collision.position = STAND_OFFSET
-	visual.size = Vector2(16, 32)
-	visual.position = Vector2(-8, -18)
+	if visual:
+		visual.position = Vector2(0, -2)
+		visual.scale = Vector2.ONE
 
 
 func _apply_slide_shape() -> void:
@@ -1074,27 +1097,45 @@ func _apply_slide_shape() -> void:
 		collision.shape = shape
 	shape.size = SLIDE_SIZE
 	collision.position = SLIDE_OFFSET
-	visual.size = Vector2(24, 14)
-	visual.position = Vector2(-12, -2)
+	if visual:
+		visual.position = Vector2(0, 4)
+		visual.scale = Vector2.ONE
 
 
 func _update_visual() -> void:
-	# Flip placeholder with facing; flash during invuln
-	visual.scale.x = 1.0
-	if facing < 0:
-		visual.position.x = absf(visual.size.x) * 0.5
-		# Keep ColorRect left-anchored; mirror via offset feel
-		visual.position.x = -visual.size.x + (8 if not _is_sliding else 12)
-	else:
-		visual.position.x = -visual.size.x * 0.5
+	# Pixel sprite: flip_h, pose frames, modulate flash. Collision untouched.
+	if visual == null:
+		return
+	_anim_time += 1.0 / 60.0
+	visual.flip_h = facing < 0
 
-	var base_col := _body_color
+	var moving := absf(velocity.x) > 12.0
+	if _is_sliding and _tex_slide:
+		visual.region_enabled = false
+		visual.texture = _tex_slide
+		visual.position = Vector2(0, 4)
+	elif not is_on_floor() and _tex_jump:
+		visual.region_enabled = false
+		visual.texture = _tex_jump
+		visual.position = Vector2(0, -2)
+	elif moving and is_on_floor() and _tex_run:
+		visual.texture = _tex_run
+		visual.region_enabled = true
+		_run_frame = int(_anim_time * 10.0) % 4
+		visual.region_rect = Rect2(_run_frame * 16, 0, 16, 32)
+		visual.position = Vector2(0, -2)
+	elif _tex_idle:
+		visual.region_enabled = false
+		visual.texture = _tex_idle
+		visual.position = Vector2(0, -2)
+
+	var base_mod := Color.WHITE
 	if not is_on_floor() and _is_on_wall_solid() and velocity.y > 0.0:
-		base_col = _body_color.lightened(0.15)
+		base_mod = Color(1.1, 1.1, 1.15, 1.0)
 	elif _is_sliding:
-		base_col = _body_color.darkened(0.12)
+		base_mod = Color(0.9, 0.9, 0.95, 1.0)
 	elif _saber_timer > 0.0:
-		base_col = _body_color.lightened(0.2)
+		base_mod = Color(1.15, 1.05, 1.05, 1.0)
 
 	# Aura de carga solo con Buster
 	var lv := 0
@@ -1103,42 +1144,39 @@ func _update_visual() -> void:
 	if charge_aura:
 		if lv >= 2:
 			charge_aura.visible = true
-			var aura_sz := visual.size + Vector2(6, 6) if lv == 2 else visual.size + Vector2(10, 10)
+			var aura_sz := Vector2(22, 38) if lv == 2 else Vector2(26, 42)
 			charge_aura.size = aura_sz
-			charge_aura.position = visual.position - Vector2(3, 3) if lv == 2 else visual.position - Vector2(5, 5)
+			charge_aura.position = Vector2(-aura_sz.x * 0.5, -22)
 			if lv >= 4:
-				# Nv4 stub (brazos): pulso violeta-dorado
 				var pulse4 := 0.6 + 0.4 * absf(sin(_charge_time * 16.0))
 				charge_aura.color = Color(0.85, 0.45, 1.0, pulse4)
-				base_col = Color(0.9, 0.7, 1.0, 1.0)
+				base_mod = Color(1.05, 0.95, 1.2, 1.0)
 			elif lv >= 3:
-				# Parpadeo blanco-dorado Nv3
 				var pulse := 0.55 + 0.45 * absf(sin(_charge_time * 12.0))
 				charge_aura.color = Color(1.0, 0.92, 0.35, pulse)
-				base_col = Color(0.95, 0.95, 0.6, 1.0)
+				base_mod = Color(1.1, 1.1, 0.85, 1.0)
 			else:
 				charge_aura.color = Color(0.35, 0.75, 1.0, 0.45 + 0.25 * absf(sin(_charge_time * 8.0)))
-				base_col = Color(0.45, 0.85, 1.0, 1.0)
+				base_mod = Color(0.9, 1.05, 1.15, 1.0)
 		else:
 			charge_aura.visible = false
 			if get_weapon_id() == WEAPON_BUSTER and _charging and _charge_time > 0.12:
-				# Nv1 charging hint: ligero brillo en el cuerpo
-				base_col = Color(0.35, 0.95, 1.0, 1.0)
+				base_mod = Color(0.85, 1.1, 1.2, 1.0)
 			elif get_weapon_id() == WEAPON_BEAT_BLAZE:
-				base_col = Color(0.95, 0.55, 0.25, 1.0)
+				base_mod = Color(1.15, 0.9, 0.75, 1.0)
 			elif get_weapon_id() == WEAPON_NEON_ARC:
-				base_col = Color(0.95, 0.9, 0.25, 1.0)
+				base_mod = Color(1.1, 1.1, 0.75, 1.0)
 
 	if _is_hovering:
-		base_col = base_col.lerp(Color(0.45, 0.9, 1.0, 1.0), 0.35)
+		base_mod = base_mod.lerp(Color(0.85, 1.05, 1.2, 1.0), 0.35)
 	_update_thruster()
 
 	if _invuln > 0.0:
-		visual.color = base_col
-		visual.color.a = 0.45 if fmod(_invuln, 0.06) < 0.03 else 1.0
+		base_mod.a = 0.45 if fmod(_invuln, 0.06) < 0.03 else 1.0
 	else:
-		visual.color = base_col
-		visual.color.a = 1.0
+		base_mod.a = 1.0
+	visual.modulate = base_mod
+
 
 
 func _check_hazards_and_pits() -> void:

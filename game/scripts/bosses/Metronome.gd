@@ -34,6 +34,7 @@ var _dash_t := 0.0
 var _tick_side := 1
 
 @onready var visual: ColorRect = $Visual
+var _sprite_art: Sprite2D
 @onready var trim: ColorRect = $Trim
 @onready var pendulum: ColorRect = $Pendulum
 @onready var contact: Area2D = $ContactArea
@@ -44,10 +45,12 @@ var _tick_side := 1
 
 
 func _ready() -> void:
+	_sprite_art = ArtKit.skin_boss_visual(visual, "metronome")
 	add_to_group("enemies")
 	add_to_group("bosses")
 	add_to_group("weak_to_neon_arc")
 	visual.color = Color(0.65, 0.7, 0.82, 1.0)
+	_sync_sprite_art(Color(0.65, 0.7, 0.82, 1.0))
 	if trim:
 		trim.color = Color(0.9, 0.75, 0.35, 0.9)
 	if pendulum:
@@ -238,6 +241,7 @@ func _die() -> void:
 		telegraph.visible = false
 	died.emit()
 	visual.color = Color(1, 1, 1, 1)
+	_sync_sprite_art(Color(1, 1, 1, 1))
 	await get_tree().create_timer(0.45).timeout
 	queue_free()
 
@@ -267,8 +271,10 @@ func _refresh_look() -> void:
 		base = Color(0.8, 0.82, 0.95, 1.0)
 	if _flash > 0.0:
 		visual.color = Color(1, 1, 1, 1)
+		_sync_sprite_art(Color(1, 1, 1, 1))
 	else:
 		visual.color = base
+		_sync_sprite_art(base)
 	if trim:
 		trim.position.x = (-14.0 if _facing > 0 else 2.0)
 
@@ -291,3 +297,15 @@ func _hurt_player(body: Node) -> void:
 		return
 	if body.has_method("take_damage"):
 		body.take_damage(CONTACT_DAMAGE)
+
+func _sync_sprite_art(col: Color) -> void:
+	var spr := get_node_or_null("SpriteArt") as Sprite2D
+	if spr == null:
+		return
+	# White/near-white = hit flash
+	if col.r >= 0.95 and col.g >= 0.95 and col.b >= 0.95:
+		spr.modulate = Color(2.2, 2.2, 2.2, 1.0)
+	else:
+		# Subtle tint from legacy color toward white sprite
+		spr.modulate = Color(0.85 + col.r * 0.2, 0.85 + col.g * 0.2, 0.85 + col.b * 0.2, col.a)
+

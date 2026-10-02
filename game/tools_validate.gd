@@ -3337,6 +3337,97 @@ func _initialize() -> void:
 		gs_ach.reset_progress()
 
 
+	# --- Visual polish / pixel art (v0.17) ---
+	var art_paths := [
+		"res://scripts/art/ArtKit.gd",
+		"res://assets/sprites/player/miku_idle.png",
+		"res://assets/sprites/player/miku_run.png",
+		"res://assets/sprites/player/teto_idle.png",
+		"res://assets/sprites/player/teto_run.png",
+		"res://assets/sprites/enemies/met_closed.png",
+		"res://assets/sprites/enemies/met_open.png",
+		"res://assets/sprites/bosses/beatfire.png",
+		"res://assets/sprites/bosses/echo_wind.png",
+		"res://assets/sprites/tiles/beatfire.png",
+		"res://assets/sprites/tiles/fortress.png",
+		"res://assets/sprites/ui/portrait_miku.png",
+		"res://assets/sprites/ui/portrait_teto.png",
+		"res://assets/sprites/ui/portrait_beatfire.png",
+		"res://assets/sprites/ui/title_banner.png",
+	]
+	for ap in art_paths:
+		if not ResourceLoader.exists(ap):
+			errors.append("missing art asset: %s" % ap)
+	if errors.is_empty() or true:
+		# Always check player scene Visual is Sprite2D
+		var pscn17 = load("res://scenes/player/Player.tscn")
+		if pscn17:
+			var p17 = pscn17.instantiate()
+			root.add_child(p17)
+			await process_frame
+			var vis = p17.get_node_or_null("Visual")
+			if vis == null or not (vis is Sprite2D):
+				errors.append("Player Visual should be Sprite2D")
+			else:
+				print("OK Player Sprite2D visual")
+			if p17.has_method("is_teto"):
+				# ensure textures load for miku
+				if vis.texture == null:
+					errors.append("Player Visual missing texture")
+				else:
+					print("OK Player has idle texture")
+			p17.queue_free()
+			await process_frame
+		var metscn = load("res://scenes/enemies/MetBeat.tscn")
+		if metscn:
+			var met = metscn.instantiate()
+			root.add_child(met)
+			await process_frame
+			var mv = met.get_node_or_null("Visual")
+			if mv == null or not (mv is Sprite2D):
+				errors.append("MetBeat Visual should be Sprite2D")
+			else:
+				print("OK MetBeat Sprite2D")
+			met.queue_free()
+			await process_frame
+		var bfscn = load("res://scenes/bosses/BeatfireMan.tscn")
+		if bfscn:
+			var bf = bfscn.instantiate()
+			root.add_child(bf)
+			await process_frame
+			if bf.get_node_or_null("SpriteArt") == null:
+				errors.append("BeatfireMan missing SpriteArt after skin")
+			else:
+				print("OK BeatfireMan SpriteArt")
+			bf.queue_free()
+			await process_frame
+		# Title portraits
+		var title17 = load("res://scenes/ui/TitleScreen.tscn")
+		if title17:
+			var t17 = title17.instantiate()
+			root.add_child(t17)
+			await process_frame
+			if t17.get_node_or_null("PortraitMiku") == null or t17.get_node_or_null("TitleBanner") == null:
+				errors.append("TitleScreen missing pixel portraits/banner")
+			else:
+				print("OK TitleScreen pixel art UI")
+			t17.queue_free()
+			await process_frame
+		# Level01 uses ArtKit platforms
+		var lvl01_src = FileAccess.get_file_as_string("res://scripts/levels/Level01.gd")
+		if "ArtKit.add_tiled_platform_visuals" not in lvl01_src:
+			errors.append("Level01 should use ArtKit tiled platforms")
+		else:
+			print("OK Level01 tiled platforms")
+		var player_src17 = FileAccess.get_file_as_string("res://scripts/player/Player.gd")
+		if "_load_character_sprites" not in player_src17 or "Sprite2D" not in player_src17:
+			errors.append("Player should load character sprites")
+		else:
+			print("OK Player sprite loader")
+		print("OK v0.17 visual polish checks")
+
+
+
 	if errors.is_empty():
 		print("VALIDATE_PASS")
 		quit(0)
