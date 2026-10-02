@@ -44,6 +44,7 @@ func _apply_look() -> void:
 	visual.size = SIZE
 	visual.position = -SIZE * 0.5
 	visual.color = COLOR
+	ArtKit.skin_projectile(visual, "res://assets/sprites/fx/static_veil.png")
 	if noise:
 		noise.size = SIZE * 0.7
 		noise.position = -noise.size * 0.5

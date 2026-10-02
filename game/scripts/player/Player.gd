@@ -737,6 +737,7 @@ func _setup_saber_hitbox() -> void:
 		saber_shape.disabled = true
 	if saber_visual:
 		saber_visual.visible = false
+		ArtKit.skin_projectile(saber_visual, "res://assets/sprites/fx/saber_flash.png")
 	if not saber_hitbox.body_entered.is_connected(_on_saber_body_entered):
 		saber_hitbox.body_entered.connect(_on_saber_body_entered)
 	if not saber_hitbox.area_entered.is_connected(_on_saber_area_entered):

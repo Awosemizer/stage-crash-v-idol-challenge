@@ -41,6 +41,7 @@ func _apply_look() -> void:
 	visual.size = SIZE
 	visual.position = -SIZE * 0.5
 	visual.color = COLOR
+	ArtKit.skin_projectile(visual, "res://assets/sprites/fx/tempo_spike.png")
 	if tip:
 		tip.size = Vector2(5, 3)
 		tip.position = Vector2((SIZE.x * 0.5 - 1.0) * float(direction) - 2.5, -1.5)

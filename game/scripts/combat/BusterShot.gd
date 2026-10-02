@@ -53,6 +53,7 @@ func _apply_look() -> void:
 	visual.size = sz
 	visual.position = -sz * 0.5
 	visual.color = COLOR_LV[level]
+	ArtKit.skin_projectile(visual, "res://assets/sprites/fx/buster.png", level - 1, 16)
 	var shape := collision.shape as RectangleShape2D
 	if shape == null:
 		shape = RectangleShape2D.new()

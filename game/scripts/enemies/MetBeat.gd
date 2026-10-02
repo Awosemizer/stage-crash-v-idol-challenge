@@ -79,7 +79,7 @@ func _refresh_look() -> void:
 	var closed_tex: Texture2D = load("res://assets/sprites/enemies/met_closed.png") as Texture2D
 	visual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	visual.centered = true
-	visual.position = Vector2(0, -8)
+	visual.position = Vector2(0, -12)  # 24px sprite, feet at y=0
 	if _open and not _warning:
 		if open_tex:
 			visual.texture = open_tex

@@ -23,6 +23,7 @@ Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → 
 
 **v0.40:** Player pixel pass — 32px Miku (cyan twin-tails, buster pose) and Teto (red drills, saber pose): idle, 8-frame run, jump, wall, slide. Flight wings and Encore shoulders overlay when a piece is owned. Hitboxes unchanged.
 **v0.41:** Robot Master pixel pass — 48×64 idle + attack for the 8 stages (fire, ice, quake, wind, neon, metronome, bloom, static), CORE-9 hologram, 16×16 stage floors. Combat numbers and hitboxes unchanged.
+**v0.42:** Met-Beat closed/open shells, pixel shots (buster charge frames, saber flash, stolen weapons, boss fire/ice/notes), and 64px boss-select portraits. HP, AI, and collision unchanged.
 
 **v0.38:** Fair Hard — incoming hits +1 capped at 10, i-frames stay 0.6s, stolen weapons start at 75% ammo. Normal unchanged. Pause and HP label show Normal or Difícil.
 

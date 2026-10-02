@@ -45,6 +45,7 @@ func _apply_look() -> void:
 	visual.size = SIZE
 	visual.position = -SIZE * 0.5
 	visual.color = COLOR if _moving else Color(COLOR.r, COLOR.g, COLOR.b, 0.55)
+	ArtKit.skin_projectile(visual, "res://assets/sprites/fx/echo_gale.png")
 	var shape := collision.shape as RectangleShape2D
 	if shape == null:
 		shape = RectangleShape2D.new()

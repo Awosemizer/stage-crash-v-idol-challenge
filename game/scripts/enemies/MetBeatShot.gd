@@ -33,6 +33,7 @@ func _ready() -> void:
 	vis.color = Color(1.0, 0.82, 0.25, 0.95)
 	vis.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(vis)
+	ArtKit.skin_projectile(vis, "res://assets/sprites/fx/met_pellet.png")
 	body_entered.connect(_on_body_entered)
 
 

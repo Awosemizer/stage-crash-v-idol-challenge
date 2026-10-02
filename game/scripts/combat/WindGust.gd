@@ -39,6 +39,7 @@ func _apply_look() -> void:
 	visual.size = SIZE
 	visual.position = -SIZE * 0.5
 	visual.color = COLOR
+	ArtKit.skin_projectile(visual, "res://assets/sprites/fx/wind_gust.png")
 	var shape := collision.shape as RectangleShape2D
 	if shape == null:
 		shape = RectangleShape2D.new()

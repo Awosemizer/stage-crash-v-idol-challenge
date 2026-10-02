@@ -194,6 +194,34 @@ const BOSS_FRAME_H := 64
 const RUN_FRAMES := 8
 
 
+
+const ShotPixelScript := preload("res://scripts/art/ShotPixel.gd")
+
+
+static func skin_projectile(visual: CanvasItem, path: String, frame: int = 0, frame_w: int = 0) -> void:
+	## Replace a flat ColorRect with a nearest-neighbor sprite. Collision stays put.
+	if visual == null or not (visual is ColorRect):
+		return
+	var tex := load_tex(path)
+	if tex == null:
+		return
+	var parent := visual.get_parent()
+	if parent == null:
+		return
+	var spr := parent.get_node_or_null("ShotPixel") as Sprite2D
+	if spr == null:
+		spr = ShotPixelScript.new()
+		spr.name = "ShotPixel"
+		parent.add_child(spr)
+	spr.texture = tex
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	spr.centered = true
+	if spr.has_method("set"):
+		spr.set("source", visual)
+		spr.set("frame_i", frame)
+		spr.set("frame_w", frame_w)
+
+
 static func set_boss_pose(sprite: Sprite2D, pose: int = 0) -> void:
 	## pose 0 = idle, 1 = attack/telegraph (sheet is 96×64).
 	if sprite == null or sprite.texture == null:
