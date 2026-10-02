@@ -66,6 +66,28 @@ func _initialize() -> void:
 		"res://scenes/combat/FreezeSampleShot.tscn",
 		"res://scenes/props/FrameSkipPlatform.tscn",
 		"res://scenes/pickups/EnergyTankPickup.tscn",
+		"res://scripts/levels/LevelChorusBloom.gd",
+		"res://scripts/bosses/ChorusBloom.gd",
+		"res://scripts/combat/PetalChorusShot.gd",
+		"res://scripts/combat/FanPetalShot.gd",
+		"res://scripts/props/VinePlatform.gd",
+		"res://scripts/hazards/PetalHazard.gd",
+		"res://scenes/levels/LevelChorusBloom.tscn",
+		"res://scenes/bosses/ChorusBloom.tscn",
+		"res://scenes/combat/PetalChorusShot.tscn",
+		"res://scenes/combat/FanPetalShot.tscn",
+		"res://scenes/props/VinePlatform.tscn",
+		"res://scenes/hazards/PetalHazard.tscn",
+		"res://scripts/levels/LevelBassquake.gd",
+		"res://scripts/bosses/Bassquake.gd",
+		"res://scripts/combat/QuakeDropShot.gd",
+		"res://scripts/hazards/QuakeWave.gd",
+		"res://scripts/props/CollapsingFloor.gd",
+		"res://scenes/levels/LevelBassquake.tscn",
+		"res://scenes/bosses/Bassquake.tscn",
+		"res://scenes/combat/QuakeDropShot.tscn",
+		"res://scenes/hazards/QuakeWave.tscn",
+		"res://scenes/props/CollapsingFloor.tscn",
 	]
 	for p in paths:
 		if not ResourceLoader.exists(p):
@@ -187,6 +209,14 @@ func _initialize() -> void:
 		errors.append("BossSelect should load LevelGlitchIce for glitch_ice")
 	else:
 		print("OK BossSelect → LevelGlitchIce")
+	if "LevelChorusBloom.tscn" not in bsel_src:
+		errors.append("BossSelect should load LevelChorusBloom for chorus_bloom")
+	else:
+		print("OK BossSelect → LevelChorusBloom")
+	if "LevelBassquake.tscn" not in bsel_src:
+		errors.append("BossSelect should load LevelBassquake for bassquake")
+	else:
+		print("OK BossSelect → LevelBassquake")
 
 	# Boss select UI
 	var boss_sel_packed: PackedScene = load("res://scenes/ui/BossSelect.tscn")
@@ -293,7 +323,7 @@ func _initialize() -> void:
 		if grid:
 			for c in grid.get_children():
 				var bid2 = str(c.get_meta("boss_id", ""))
-				if bid2 in ["bassquake", "metronome", "chorus_bloom"]:
+				if bid2 in ["metronome", "static_shadow"]:
 					var st2 = c.get_node_or_null("SelectButton/StatusLabel")
 					if st2 and "Pronto" in st2.text:
 						pronto_ok = true
@@ -1799,6 +1829,292 @@ func _initialize() -> void:
 		await process_frame
 	else:
 		errors.append("LevelChorusBloom.tscn failed to load")
+
+
+
+	# --- Bassquake boss / weapon / level ---
+	var bq_boss_packed: PackedScene = load("res://scenes/bosses/Bassquake.tscn")
+	if bq_boss_packed:
+		var bqb = bq_boss_packed.instantiate()
+		root.add_child(bqb)
+		await process_frame
+		if not bqb.is_in_group("weak_to_freeze_sample"):
+			errors.append("Bassquake missing weak_to_freeze_sample group")
+		else:
+			print("OK Bassquake weak_to_freeze_sample")
+		if int(bqb.hp) != 28:
+			errors.append("Bassquake HP expected 28, got %d" % int(bqb.hp))
+		else:
+			print("OK Bassquake HP=28")
+		if bqb.has_method("activate"):
+			bqb.activate()
+		# Freeze Sample ×3: base 2 → 6
+		bqb.hp = 26
+		var fsb = load("res://scenes/combat/FreezeSampleShot.tscn").instantiate()
+		root.add_child(fsb)
+		fsb.global_position = bqb.global_position
+		if fsb.has_method("_try_hit"):
+			fsb._try_hit(bqb)
+		await process_frame
+		if int(bqb.hp) != 20:
+			errors.append("Freeze Sample weakness vs Bassquake expected hp 20 (26-6), got %d" % int(bqb.hp))
+		else:
+			print("OK Freeze Sample ×3 vs Bassquake hp=", bqb.hp)
+		if is_instance_valid(fsb):
+			fsb.queue_free()
+		bqb.queue_free()
+		await process_frame
+	else:
+		errors.append("Bassquake.tscn failed to load")
+
+	# Quake Drop weapon smoke
+	var qd_player_packed: PackedScene = load("res://scenes/player/Player.tscn")
+	if qd_player_packed:
+		if gs:
+			gs.select_miku()
+		var qdp = qd_player_packed.instantiate()
+		root.add_child(qdp)
+		await process_frame
+		qdp.grant_weapon("quake_drop")
+		await process_frame
+		if str(qdp.get_weapon_id()) != "quake_drop":
+			errors.append("grant_weapon quake_drop failed")
+		else:
+			print("OK grant_weapon quake_drop")
+		var qdw: Dictionary = qdp.get_current_weapon()
+		if int(qdw.get("ammo", 0)) != 14:
+			errors.append("Quake Drop ammo expected 14")
+		else:
+			print("OK Quake Drop ammo=", qdw.get("ammo"))
+		if int(qdw.get("cost", 0)) != 2:
+			errors.append("Quake Drop cost expected 2")
+		else:
+			print("OK Quake Drop cost=2")
+		if qdp.has_method("_fire_quake_drop"):
+			qdp._fire_quake_drop()
+			await process_frame
+			var qd_shots = root.get_tree().get_nodes_in_group("player_shots")
+			var found_qd := false
+			for s in qd_shots:
+				if s.get_script() and "QuakeDrop" in str(s.get_script().resource_path):
+					found_qd = true
+				elif "damage" in s and int(s.damage) == 3:
+					found_qd = true
+			if not found_qd and qd_shots.is_empty():
+				errors.append("QuakeDropShot not spawned")
+			else:
+				print("OK QuakeDropShot spawned count=", qd_shots.size())
+				qdw = qdp.get_current_weapon()
+				if int(qdw.get("ammo", 14)) != 12:
+					errors.append("Quake Drop ammo not consumed (cost 2)")
+				else:
+					print("OK Quake Drop ammo consumed=", qdw.get("ammo"))
+				for sh in qd_shots:
+					sh.queue_free()
+		# Encore Guard torso defense + slide hyper armor
+		if gs:
+			gs.grant_armor_piece("encore", "torso", true)
+		if qdp.has_method("_sync_armor_from_state"):
+			qdp._sync_armor_from_state()
+		if qdp.has_method("has_encore_torso") and not qdp.has_encore_torso():
+			errors.append("Encore torso not synced on player")
+		else:
+			print("OK Encore torso equipped on player")
+		# Damage reduction: 4 → 3
+		qdp.hp = 28
+		qdp._invuln = 0.0
+		qdp.take_damage(4)
+		await process_frame
+		if int(qdp.hp) != 25:
+			errors.append("Encore torso damage reduce expected hp 25 (28-3), got %d" % int(qdp.hp))
+		else:
+			print("OK Encore torso damage reduction hp=", qdp.hp)
+		qdp.queue_free()
+		await process_frame
+		if gs:
+			gs._armor_owned.clear()
+			gs._armor_equipped.clear()
+	else:
+		errors.append("Player.tscn failed for Quake Drop test")
+
+	# CollapsingFloor smoke
+	var col_plat: PackedScene = load("res://scenes/props/CollapsingFloor.tscn")
+	if col_plat:
+		var cplat = col_plat.instantiate()
+		root.add_child(cplat)
+		await process_frame
+		if not cplat.is_in_group("collapsing_floors"):
+			errors.append("CollapsingFloor missing group")
+		else:
+			print("OK CollapsingFloor group")
+		cplat.queue_free()
+		await process_frame
+	else:
+		errors.append("CollapsingFloor.tscn failed to load")
+
+	# QuakeWave smoke
+	var qw_hz: PackedScene = load("res://scenes/hazards/QuakeWave.tscn")
+	if qw_hz:
+		var qwh = qw_hz.instantiate()
+		root.add_child(qwh)
+		await process_frame
+		if not qwh.is_in_group("quake_waves"):
+			errors.append("QuakeWave missing group")
+		else:
+			print("OK QuakeWave group")
+		qwh.queue_free()
+		await process_frame
+	else:
+		errors.append("QuakeWave.tscn failed to load")
+
+	# GameState bassquake unlock
+	if gs:
+		gs.mark_boss_defeated("bassquake")
+		if not gs.is_boss_defeated("bassquake"):
+			errors.append("mark bassquake defeated failed")
+		else:
+			print("OK bassquake defeated in GameState")
+		if not gs.has_weapon_unlocked("quake_drop"):
+			errors.append("quake_drop should unlock on bassquake defeat")
+		else:
+			print("OK quake_drop unlocked")
+		if gs.has_method("has_pending_armor_secret"):
+			# Grant then clear for pending check
+			var pending_before = gs.has_pending_armor_secret("bassquake")
+			if not pending_before and not gs.has_armor_piece("encore", "torso"):
+				errors.append("bassquake should have pending encore torso secret when not owned")
+			elif pending_before:
+				print("OK bassquake pending armor secret")
+			gs.grant_armor_piece("encore", "torso", true)
+			if gs.has_pending_armor_secret("bassquake"):
+				errors.append("bassquake secret should clear after encore torso")
+			else:
+				print("OK bassquake secret cleared after grant")
+			gs._armor_owned.clear()
+			gs._armor_equipped.clear()
+
+	# BossSelect bassquake playable
+	var bs_bq: PackedScene = load("res://scenes/ui/BossSelect.tscn")
+	if bs_bq:
+		var bsb = bs_bq.instantiate()
+		root.add_child(bsb)
+		await process_frame
+		var cell_bq = bsb.find_child("BossCell_bassquake", true, false)
+		if cell_bq:
+			var btn_bq = cell_bq.get_node_or_null("SelectButton")
+			if btn_bq and btn_bq.disabled:
+				errors.append("Bassquake BossSelect cell should be playable")
+			else:
+				print("OK BossSelect Bassquake playable")
+		else:
+			print("WARN BossCell_bassquake not found via find_child")
+		bsb.queue_free()
+		await process_frame
+
+	# Instantiate LevelBassquake
+	var bq_level_packed: PackedScene = load("res://scenes/levels/LevelBassquake.tscn")
+	if bq_level_packed:
+		var bqlvl = bq_level_packed.instantiate()
+		root.add_child(bqlvl)
+		print("OK instantiate LevelBassquake, children=", bqlvl.get_child_count())
+		await process_frame
+		await process_frame
+		var bqent = bqlvl.get_node_or_null("Entities")
+		if bqent == null:
+			errors.append("LevelBassquake Entities missing")
+		else:
+			var bqp = bqent.get_node_or_null("Player")
+			if bqp == null:
+				errors.append("Player not spawned in LevelBassquake")
+			else:
+				print("OK Bassquake level player spawned")
+			var bqboss = 0
+			var bqmet = 0
+			for c in bqent.get_children():
+				if c.is_in_group("bosses") or str(c.name).begins_with("Bass"):
+					bqboss += 1
+				elif c.is_in_group("enemies") or str(c.name).begins_with("Met"):
+					bqmet += 1
+			if bqmet < 2:
+				errors.append("Expected >=2 MetBeat in LevelBassquake, got %d" % bqmet)
+			else:
+				print("OK MetBeat in LevelBassquake=", bqmet)
+			if bqboss < 1:
+				errors.append("Expected Bassquake boss in level")
+			else:
+				print("OK Bassquake boss in level")
+			if bqent.get_node_or_null("ArenaTrigger") == null:
+				errors.append("LevelBassquake ArenaTrigger missing")
+			else:
+				print("OK LevelBassquake ArenaTrigger")
+			var etorso = bqent.get_node_or_null("EncoreTorsoPickup")
+			if etorso == null:
+				errors.append("EncoreTorsoPickup missing in LevelBassquake")
+			else:
+				print("OK EncoreTorsoPickup at ", etorso.position)
+		var bqgeom = bqlvl.get_node_or_null("Geometry")
+		var collapse_n := 0
+		if bqgeom:
+			for c in bqgeom.get_children():
+				if c.is_in_group("collapsing_floors") or str(c.name).begins_with("Collaps"):
+					collapse_n += 1
+		if collapse_n < 3:
+			errors.append("Expected >=3 CollapsingFloor in LevelBassquake, got %d" % collapse_n)
+		else:
+			print("OK CollapsingFloor count=", collapse_n)
+		if bqlvl.get_node_or_null("HUD") == null:
+			errors.append("HUD missing in LevelBassquake")
+		else:
+			print("OK HUD in LevelBassquake")
+		if bqlvl.get_node_or_null("TouchControls") == null:
+			errors.append("TouchControls missing in LevelBassquake")
+		else:
+			print("OK TouchControls in LevelBassquake")
+		# Armor pickup
+		var et2 = bqent.get_node_or_null("EncoreTorsoPickup") if bqent else null
+		var bp2 = bqent.get_node_or_null("Player") if bqent else null
+		if et2 and bp2 and et2.has_method("_collect"):
+			et2._collect(bp2)
+			await process_frame
+			if gs and not gs.has_encore_torso_equipped():
+				errors.append("Bassquake encore torso pickup did not equip")
+			else:
+				print("OK Bassquake encore torso equipped")
+		# Boss kill path
+		if bqlvl.has_method("_start_boss_fight"):
+			bqlvl._start_boss_fight()
+			await process_frame
+			var boss_q = bqent.get_node_or_null("Bassquake") if bqent else null
+			if boss_q and boss_q.has_method("take_damage"):
+				while is_instance_valid(boss_q) and int(boss_q.hp) > 0:
+					boss_q.take_damage(7)
+					await process_frame
+				await process_frame
+				await process_frame
+				var bp3 = bqent.get_node_or_null("Player") if bqent else null
+				if bp3 and bp3.has_method("_has_weapon"):
+					if not bp3._has_weapon("quake_drop"):
+						errors.append("Bassquake defeat did not grant Quake Drop")
+					else:
+						print("OK Bassquake defeat granted Quake Drop")
+				if gs and not gs.is_boss_defeated("bassquake"):
+					errors.append("Bassquake defeat did not set GameState")
+				else:
+					print("OK GameState bassquake defeated after win")
+				var win_q = bqlvl.get_node_or_null("WinBanner")
+				if win_q == null:
+					print("WARN Bassquake WinBanner not found immediately")
+				else:
+					print("OK Bassquake WinBanner")
+					var ret_q = win_q.get_node_or_null("Root/Panel/ReturnBossSelect")
+					if ret_q == null:
+						errors.append("Bassquake WinBanner missing ReturnBossSelect")
+					else:
+						print("OK Bassquake ReturnBossSelect")
+		bqlvl.queue_free()
+		await process_frame
+	else:
+		errors.append("LevelBassquake.tscn failed to load")
 
 
 	# Instantiate main scene briefly

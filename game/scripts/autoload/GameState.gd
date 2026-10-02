@@ -18,6 +18,10 @@ const ARMOR_SLOT_ORDER := [ARMOR_PIECE_HEAD, ARMOR_PIECE_TORSO, ARMOR_PIECE_ARMS
 
 const COLOR_FLIGHT := Color(0.35, 0.85, 1.0, 1.0)
 
+## Encore Guard set — defensa / utilidad.
+const ARMOR_SET_ENCORE := "encore"
+const COLOR_ENCORE := Color(0.85, 0.55, 0.25, 1.0)
+
 ## Boss ids (Robot Masters + fortaleza).
 const BOSS_BEATFIRE := "beatfire"
 const BOSS_GLITCH_ICE := "glitch_ice"
@@ -40,7 +44,7 @@ var _armor_owned: Dictionary = {}
 ## equipped[set_id][piece_id] = true (proto: auto-equip on pickup)
 var _armor_equipped: Dictionary = {}
 
-## Progreso de jefes — proto: Beatfire + Echo + Neon + Glitch Ice + Chorus Bloom jugables.
+## Progreso de jefes — proto: Beatfire + Echo + Neon + Glitch Ice + Chorus Bloom + Bassquake jugables.
 var beatfire_defeated: bool = false
 var _bosses_defeated: Dictionary = {}
 
@@ -153,6 +157,14 @@ func has_flight_arms_equipped() -> bool:
 	return is_armor_equipped(ARMOR_SET_FLIGHT, ARMOR_PIECE_ARMS)
 
 
+func has_encore_torso_equipped() -> bool:
+	return is_armor_equipped(ARMOR_SET_ENCORE, ARMOR_PIECE_TORSO)
+
+
+func get_encore_armor_color() -> Color:
+	return COLOR_ENCORE
+
+
 func get_flight_armor_color() -> Color:
 	return COLOR_FLIGHT
 
@@ -182,6 +194,8 @@ func mark_boss_defeated(boss_id: String) -> void:
 			unlock_weapon("freeze_sample")
 		elif boss_id == BOSS_CHORUS_BLOOM:
 			unlock_weapon("petal_chorus")
+		elif boss_id == BOSS_BASSQUAKE:
+			unlock_weapon("quake_drop")
 	boss_defeated.emit(boss_id)
 	print("GameState: jefe derrotado → %s" % boss_id)
 
@@ -202,6 +216,8 @@ func has_pending_armor_secret(boss_id: String) -> bool:
 		return not has_armor_piece(ARMOR_SET_FLIGHT, ARMOR_PIECE_HEAD)
 	if boss_id == BOSS_NEON_VOLT:
 		return not has_armor_piece(ARMOR_SET_FLIGHT, ARMOR_PIECE_ARMS)
+	if boss_id == BOSS_BASSQUAKE:
+		return not has_armor_piece(ARMOR_SET_ENCORE, ARMOR_PIECE_TORSO)
 	return false
 
 

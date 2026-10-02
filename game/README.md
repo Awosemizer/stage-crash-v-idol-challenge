@@ -19,8 +19,9 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 /workspace/tools/godot --headless --path /workspace/miku-teto-megaman/game --quit-after 2
 ```
 
-Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom.
+Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake.
 
+**v0.10:** etapa **Bassquake** (temblores, suelos colapsables, jefe, Quake Drop, torso Encore Guard).
 **v0.9:** etapa **Chorus Bloom** (enredaderas, pétalos, jefe, Petal Chorus, Energy Tank).
 **v0.8:** etapa **Glitch Ice** (plataformas frame-skip, jefe, Freeze Sample, Energy Tank).
 **v0.7:** etapa **Neon Volt** (pisos eléctricos a tempo, jefe, Neon Arc, brazos Stage Flight).
@@ -34,7 +35,7 @@ Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → 
 | Move | Arrow keys or WASD |
 | Jump | **Z** or Space |
 | Attack / charge Buster | **X** (hold to charge) |
-| Weapon prev / next | **Q** / **E** (also **1** Buster/Sable, **2** Beat Blaze, **3** Echo Gale, **4** Neon Arc, **5** Freeze Sample, **6** Petal Chorus) |
+| Weapon prev / next | **Q** / **E** (also **1** Buster/Sable, **2** Beat Blaze, **3** Echo Gale, **4** Neon Arc, **5** Freeze Sample, **6** Petal Chorus, **7** Quake Drop) |
 | Slide | **C** |
 
 **Wall-jump:** press Jump while sliding down / touching a wall (always available).

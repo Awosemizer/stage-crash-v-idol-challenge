@@ -49,6 +49,7 @@ const WEAPON_ECHO_GALE := "echo_gale"
 const WEAPON_NEON_ARC := "neon_arc"
 const WEAPON_FREEZE_SAMPLE := "freeze_sample"
 const WEAPON_PETAL_CHORUS := "petal_chorus"
+const WEAPON_QUAKE_DROP := "quake_drop"
 
 const SABER_DURATION := 0.18
 const SABER_DAMAGE := 2
@@ -69,6 +70,7 @@ const EchoGaleShotScene := preload("res://scenes/combat/EchoGaleShot.tscn")
 const NeonArcShotScene := preload("res://scenes/combat/NeonArcShot.tscn")
 const FreezeSampleShotScene := preload("res://scenes/combat/FreezeSampleShot.tscn")
 const PetalChorusShotScene := preload("res://scenes/combat/PetalChorusShot.tscn")
+const QuakeDropShotScene := preload("res://scenes/combat/QuakeDropShot.tscn")
 
 signal hp_changed(current: int, maximum: int)
 signal weapon_changed(weapon_id: String, display_name: String, ammo: int, max_ammo: int)
@@ -121,12 +123,14 @@ var _hover_cd := 0.0
 var _is_hovering := false
 var _has_flight_torso := false
 var _has_flight_arms := false
+var _has_encore_torso := false
 var _thruster: ColorRect = null
 var _wind_force := Vector2.ZERO
 var _key3_held := false
 var _key4_held := false
 var _key5_held := false
 var _key6_held := false
+var _key7_held := false
 
 
 func _ready() -> void:
@@ -268,6 +272,10 @@ func _handle_weapon_switch() -> void:
 		_select_weapon_by_id(WEAPON_FREEZE_SAMPLE)
 	if k6 and not _key6_held and _has_weapon(WEAPON_PETAL_CHORUS):
 		_select_weapon_by_id(WEAPON_PETAL_CHORUS)
+	var k7 := Input.is_physical_key_pressed(KEY_7)
+	if k7 and not _key7_held and _has_weapon(WEAPON_QUAKE_DROP):
+		_select_weapon_by_id(WEAPON_QUAKE_DROP)
+	_key7_held = k7
 	_key1_held = k1
 	_key2_held = k2
 	_key3_held = k3
@@ -319,7 +327,7 @@ func get_weapon_id() -> String:
 
 
 func grant_weapon(weapon_id: String) -> void:
-	## Otorga arma robada de jefe (Beat Blaze / Echo Gale / Neon Arc / Freeze Sample / Petal Chorus).
+	## Otorga arma robada de jefe (Beat Blaze / Echo Gale / Neon Arc / Freeze Sample / Petal Chorus / Quake Drop).
 	var gs := _game_state()
 	if gs != null and gs.has_method("unlock_weapon"):
 		gs.unlock_weapon(weapon_id)
@@ -399,6 +407,19 @@ func grant_weapon(weapon_id: String) -> void:
 		_charge_time = 0.0
 		_emit_weapon()
 		print("Player: arma otorgada Petal Chorus")
+	elif weapon_id == WEAPON_QUAKE_DROP:
+		_weapons.append({
+			"id": WEAPON_QUAKE_DROP,
+			"name": "Quake Drop",
+			"ammo": 14,
+			"max_ammo": 14,
+			"cost": 2,
+		})
+		_weapon_index = _weapons.size() - 1
+		_charging = false
+		_charge_time = 0.0
+		_emit_weapon()
+		print("Player: arma otorgada Quake Drop")
 
 
 func _emit_weapon() -> void:
@@ -467,7 +488,7 @@ func _apply_character_from_state() -> void:
 
 
 func _restore_unlocked_weapons() -> void:
-	## Otorga armas ya desbloqueadas en GameState (Beat Blaze / Echo Gale / Neon Arc / Freeze Sample / Petal Chorus).
+	## Otorga armas ya desbloqueadas en GameState (incl. Quake Drop).
 	var gs := _game_state()
 	if gs == null or not gs.has_method("get_unlocked_weapons"):
 		return
@@ -745,6 +766,36 @@ func _fire_petal_chorus() -> void:
 		shot.setup(facing)
 
 
+func _handle_quake_drop() -> void:
+	if _charging:
+		_charging = false
+		_charge_time = 0.0
+	if Input.is_action_just_pressed("attack"):
+		_fire_quake_drop()
+
+
+func _fire_quake_drop() -> void:
+	var w := get_current_weapon()
+	var ammo: int = int(w.get("ammo", 0))
+	var cost: int = int(w.get("cost", 2))
+	if ammo < cost:
+		return
+	var live := get_tree().get_nodes_in_group("player_shots")
+	if live.size() >= MAX_SHOTS:
+		return
+	ammo -= cost
+	_weapons[_weapon_index]["ammo"] = ammo
+	_emit_weapon()
+	var shot: Area2D = QuakeDropShotScene.instantiate()
+	var parent_node := get_parent()
+	if parent_node == null:
+		parent_node = get_tree().current_scene
+	parent_node.add_child(shot)
+	shot.global_position = global_position + Vector2(facing * SHOT_SPAWN_X, SHOT_SPAWN_Y)
+	if shot.has_method("setup"):
+		shot.setup(facing)
+
+
 func heal(amount: int) -> void:
 	## Cura PV (Petal Chorus / tanques). Cap a max_hp.
 	if not _alive or amount <= 0:
@@ -813,7 +864,11 @@ func _can_slide(on_floor: bool) -> bool:
 func _start_slide() -> void:
 	_is_sliding = true
 	_slide_timer = SLIDE_DURATION
-	_invuln = INVULN_SLIDE  # stub i-frames (Encore Guard legs later)
+	# Encore Guard torso: hyper armor breve en slide
+	if _has_encore_torso:
+		_invuln = 0.38
+	else:
+		_invuln = INVULN_SLIDE  # stub i-frames (Encore Guard legs later)
 	_apply_slide_shape()
 	velocity.x = facing * SLIDE_SPEED
 	velocity.y = 0.0
@@ -982,6 +1037,9 @@ func take_damage(amount: int) -> void:
 func _take_hit(amount: int) -> void:
 	if _invuln > 0.0:
 		return
+	# Encore Guard torso: reduce contact / hit damage by 1 (min 1)
+	if _has_encore_torso and amount > 1:
+		amount = maxi(1, amount - 1)
 	hp = maxi(hp - amount, 0)
 	_invuln = 1.0  # GDD: 1.0 s after hit
 	# Cancel charge on hit
@@ -1026,6 +1084,7 @@ func _on_armor_changed(_set_id: String) -> void:
 func _sync_armor_from_state() -> void:
 	_has_flight_torso = false
 	_has_flight_arms = false
+	_has_encore_torso = false
 	var gs := _game_state()
 	if gs != null and gs.has_method("has_flight_torso_equipped"):
 		_has_flight_torso = bool(gs.has_flight_torso_equipped())
@@ -1035,6 +1094,10 @@ func _sync_armor_from_state() -> void:
 		_has_flight_arms = bool(gs.has_flight_arms_equipped())
 	elif gs != null and gs.has_method("is_armor_equipped"):
 		_has_flight_arms = bool(gs.is_armor_equipped("flight", "arms"))
+	if gs != null and gs.has_method("has_encore_torso_equipped"):
+		_has_encore_torso = bool(gs.has_encore_torso_equipped())
+	elif gs != null and gs.has_method("is_armor_equipped"):
+		_has_encore_torso = bool(gs.is_armor_equipped("encore", "torso"))
 
 
 func on_armor_pickup(set_id: String, piece_id: String, _display_name: String = "") -> void:
@@ -1046,6 +1109,8 @@ func on_armor_pickup(set_id: String, piece_id: String, _display_name: String = "
 		print("Player: Stage Flight torso equipado — hover listo")
 	elif set_id == "flight" and piece_id == "arms":
 		print("Player: Stage Flight brazos — carga Nv4 + daño+")
+	elif set_id == "encore" and piece_id == "torso":
+		print("Player: Encore Guard torso — defensa + hyper armor slide")
 
 
 func has_flight_hover() -> bool:
@@ -1054,6 +1119,10 @@ func has_flight_hover() -> bool:
 
 func has_flight_arms() -> bool:
 	return _has_flight_arms
+
+
+func has_encore_torso() -> bool:
+	return _has_encore_torso
 
 
 func is_hovering() -> bool:
