@@ -12,6 +12,8 @@ var pos_b := Vector2.ZERO
 var _t := 0.0
 var _at_b := false
 var _glitch_t := 0.0
+var _warn := false
+const SKIP_WARN := 0.28
 var _col: CollisionShape2D = null
 var _visual: ColorRect = null
 var _glitch_lbl: Label = null
@@ -99,8 +101,14 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_t += delta
+	var lead := minf(SKIP_WARN, maxf(skip_period * 0.4, 0.12))
+	var warn := _t >= skip_period - lead
+	if warn != _warn:
+		_warn = warn
+		_refresh_look(false)
 	if _t >= skip_period:
 		_t = 0.0
+		_warn = false
 		_do_skip()
 
 
@@ -121,9 +129,19 @@ func _refresh_look(glitching: bool) -> void:
 		if _glitch_lbl:
 			_glitch_lbl.visible = true
 			_glitch_lbl.modulate = Color(1.0, 0.5, 1.0, 0.9)
+	elif _warn:
+		var pulse := 0.55 + 0.45 * absf(sin(Time.get_ticks_msec() * 0.02))
+		_visual.color = Color(1.0, 0.78, 0.22, pulse)
+		if _edge:
+			_edge.color = Color(1.0, 0.9, 0.4, 1.0)
+		if _glitch_lbl:
+			_glitch_lbl.visible = true
+			_glitch_lbl.text = "!"
+			_glitch_lbl.modulate = Color(1.0, 0.85, 0.3, 0.95)
 	else:
 		_visual.color = COL_ICE
 		if _edge:
 			_edge.color = COL_ICE.lightened(0.3)
 		if _glitch_lbl:
 			_glitch_lbl.visible = false
+			_glitch_lbl.text = "スキップ"

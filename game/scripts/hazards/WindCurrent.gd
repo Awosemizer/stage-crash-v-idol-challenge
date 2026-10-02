@@ -34,7 +34,25 @@ func _physics_process(_delta: float) -> void:
 			_bodies.erase(id)
 			continue
 		if body.has_method("apply_wind"):
-			body.apply_wind(push_force)
+			body.apply_wind(_force_for(body))
+
+
+func _force_for(body: Node) -> Vector2:
+	## No empuja fuerte hacia un hueco (pozo) — solo un soplo.
+	var dir := signf(push_force.x)
+	if dir == 0.0 or not (body is Node2D):
+		return push_force
+	var world := (body as Node2D).get_world_2d()
+	if world == null:
+		return push_force
+	var origin: Vector2 = (body as Node2D).global_position + Vector2(dir * 8.0, 4.0)
+	var query := PhysicsRayQueryParameters2D.create(origin, origin + Vector2(dir * 22.0, 36.0))
+	query.collision_mask = 1
+	if body is CollisionObject2D:
+		query.exclude = [(body as CollisionObject2D).get_rid()]
+	if world.direct_space_state.intersect_ray(query).is_empty():
+		return Vector2(push_force.x * 0.15, push_force.y)
+	return push_force
 
 
 func _on_body_entered(body: Node) -> void:

@@ -21,6 +21,8 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 
 Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome / LevelStaticShadow.
 
+**v0.34:** Common enemies — Met-Beat amber open telegraph + one slow pellet (contact 1 only while open, HP 2), stage hazards share a ~0.28s amber windup, petal damage 2, knockback/wind won't fling you into a pit.
+
 **v0.33:** Weapon balance — DISENO weakness cycle (×3, boss i-frames 0.45s), Freeze Sample cost 2, buster Nv3=4 / Nv4=8, Static Veil hits once, pause E-Tank spends a tank for 28 HP.
 
 **v0.32:** Menús/HUD — botones de título, slots y cartelera más altos, Datos en boss select, check y secreto más legibles, HP de jefe a la derecha, aviso «Sin munición», pausa 36px sin tapar el cambio de arma.
@@ -130,7 +132,7 @@ Bound at runtime by TouchControls (same actions):
 - `EchoWind` — 2º jefe HP 28 (flotar / ráfagas / dash); debilidad Beat Blaze ×3
 - `EchoGaleShot` — proyectil verde (daño 2, delay+rebote stub, munición 28)
 - `WindCurrent` — corrientes que empujan al jugador
-- `MetBeat` — enemigo caparazón a ritmo (HP 2, contacto 2)
+- `MetBeat` — enemigo caparazón a ritmo (HP 2, contacto 1 al abrir)
 - `TouchControls` — mobile overlay + joypad InputMap wiring (CanvasLayer 100)
 - `HUD` — life bar, portrait, weapon label, energy tanks, armor stubs, pause (CanvasLayer 50; Spanish strings)
 - `TitleScreen` / `CharacterSelect` / **`BossSelect`** — flujo de menú (grilla 3×3, CORE-9 tras 8 jefes → stub fortaleza)

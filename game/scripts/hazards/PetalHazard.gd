@@ -1,13 +1,15 @@
 extends Area2D
 ## Pétalo peligroso — hazard de invernadero (daño 3). Flota / cae suave.
 
-@export var damage := 3
+@export var damage := 2  ## proyectil común
 @export var drift_amp := 10.0
 @export var fall_speed := 18.0
 
 var _base := Vector2.ZERO
 var _t := 0.0
 var _active := true
+var _arm := 0.25
+var _prev_fall := 0.0
 
 @onready var visual: ColorRect = $Visual
 
@@ -35,15 +37,25 @@ func _physics_process(delta: float) -> void:
 	if not _active:
 		return
 	_t += delta
+	_arm = maxf(_arm - delta, 0.0)
 	position.x = _base.x + sin(_t * 2.2) * drift_amp
-	position.y = _base.y + fmod(_t * fall_speed, 40.0)
+	var fall := fmod(_t * fall_speed, 40.0)
+	if fall + 0.5 < _prev_fall:
+		_arm = maxf(_arm, 0.22)
+	_prev_fall = fall
+	position.y = _base.y + fall
 	if visual:
 		visual.rotation = sin(_t * 3.0) * 0.4
-		visual.color.a = 0.7 + 0.25 * absf(sin(_t * 5.0))
+		if _arm > 0.0:
+			visual.color = Color(1.0, 0.85, 0.3, 0.85)
+			visual.scale = Vector2(0.75, 0.75)
+		else:
+			visual.color = Color(0.95, 0.45, 0.75, 0.7 + 0.25 * absf(sin(_t * 5.0)))
+			visual.scale = Vector2.ONE
 
 
 func _on_body_entered(body: Node) -> void:
-	if body == null:
+	if _arm > 0.0 or body == null:
 		return
 	if body.has_method("is_invulnerable") and body.is_invulnerable():
 		return

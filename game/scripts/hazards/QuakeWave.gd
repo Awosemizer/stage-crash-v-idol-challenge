@@ -10,7 +10,7 @@ extends Area2D
 var velocity := Vector2.ZERO
 var _life := 1.6
 var _hurt_cd := 0.0
-var _arm := 0.12
+var _arm := 0.22  ## no hiere al aparecer
 
 @onready var visual: ColorRect = $Visual
 @onready var collision: CollisionShape2D = $CollisionShape2D
@@ -62,7 +62,12 @@ func _physics_process(delta: float) -> void:
 	position += velocity * delta
 	_life -= delta
 	if visual:
-		visual.color.a = 0.45 + 0.35 * absf(sin(Time.get_ticks_msec() * 0.025))
+		if _arm > 0.0:
+			visual.color = Color(1.0, 0.82, 0.28, 0.55)
+			visual.scale = Vector2(0.7, 0.7)
+		else:
+			visual.scale = Vector2.ONE
+			visual.color = Color(0.75, 0.45, 0.15, 0.45 + 0.35 * absf(sin(Time.get_ticks_msec() * 0.025)))
 		visual.size.x = 24.0 + 8.0 * absf(sin(Time.get_ticks_msec() * 0.02))
 		visual.position.x = -visual.size.x * 0.5
 	if _life <= 0.0:

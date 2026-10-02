@@ -20,7 +20,12 @@ func setup(life: float = LIFETIME, dmg: int = DAMAGE, arm: float = 0.0) -> void:
 	lifetime = life
 	_life = life
 	damage = dmg
-	_arm = maxf(arm, 0.0)
+	if arm > 0.0:
+		_arm = arm
+	elif dmg <= 2:
+		_arm = 0.25
+	else:
+		_arm = 0.12
 
 
 func _ready() -> void:
@@ -39,7 +44,12 @@ func _physics_process(delta: float) -> void:
 	_arm = maxf(_arm - delta, 0.0)
 	_tick -= delta
 	if visual:
-		visual.color.a = 0.2 + 0.35 * absf(sin(_t * 28.0))
+		if _arm > 0.0:
+			visual.color = Color(1.0, 0.82, 0.3, 0.45)
+			visual.scale = Vector2(0.85, 0.85)
+		else:
+			visual.scale = Vector2.ONE
+			visual.color = Color(0.85, 0.85, 0.95, 0.2 + 0.35 * absf(sin(_t * 28.0)))
 		visual.position.x = -visual.size.x * 0.5 + sin(_t * 55.0) * 1.5
 	if flicker:
 		flicker.visible = int(_t * 20.0) % 3 != 0

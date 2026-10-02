@@ -1545,10 +1545,26 @@ func _take_hit(amount: int) -> void:
 	# Cancel charge on hit
 	_charging = false
 	_charge_time = 0.0
-	velocity = Vector2(-facing * 90.0, -130.0)
+	velocity = _hurt_knockback()
 	hp_changed.emit(hp, max_hp)
 	if hp <= 0:
 		_respawn()
+
+
+func _hurt_knockback() -> Vector2:
+	## Empuja hacia atrás si hay suelo; si no, solo un salto corto (no al pozo).
+	var back := -facing
+	var grounded_back := false
+	var world := get_world_2d()
+	if world:
+		var origin := global_position + Vector2(float(back) * 8.0, 4.0)
+		var query := PhysicsRayQueryParameters2D.create(origin, origin + Vector2(float(back) * 22.0, 32.0))
+		query.collision_mask = 1
+		query.exclude = [get_rid()]
+		grounded_back = not world.direct_space_state.intersect_ray(query).is_empty()
+	if grounded_back:
+		return Vector2(float(back) * 70.0, -120.0)
+	return Vector2(float(back) * 16.0, -150.0)
 
 
 func _respawn() -> void:

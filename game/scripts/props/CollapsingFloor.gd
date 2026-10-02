@@ -62,7 +62,7 @@ func _physics_process(delta: float) -> void:
 			_timer -= delta
 			if visual:
 				var pulse := 0.5 + 0.5 * absf(sin(Time.get_ticks_msec() * 0.03))
-				visual.color = Color(0.9, 0.35, 0.15, pulse)
+				visual.color = Color(1.0, 0.78, 0.22, pulse)
 				position.x = _base_pos.x + sin(Time.get_ticks_msec() * 0.04) * 1.5
 			if _timer <= 0.0:
 				_phase = Phase.FALL

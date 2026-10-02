@@ -6,9 +6,11 @@ extends Area2D
 @export var period := 1.2  ## ciclo completo ON+OFF en segundos
 @export var on_ratio := 0.45  ## fracción del ciclo activa
 @export var phase_offset := 0.0  ## desfase para patrones
+const WARN_SEC := 0.28  ## ámbar antes de la descarga (toque)
 
 var _t := 0.0
 var _active := false
+var _warning := false
 var _hurt_cd := 0.0
 
 @onready var visual: ColorRect = $Visual
@@ -32,10 +34,15 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	_t += delta
 	_hurt_cd = maxf(_hurt_cd - delta, 0.0)
-	var cycle := fmod(_t, maxf(period, 0.05))
-	var want_on := cycle < period * on_ratio
+	var psec := maxf(period, 0.05)
+	var cycle := fmod(_t, psec)
+	var want_on := cycle < psec * on_ratio
+	var off := psec * (1.0 - on_ratio)
+	var lead := minf(WARN_SEC, maxf(off - 0.06, 0.0))
+	var warning := (not want_on) and cycle >= psec - lead and lead > 0.05
 	var turned_on := want_on and not _active
 	_active = want_on
+	_warning = warning
 	_refresh_state()
 	if _active and (turned_on or _hurt_cd <= 0.0):
 		_hurt_overlaps()
@@ -45,11 +52,19 @@ func _refresh_state() -> void:
 	if visual:
 		if _active:
 			visual.color = Color(0.95, 0.95, 0.25, 0.55 + 0.35 * absf(sin(Time.get_ticks_msec() * 0.02)))
+		elif _warning:
+			var pulse := 0.45 + 0.4 * absf(sin(Time.get_ticks_msec() * 0.018))
+			visual.color = Color(1.0, 0.78, 0.2, pulse)
 		else:
 			visual.color = Color(0.25, 0.2, 0.35, 0.22)
 	if spark:
-		spark.visible = _active
-		spark.modulate = Color(1.0, 1.0, 0.4, 0.95) if _active else Color(0.4, 0.4, 0.5, 0.3)
+		spark.visible = _active or _warning
+		if _warning and not _active:
+			spark.text = "!"
+			spark.modulate = Color(1.0, 0.85, 0.3, 0.95)
+		else:
+			spark.text = "⚡⚡"
+			spark.modulate = Color(1.0, 1.0, 0.4, 0.95) if _active else Color(0.4, 0.4, 0.5, 0.3)
 
 
 func is_electrified() -> bool:

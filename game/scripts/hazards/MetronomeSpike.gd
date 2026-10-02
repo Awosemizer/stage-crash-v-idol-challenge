@@ -6,7 +6,8 @@ extends Area2D
 @export var period := 1.0  ## ciclo completo extend+retract
 @export var on_ratio := 0.45  ## fracción del ciclo extendida
 @export var phase_offset := 0.0
-@export var telegraph_ratio := 0.15  ## fracción previa al extend (aviso)
+@export var telegraph_ratio := 0.15  ## legado; el aviso real es WARN_SEC
+const WARN_SEC := 0.28
 
 var _t := 0.0
 var _extended := false
@@ -36,12 +37,13 @@ func _physics_process(delta: float) -> void:
 	var p := maxf(period, 0.05)
 	var cycle := fmod(_t, p)
 	var on_end := p * on_ratio
-	var telegraph_start := p - p * telegraph_ratio
-	# If telegraph wraps before on: treat end-of-cycle as warn when next beat is near
+	var off := p - on_end
+	var lead := minf(WARN_SEC, maxf(off - 0.06, 0.0))
+	var telegraph_start := p - lead
 	var want_on := cycle < on_end
 	var turned_on := want_on and not _extended
 	_extended = want_on
-	_refresh_state(cycle >= telegraph_start and not want_on)
+	_refresh_state(lead > 0.05 and cycle >= telegraph_start and not want_on)
 	if _extended and (turned_on or _hurt_cd <= 0.0):
 		_hurt_overlaps()
 
@@ -52,6 +54,10 @@ func _refresh_state(warning: bool = false) -> void:
 			visual.color = Color(0.9, 0.25, 0.3, 1.0)
 			visual.scale = Vector2(1.0, 1.0)
 			visual.position = Vector2.ZERO
+		elif warning:
+			visual.color = Color(1.0, 0.78, 0.22, 0.9)
+			visual.scale = Vector2(1.0, 0.62)
+			visual.position = Vector2(0, 3)
 		else:
 			visual.color = Color(0.45, 0.4, 0.5, 0.55)
 			visual.scale = Vector2(1.0, 0.35)
