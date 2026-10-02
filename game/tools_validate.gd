@@ -54,6 +54,18 @@ func _initialize() -> void:
 		"res://scenes/combat/ElectricZigzagShot.tscn",
 		"res://scenes/combat/NeonArcShot.tscn",
 		"res://scenes/hazards/ElectricFloor.tscn",
+		"res://scripts/levels/LevelGlitchIce.gd",
+		"res://scripts/bosses/GlitchIce.gd",
+		"res://scripts/combat/IceGlitchShot.gd",
+		"res://scripts/combat/FreezeSampleShot.gd",
+		"res://scripts/props/FrameSkipPlatform.gd",
+		"res://scripts/pickups/EnergyTankPickup.gd",
+		"res://scenes/levels/LevelGlitchIce.tscn",
+		"res://scenes/bosses/GlitchIce.tscn",
+		"res://scenes/combat/IceGlitchShot.tscn",
+		"res://scenes/combat/FreezeSampleShot.tscn",
+		"res://scenes/props/FrameSkipPlatform.tscn",
+		"res://scenes/pickups/EnergyTankPickup.tscn",
 	]
 	for p in paths:
 		if not ResourceLoader.exists(p):
@@ -171,6 +183,10 @@ func _initialize() -> void:
 		errors.append("BossSelect should load LevelNeonVolt for neon_volt")
 	else:
 		print("OK BossSelect → LevelNeonVolt")
+	if "LevelGlitchIce.tscn" not in bsel_src:
+		errors.append("BossSelect should load LevelGlitchIce for glitch_ice")
+	else:
+		print("OK BossSelect → LevelGlitchIce")
 
 	# Boss select UI
 	var boss_sel_packed: PackedScene = load("res://scenes/ui/BossSelect.tscn")
@@ -257,12 +273,27 @@ func _initialize() -> void:
 				errors.append("Neon Volt missing SecretStub for pending arms")
 			elif nsecret:
 				print("OK Neon Volt SecretStub present")
+		# Glitch Ice playable cell
+		var ice_cell = null
+		if grid:
+			for c in grid.get_children():
+				if str(c.get_meta("boss_id", "")) == "glitch_ice":
+					ice_cell = c
+					break
+		if ice_cell == null:
+			errors.append("BossSelect missing Glitch Ice cell")
+		else:
+			var ist = ice_cell.get_node_or_null("SelectButton/StatusLabel")
+			if ist and "Pronto" in ist.text:
+				errors.append("Glitch Ice should be playable, got: " + ist.text)
+			elif ist:
+				print("OK Glitch Ice status=", ist.text)
 		# Greyed Pronto on a locked boss
 		var pronto_ok := false
 		if grid:
 			for c in grid.get_children():
 				var bid2 = str(c.get_meta("boss_id", ""))
-				if bid2 in ["glitch_ice", "bassquake", "metronome"]:
+				if bid2 in ["bassquake", "metronome", "chorus_bloom"]:
 					var st2 = c.get_node_or_null("SelectButton/StatusLabel")
 					if st2 and "Pronto" in st2.text:
 						pronto_ok = true
@@ -1233,6 +1264,266 @@ func _initialize() -> void:
 		await process_frame
 	else:
 		errors.append("LevelNeonVolt.tscn failed to load")
+
+
+	# --- Glitch Ice boss / weapon / level ---
+	var gi_boss_packed: PackedScene = load("res://scenes/bosses/GlitchIce.tscn")
+	if gi_boss_packed:
+		var gib = gi_boss_packed.instantiate()
+		root.add_child(gib)
+		await process_frame
+		if not gib.is_in_group("weak_to_neon_arc"):
+			errors.append("GlitchIce missing weak_to_neon_arc group")
+		else:
+			print("OK GlitchIce weak_to_neon_arc")
+		if int(gib.hp) != 28:
+			errors.append("GlitchIce HP expected 28, got %d" % int(gib.hp))
+		else:
+			print("OK GlitchIce HP=28")
+		if gib.has_method("activate"):
+			gib.activate()
+		# Neon Arc ×3: base 2 → 6
+		gib.hp = 26
+		var narc = load("res://scenes/combat/NeonArcShot.tscn").instantiate()
+		root.add_child(narc)
+		narc.global_position = gib.global_position
+		if narc.has_method("_try_hit"):
+			narc._try_hit(gib)
+		await process_frame
+		if int(gib.hp) != 20:
+			errors.append("Neon Arc weakness expected hp 20 (26-6), got %d" % int(gib.hp))
+		else:
+			print("OK Neon Arc ×3 vs GlitchIce hp=", gib.hp)
+		if is_instance_valid(narc):
+			narc.queue_free()
+		gib.queue_free()
+		await process_frame
+	else:
+		errors.append("GlitchIce.tscn failed to load")
+
+	# Freeze Sample weapon smoke
+	var fs_player_packed: PackedScene = load("res://scenes/player/Player.tscn")
+	if fs_player_packed:
+		if gs:
+			gs.select_miku()
+		var fsp = fs_player_packed.instantiate()
+		root.add_child(fsp)
+		await process_frame
+		fsp.grant_weapon("freeze_sample")
+		await process_frame
+		if str(fsp.get_weapon_id()) != "freeze_sample":
+			errors.append("grant_weapon freeze_sample failed")
+		else:
+			print("OK grant_weapon freeze_sample")
+		var fsw: Dictionary = fsp.get_current_weapon()
+		if int(fsw.get("ammo", 0)) != 28:
+			errors.append("Freeze Sample ammo expected 28")
+		else:
+			print("OK Freeze Sample ammo=", fsw.get("ammo"))
+		if fsp.has_method("_fire_freeze_sample"):
+			fsp._fire_freeze_sample()
+			await process_frame
+			var fs_shots = root.get_tree().get_nodes_in_group("player_shots")
+			var found_fs := false
+			for s in fs_shots:
+				if s.get_script() and "FreezeSample" in str(s.get_script().resource_path):
+					found_fs = true
+				elif "damage" in s and int(s.damage) == 2:
+					found_fs = true
+			if not found_fs and fs_shots.is_empty():
+				errors.append("FreezeSampleShot not spawned")
+			else:
+				print("OK FreezeSampleShot spawned count=", fs_shots.size())
+				fsw = fsp.get_current_weapon()
+				if int(fsw.get("ammo", 28)) != 27:
+					errors.append("Freeze Sample ammo not consumed")
+				else:
+					print("OK Freeze Sample ammo consumed=", fsw.get("ammo"))
+				for sh in fs_shots:
+					sh.queue_free()
+		# Optional: Freeze Sample ×3 vs Beatfire
+		var bf_pack: PackedScene = load("res://scenes/bosses/BeatfireMan.tscn")
+		if bf_pack:
+			var bfb = bf_pack.instantiate()
+			root.add_child(bfb)
+			await process_frame
+			if not bfb.is_in_group("weak_to_freeze_sample"):
+				errors.append("BeatfireMan missing weak_to_freeze_sample")
+			else:
+				print("OK Beatfire weak_to_freeze_sample")
+			if bfb.has_method("activate"):
+				bfb.activate()
+			bfb.hp = 26
+			var fshot = load("res://scenes/combat/FreezeSampleShot.tscn").instantiate()
+			root.add_child(fshot)
+			fshot.global_position = bfb.global_position
+			if fshot.has_method("_try_hit"):
+				fshot._try_hit(bfb)
+			await process_frame
+			if int(bfb.hp) != 20:
+				errors.append("Freeze Sample vs Beatfire expected hp 20, got %d" % int(bfb.hp))
+			else:
+				print("OK Freeze Sample ×3 vs Beatfire hp=", bfb.hp)
+			if is_instance_valid(fshot):
+				fshot.queue_free()
+			bfb.queue_free()
+			await process_frame
+		fsp.queue_free()
+		await process_frame
+	else:
+		errors.append("Player.tscn failed for Freeze Sample test")
+
+	# FrameSkipPlatform smoke
+	var fsp_plat: PackedScene = load("res://scenes/props/FrameSkipPlatform.tscn")
+	if fsp_plat:
+		var fplat = fsp_plat.instantiate()
+		root.add_child(fplat)
+		await process_frame
+		if not fplat.is_in_group("frame_skip_platforms"):
+			errors.append("FrameSkipPlatform missing group")
+		else:
+			print("OK FrameSkipPlatform group")
+		fplat.queue_free()
+		await process_frame
+	else:
+		errors.append("FrameSkipPlatform.tscn failed to load")
+
+	# Energy tank GameState API
+	if gs:
+		var prev_et = int(gs.get_energy_tanks()) if gs.has_method("get_energy_tanks") else -1
+		if not gs.has_method("grant_energy_tank"):
+			errors.append("GameState missing grant_energy_tank")
+		else:
+			gs.energy_tanks = 0
+			var n1 = int(gs.grant_energy_tank())
+			if n1 != 1:
+				errors.append("grant_energy_tank expected 1, got %d" % n1)
+			else:
+				print("OK grant_energy_tank=", n1)
+		gs.mark_boss_defeated("glitch_ice")
+		if not gs.is_boss_defeated("glitch_ice"):
+			errors.append("mark glitch_ice defeated failed")
+		else:
+			print("OK glitch_ice defeated in GameState")
+		if not gs.has_weapon_unlocked("freeze_sample"):
+			errors.append("freeze_sample should unlock on glitch_ice defeat")
+		else:
+			print("OK freeze_sample unlocked")
+
+	# Instantiate LevelGlitchIce
+	var ice_level_packed: PackedScene = load("res://scenes/levels/LevelGlitchIce.tscn")
+	if ice_level_packed:
+		if gs:
+			gs.energy_tanks = 0
+		var ilvl = ice_level_packed.instantiate()
+		root.add_child(ilvl)
+		print("OK instantiate LevelGlitchIce, children=", ilvl.get_child_count())
+		await process_frame
+		await process_frame
+		var ient = ilvl.get_node_or_null("Entities")
+		if ient == null:
+			errors.append("LevelGlitchIce Entities missing")
+		else:
+			var ip = ient.get_node_or_null("Player")
+			if ip == null:
+				errors.append("Player not spawned in LevelGlitchIce")
+			else:
+				print("OK GlitchIce level player spawned")
+			var iboss = 0
+			var imet = 0
+			for c in ient.get_children():
+				if c.is_in_group("bosses") or str(c.name).begins_with("Glitch"):
+					iboss += 1
+				elif c.is_in_group("enemies") or str(c.name).begins_with("Met"):
+					imet += 1
+			if imet < 2:
+				errors.append("Expected >=2 MetBeat in LevelGlitchIce, got %d" % imet)
+			else:
+				print("OK MetBeat in LevelGlitchIce=", imet)
+			if iboss < 1:
+				errors.append("Expected GlitchIce boss in level")
+			else:
+				print("OK GlitchIce boss in level")
+			if ient.get_node_or_null("ArenaTrigger") == null:
+				errors.append("LevelGlitchIce ArenaTrigger missing")
+			else:
+				print("OK LevelGlitchIce ArenaTrigger")
+			var etank = ient.get_node_or_null("EnergyTankPickup")
+			if etank == null:
+				errors.append("EnergyTankPickup missing in LevelGlitchIce")
+			else:
+				print("OK EnergyTankPickup at ", etank.position)
+		var igeom = ilvl.get_node_or_null("Geometry")
+		var skip_n := 0
+		if igeom:
+			for c in igeom.get_children():
+				if c.is_in_group("frame_skip_platforms") or str(c.name).begins_with("FrameSkip"):
+					skip_n += 1
+		if skip_n < 3:
+			errors.append("Expected >=3 FrameSkipPlatform in LevelGlitchIce, got %d" % skip_n)
+		else:
+			print("OK FrameSkipPlatform count=", skip_n)
+		if ilvl.get_node_or_null("HUD") == null:
+			errors.append("HUD missing in LevelGlitchIce")
+		else:
+			print("OK HUD in LevelGlitchIce")
+		if ilvl.get_node_or_null("TouchControls") == null:
+			errors.append("TouchControls missing in LevelGlitchIce")
+		else:
+			print("OK TouchControls in LevelGlitchIce")
+		# Energy tank pickup
+		var et2 = ient.get_node_or_null("EnergyTankPickup") if ient else null
+		var ip2 = ient.get_node_or_null("Player") if ient else null
+		if et2 and ip2 and et2.has_method("_collect"):
+			et2._collect(ip2)
+			await process_frame
+			if gs and int(gs.get_energy_tanks()) < 1:
+				errors.append("Energy tank pickup did not increase tanks")
+			else:
+				print("OK energy tanks after pickup=", gs.get_energy_tanks() if gs else -1)
+			var hud_i = ilvl.get_node_or_null("HUD")
+			if hud_i and hud_i.has_method("sync_energy_tanks_from_state"):
+				hud_i.sync_energy_tanks_from_state()
+			if hud_i and "energy_tanks" in hud_i:
+				if int(hud_i.energy_tanks) < 1:
+					errors.append("HUD energy_tanks not updated")
+				else:
+					print("OK HUD energy_tanks=", hud_i.energy_tanks)
+		# Boss kill path
+		if ilvl.has_method("_start_boss_fight"):
+			ilvl._start_boss_fight()
+			await process_frame
+			var boss_i = ient.get_node_or_null("GlitchIce") if ient else null
+			if boss_i and boss_i.has_method("take_damage"):
+				while is_instance_valid(boss_i) and int(boss_i.hp) > 0:
+					boss_i.take_damage(7)
+					await process_frame
+				await process_frame
+				await process_frame
+				var ip3 = ient.get_node_or_null("Player") if ient else null
+				if ip3 and ip3.has_method("_has_weapon"):
+					if not ip3._has_weapon("freeze_sample"):
+						errors.append("Glitch Ice defeat did not grant Freeze Sample")
+					else:
+						print("OK Glitch Ice defeat granted Freeze Sample")
+				if gs and not gs.is_boss_defeated("glitch_ice"):
+					errors.append("Glitch Ice defeat did not set GameState")
+				else:
+					print("OK GameState glitch_ice defeated after win")
+				var win_i = ilvl.get_node_or_null("WinBanner")
+				if win_i == null:
+					print("WARN Glitch Ice WinBanner not found immediately")
+				else:
+					print("OK Glitch Ice WinBanner")
+					var ret_i = win_i.get_node_or_null("Root/Panel/ReturnBossSelect")
+					if ret_i == null:
+						errors.append("Glitch Ice WinBanner missing ReturnBossSelect")
+					else:
+						print("OK Glitch Ice ReturnBossSelect")
+		ilvl.queue_free()
+		await process_frame
+	else:
+		errors.append("LevelGlitchIce.tscn failed to load")
 
 	# Instantiate main scene briefly
 	var packed: PackedScene = load("res://scenes/levels/Level01.tscn")

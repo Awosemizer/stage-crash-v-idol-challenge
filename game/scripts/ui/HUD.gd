@@ -55,6 +55,10 @@ func _ready() -> void:
 	if gs != null and gs.has_signal("armor_changed"):
 		if not gs.armor_changed.is_connected(_on_armor_changed):
 			gs.armor_changed.connect(_on_armor_changed)
+	if gs != null and gs.has_signal("energy_tanks_changed"):
+		if not gs.energy_tanks_changed.is_connected(_on_energy_tanks_changed):
+			gs.energy_tanks_changed.connect(_on_energy_tanks_changed)
+	sync_energy_tanks_from_state()
 	# Auto-bind if player already in tree
 	call_deferred("_try_auto_bind")
 
@@ -123,6 +127,16 @@ func set_weapon_ammo(ammo: int, max_ammo: int = -1) -> void:
 func set_energy_tanks(count: int) -> void:
 	energy_tanks = clampi(count, 0, MAX_ENERGY_TANKS)
 	_refresh_tanks()
+
+
+func sync_energy_tanks_from_state() -> void:
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs != null and gs.has_method("get_energy_tanks"):
+		set_energy_tanks(int(gs.get_energy_tanks()))
+
+
+func _on_energy_tanks_changed(count: int) -> void:
+	set_energy_tanks(count)
 
 
 func _try_auto_bind() -> void:

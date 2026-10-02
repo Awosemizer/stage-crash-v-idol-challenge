@@ -47,6 +47,7 @@ const WEAPON_SABER := "saber"
 const WEAPON_BEAT_BLAZE := "beat_blaze"
 const WEAPON_ECHO_GALE := "echo_gale"
 const WEAPON_NEON_ARC := "neon_arc"
+const WEAPON_FREEZE_SAMPLE := "freeze_sample"
 
 const SABER_DURATION := 0.18
 const SABER_DAMAGE := 2
@@ -65,6 +66,7 @@ const BusterShotScene := preload("res://scenes/combat/BusterShot.tscn")
 const BeatBlazeShotScene := preload("res://scenes/combat/BeatBlazeShot.tscn")
 const EchoGaleShotScene := preload("res://scenes/combat/EchoGaleShot.tscn")
 const NeonArcShotScene := preload("res://scenes/combat/NeonArcShot.tscn")
+const FreezeSampleShotScene := preload("res://scenes/combat/FreezeSampleShot.tscn")
 
 signal hp_changed(current: int, maximum: int)
 signal weapon_changed(weapon_id: String, display_name: String, ammo: int, max_ammo: int)
@@ -121,6 +123,7 @@ var _thruster: ColorRect = null
 var _wind_force := Vector2.ZERO
 var _key3_held := false
 var _key4_held := false
+var _key5_held := false
 
 
 func _ready() -> void:
@@ -248,6 +251,7 @@ func _handle_weapon_switch() -> void:
 	var k2 := Input.is_physical_key_pressed(KEY_2)
 	var k3 := Input.is_physical_key_pressed(KEY_3)
 	var k4 := Input.is_physical_key_pressed(KEY_4)
+	var k5 := Input.is_physical_key_pressed(KEY_5)
 	if k1 and not _key1_held:
 		_select_weapon_by_id(WEAPON_SABER if _is_teto else WEAPON_BUSTER)
 	if k2 and not _key2_held and _has_weapon(WEAPON_BEAT_BLAZE):
@@ -256,10 +260,13 @@ func _handle_weapon_switch() -> void:
 		_select_weapon_by_id(WEAPON_ECHO_GALE)
 	if k4 and not _key4_held and _has_weapon(WEAPON_NEON_ARC):
 		_select_weapon_by_id(WEAPON_NEON_ARC)
+	if k5 and not _key5_held and _has_weapon(WEAPON_FREEZE_SAMPLE):
+		_select_weapon_by_id(WEAPON_FREEZE_SAMPLE)
 	_key1_held = k1
 	_key2_held = k2
 	_key3_held = k3
 	_key4_held = k4
+	_key5_held = k5
 
 
 func _cycle_weapon(dir: int) -> void:
@@ -305,7 +312,7 @@ func get_weapon_id() -> String:
 
 
 func grant_weapon(weapon_id: String) -> void:
-	## Otorga arma robada de jefe (Beat Blaze / Echo Gale / Neon Arc).
+	## Otorga arma robada de jefe (Beat Blaze / Echo Gale / Neon Arc / Freeze Sample).
 	var gs := _game_state()
 	if gs != null and gs.has_method("unlock_weapon"):
 		gs.unlock_weapon(weapon_id)
@@ -359,6 +366,19 @@ func grant_weapon(weapon_id: String) -> void:
 		_charge_time = 0.0
 		_emit_weapon()
 		print("Player: arma otorgada Neon Arc")
+	elif weapon_id == WEAPON_FREEZE_SAMPLE:
+		_weapons.append({
+			"id": WEAPON_FREEZE_SAMPLE,
+			"name": "Freeze Sample",
+			"ammo": 28,
+			"max_ammo": 28,
+			"cost": 1,
+		})
+		_weapon_index = _weapons.size() - 1
+		_charging = false
+		_charge_time = 0.0
+		_emit_weapon()
+		print("Player: arma otorgada Freeze Sample")
 
 
 func _emit_weapon() -> void:
@@ -386,6 +406,8 @@ func _handle_attack(delta: float) -> void:
 		_handle_echo_gale()
 	elif wid == WEAPON_NEON_ARC:
 		_handle_neon_arc()
+	elif wid == WEAPON_FREEZE_SAMPLE:
+		_handle_freeze_sample()
 	elif wid == WEAPON_SABER:
 		_handle_saber()
 	else:
@@ -423,7 +445,7 @@ func _apply_character_from_state() -> void:
 
 
 func _restore_unlocked_weapons() -> void:
-	## Otorga armas ya desbloqueadas en GameState (Beat Blaze / Echo Gale / Neon Arc).
+	## Otorga armas ya desbloqueadas en GameState (Beat Blaze / Echo Gale / Neon Arc / Freeze Sample).
 	var gs := _game_state()
 	if gs == null or not gs.has_method("get_unlocked_weapons"):
 		return
@@ -639,6 +661,36 @@ func _fire_neon_arc() -> void:
 	if shot.has_method("setup"):
 		shot.setup(facing)
 
+
+
+func _handle_freeze_sample() -> void:
+	if _charging:
+		_charging = false
+		_charge_time = 0.0
+	if Input.is_action_just_pressed("attack"):
+		_fire_freeze_sample()
+
+
+func _fire_freeze_sample() -> void:
+	var w := get_current_weapon()
+	var ammo: int = int(w.get("ammo", 0))
+	var cost: int = int(w.get("cost", 1))
+	if ammo < cost:
+		return
+	var live := get_tree().get_nodes_in_group("player_shots")
+	if live.size() >= MAX_SHOTS:
+		return
+	ammo -= cost
+	_weapons[_weapon_index]["ammo"] = ammo
+	_emit_weapon()
+	var shot: Area2D = FreezeSampleShotScene.instantiate()
+	var parent_node := get_parent()
+	if parent_node == null:
+		parent_node = get_tree().current_scene
+	parent_node.add_child(shot)
+	shot.global_position = global_position + Vector2(facing * SHOT_SPAWN_X, SHOT_SPAWN_Y)
+	if shot.has_method("setup"):
+		shot.setup(facing)
 
 func _handle_buster(delta: float) -> void:
 	if Input.is_action_just_pressed("attack"):

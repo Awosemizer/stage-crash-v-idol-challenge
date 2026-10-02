@@ -6,7 +6,7 @@ Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.5.0-proto`
+- Versión demo: `0.8.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)
@@ -37,7 +37,7 @@ En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
 1. **Title** — *Stage Crash: V-Idol Challenge* → **Jugar**
 2. **Selección** — **Miku** (Buster + carga, cian) o **Teto** (Sable melee, rojo)
 3. **Boss Select** — grilla 3×3 SynthoCorp (8 Robot Masters + CORE-9 centro bloqueado)
-4. **Level01** — etapa piloto Beatfire Man (único jugable; resto "Pronto")
+4. **Boss stages** — Beatfire · Echo Wind · Neon Volt · Glitch Ice (resto "Pronto")
 
 ---
 
@@ -45,7 +45,7 @@ En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
 
 Archivo listo (debug, un solo archivo, ~27 MB):
 
-**[build/StageCrash-debug.apk (v0.6 — Echo Wind)](./build/StageCrash-debug.apk (v0.6 — Echo Wind))**
+**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.8 — Glitch Ice)
 
 1. Descarga el APK desde este repo (botón Raw / Download).
 2. En el teléfono: permite **orígenes desconocidos** / instalar apps desconocidas para el navegador o gestor de archivos.
@@ -62,7 +62,7 @@ Con Godot 4.5, plantillas Android, JDK y Android SDK configurados:
 ./scripts/export_android_debug.sh
 ```
 
-Salida: `build/StageCrash-debug.apk (v0.6 — Echo Wind)`
+Salida: `build/StageCrash-debug.apk`
 
 ---
 
@@ -73,7 +73,7 @@ DISENO.md                 # GDD / diseño
 README.md                 # Este archivo
 docs/ANDROID_EXPORT.md    # Setup export Android
 scripts/export_android_debug.sh
-build/StageCrash-debug.apk (v0.6 — Echo Wind)
+build/StageCrash-debug.apk
 game/                     # Proyecto Godot 4.5
   project.godot
   scenes/  scripts/

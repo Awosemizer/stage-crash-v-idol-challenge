@@ -40,12 +40,18 @@ var _armor_owned: Dictionary = {}
 ## equipped[set_id][piece_id] = true (proto: auto-equip on pickup)
 var _armor_equipped: Dictionary = {}
 
-## Progreso de jefes — proto: Beatfire + Echo Wind + Neon Volt jugables.
+## Progreso de jefes — proto: Beatfire + Echo Wind + Neon Volt + Glitch Ice jugables.
 var beatfire_defeated: bool = false
 var _bosses_defeated: Dictionary = {}
 
 ## Armas desbloqueadas (persisten entre etapas).
 var _weapons_unlocked: Dictionary = {}
+
+## Energy tanks (0–4) — HUD / recoverable stubs.
+const MAX_ENERGY_TANKS := 4
+var energy_tanks: int = 0
+
+signal energy_tanks_changed(count: int)
 
 
 func select_miku() -> void:
@@ -172,6 +178,8 @@ func mark_boss_defeated(boss_id: String) -> void:
 			unlock_weapon("echo_gale")
 		elif boss_id == BOSS_NEON_VOLT:
 			unlock_weapon("neon_arc")
+		elif boss_id == BOSS_GLITCH_ICE:
+			unlock_weapon("freeze_sample")
 	boss_defeated.emit(boss_id)
 	print("GameState: jefe derrotado → %s" % boss_id)
 
@@ -194,6 +202,24 @@ func has_pending_armor_secret(boss_id: String) -> bool:
 		return not has_armor_piece(ARMOR_SET_FLIGHT, ARMOR_PIECE_ARMS)
 	return false
 
+
+
+func get_energy_tanks() -> int:
+	return energy_tanks
+
+
+func grant_energy_tank() -> int:
+	## +1 tanque (cap MAX). Devuelve el nuevo total.
+	if energy_tanks < MAX_ENERGY_TANKS:
+		energy_tanks += 1
+		energy_tanks_changed.emit(energy_tanks)
+		print("GameState: Energy Tank → %d/%d" % [energy_tanks, MAX_ENERGY_TANKS])
+	return energy_tanks
+
+
+func set_energy_tanks(count: int) -> void:
+	energy_tanks = clampi(count, 0, MAX_ENERGY_TANKS)
+	energy_tanks_changed.emit(energy_tanks)
 
 func unlock_weapon(weapon_id: String) -> void:
 	_weapons_unlocked[weapon_id] = true

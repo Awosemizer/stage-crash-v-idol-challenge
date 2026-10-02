@@ -1,0 +1,66 @@
+[gd_scene load_steps=4 format=3 uid="uid://bglitchiceboss01"]
+
+[ext_resource type="Script" path="res://scripts/bosses/GlitchIce.gd" id="1_boss"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_body"]
+size = Vector2(22, 36)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_contact"]
+size = Vector2(24, 38)
+
+[node name="GlitchIce" type="CharacterBody2D"]
+collision_layer = 8
+collision_mask = 1
+floor_stop_on_slope = true
+script = ExtResource("1_boss")
+
+[node name="Visual" type="ColorRect" parent="."]
+offset_left = -12.0
+offset_top = -36.0
+offset_right = 12.0
+offset_bottom = 0.0
+color = Color(0.55, 0.85, 1, 1)
+
+[node name="Trim" type="ColorRect" parent="."]
+offset_left = -14.0
+offset_top = -28.0
+offset_right = -6.0
+offset_bottom = -8.0
+color = Color(0.95, 0.55, 1, 0.9)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -18)
+shape = SubResource("RectangleShape2D_body")
+
+[node name="ContactArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ContactArea"]
+position = Vector2(0, -18)
+shape = SubResource("RectangleShape2D_contact")
+
+[node name="HpBarBg" type="ColorRect" parent="."]
+offset_left = -28.0
+offset_top = -48.0
+offset_right = 28.0
+offset_bottom = -44.0
+color = Color(0.08, 0.1, 0.14, 0.85)
+
+[node name="HpBarFill" type="ColorRect" parent="."]
+offset_left = -28.0
+offset_top = -48.0
+offset_right = 28.0
+offset_bottom = -44.0
+color = Color(0.55, 0.9, 1, 1)
+
+[node name="NameLabel" type="Label" parent="."]
+offset_left = -44.0
+offset_top = -60.0
+offset_right = 44.0
+offset_bottom = -50.0
+theme_override_font_sizes/font_size = 6
+text = "GLITCH ICE"
+horizontal_alignment = 1

@@ -2,6 +2,7 @@ extends CharacterBody2D
 ## Beatfire Man — jefe piloto (fuego + batería). HP 28, contacto 4.
 ## Patrones al beat: salto, bolas de fuego, ground pound con telegraph.
 ## Bajo 50% HP acelera el tempo.
+## Debilidad opcional: Freeze Sample ×3 (weak_to_freeze_sample).
 
 signal died
 signal hp_changed(current: int, maximum: int)
@@ -45,6 +46,7 @@ var _facing := -1
 func _ready() -> void:
 	add_to_group("enemies")
 	add_to_group("bosses")
+	add_to_group("weak_to_freeze_sample")  # Freeze Sample ×3 (Glitch Ice)
 	visual.color = Color(0.85, 0.25, 0.15, 1.0)
 	if drum:
 		drum.color = Color(0.35, 0.12, 0.1, 1.0)
