@@ -75,6 +75,9 @@ func _on_body_entered(body: Node) -> void:
 	if body == null:
 		return
 	if body.is_in_group("player"):
+		if body.has_method("try_block_projectile") and body.try_block_projectile(self):
+			queue_free()
+			return
 		if body.has_method("is_invulnerable") and body.is_invulnerable():
 			queue_free()
 			return

@@ -413,7 +413,7 @@ func _build_secret_encore_torso() -> void:
 	pickup.armor_set = "encore"
 	pickup.armor_piece = "torso"
 	pickup.display_name_es = "Torso Encore Guard"
-	pickup.toast_hint_es = "Defensa + hyper armor al slide"
+	pickup.toast_hint_es = "Defensa · Miku Barrier / Teto Counter"
 	if pickup.has_node("Glow"):
 		pickup.get_node("Glow").color = Color(0.85, 0.55, 0.25, 0.4)
 	if pickup.has_node("Visual"):

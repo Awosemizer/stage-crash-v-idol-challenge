@@ -213,6 +213,15 @@ func has_flight_head_equipped() -> bool:
 	return is_armor_equipped(ARMOR_SET_FLIGHT, ARMOR_PIECE_HEAD)
 
 
+func has_full_flight_equipped() -> bool:
+	## Set completo Stage Flight (head+torso+arms) — bonus hover prolongado.
+	return (
+		has_flight_head_equipped()
+		and has_flight_torso_equipped()
+		and has_flight_arms_equipped()
+	)
+
+
 func get_encore_armor_color() -> Color:
 	return COLOR_ENCORE
 

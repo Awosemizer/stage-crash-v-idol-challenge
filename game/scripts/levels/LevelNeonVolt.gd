@@ -364,7 +364,7 @@ func _build_secret_arms() -> void:
 	pickup.armor_piece = "arms"
 	pickup.display_name_es = "Brazos Stage Flight"
 	if "toast_hint_es" in pickup:
-		pickup.toast_hint_es = "Carga Nv4 (Miku) · daño+"
+		pickup.toast_hint_es = "Miku: carga Nv4 · Teto: Sonic Slash"
 	entities.add_child(pickup)
 	var hint := Label.new()
 	hint.name = "SecretHint"

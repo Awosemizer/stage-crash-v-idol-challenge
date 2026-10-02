@@ -35,6 +35,8 @@ func _initialize() -> void:
 		"res://scenes/ui/SaveSelect.tscn",
 		"res://scenes/ui/AchievementsScreen.tscn",
 		"res://scenes/combat/BusterShot.tscn",
+		"res://scripts/combat/SonicSlashShot.gd",
+		"res://scenes/combat/SonicSlashShot.tscn",
 		"res://scenes/combat/BeatBlazeShot.tscn",
 		"res://scenes/combat/Fireball.tscn",
 		"res://scenes/enemies/MetBeat.tscn",
@@ -3426,7 +3428,152 @@ func _initialize() -> void:
 			print("OK Player sprite loader")
 		print("OK v0.17 visual polish checks")
 
-
+	# --- v0.18 armor abilities (GDD fill) ---
+	var gs18 = root.get_node_or_null("GameState")
+	if gs18 == null:
+		gs18 = root.get_node_or_null("/root/GameState")
+	# Full flight set helper
+	if gs18:
+		gs18._armor_owned.clear()
+		gs18._armor_equipped.clear()
+		gs18.grant_armor_piece("flight", "head", true)
+		gs18.grant_armor_piece("flight", "torso", true)
+		gs18.grant_armor_piece("flight", "arms", true)
+		if not gs18.has_method("has_full_flight_equipped") or not gs18.has_full_flight_equipped():
+			errors.append("GameState missing has_full_flight_equipped")
+		else:
+			print("OK has_full_flight_equipped")
+	# Player: Sonic Slash + Barrier + Counter + hover+
+	var pscn18 = load("res://scenes/player/Player.tscn")
+	if pscn18:
+		var p18 = pscn18.instantiate()
+		root.add_child(p18)
+		await process_frame
+		if gs18:
+			# Force Teto for Sonic Slash / Counter
+			if gs18.has_method("select_teto"):
+				gs18.select_teto()
+			if p18.has_method("_apply_character_from_state"):
+				p18._apply_character_from_state()
+			gs18.grant_armor_piece("flight", "arms", true)
+			gs18.grant_armor_piece("encore", "torso", true)
+			if p18.has_method("_sync_armor_from_state"):
+				p18._sync_armor_from_state()
+		# Sonic Slash API
+		if not p18.has_method("_fire_sonic_slash"):
+			errors.append("Player missing _fire_sonic_slash")
+		else:
+			p18._has_flight_arms = true
+			p18._is_teto = true
+			p18._fire_sonic_slash()
+			await process_frame
+			var slashes = root.get_tree().get_nodes_in_group("player_shots")
+			var found_slash := false
+			for s in slashes:
+				if str(s.get_script()).find("SonicSlash") >= 0 or s.name.find("SonicSlash") >= 0:
+					found_slash = true
+					break
+				# Script path check
+				var scr = s.get_script()
+				if scr and "SonicSlashShot" in str(scr.resource_path):
+					found_slash = true
+					break
+			if not found_slash and slashes.size() == 0:
+				errors.append("Sonic Slash did not spawn projectile")
+			else:
+				print("OK Sonic Slash projectile shots=", slashes.size())
+			for s in slashes:
+				s.queue_free()
+			await process_frame
+		# Counter Guard
+		if not p18.has_method("is_parrying") or not p18.has_method("_trigger_counter_guard"):
+			errors.append("Player missing Counter Guard API")
+		else:
+			p18._is_teto = true
+			p18._has_encore_torso = true
+			p18._parry_window = 0.16
+			var hp_before = int(p18.hp)
+			p18.take_damage(4)
+			if int(p18.hp) != hp_before:
+				errors.append("Counter Guard should negate damage during parry")
+			elif p18._parry_window > 0.0:
+				errors.append("Counter Guard should clear parry window")
+			else:
+				print("OK Counter Guard negated hit")
+		# Switch to Miku for Barrier Pulse
+		if gs18 and gs18.has_method("select_miku"):
+			gs18.select_miku()
+		if p18.has_method("_apply_character_from_state"):
+			p18._apply_character_from_state()
+		p18._has_encore_torso = true
+		p18._is_teto = false
+		if not p18.has_method("_activate_barrier_pulse") or not p18.has_method("is_barrier_active"):
+			errors.append("Player missing Barrier Pulse API")
+		else:
+			p18._activate_barrier_pulse()
+			if not p18.is_barrier_active():
+				errors.append("Barrier Pulse did not activate")
+			else:
+				print("OK Barrier Pulse active")
+			# Reflect stub via try_block
+			var fbscn = load("res://scenes/combat/Fireball.tscn")
+			if fbscn and p18.has_method("try_block_projectile"):
+				var fb = fbscn.instantiate()
+				root.add_child(fb)
+				fb.global_position = p18.global_position + Vector2(20, 0)
+				await process_frame
+				var blocked = p18.try_block_projectile(fb)
+				if not blocked:
+					errors.append("Barrier try_block_projectile failed")
+				else:
+					print("OK Barrier blocked fireball")
+				if is_instance_valid(fb):
+					fb.queue_free()
+				await process_frame
+				# cleanup reflect buster
+				for s in root.get_tree().get_nodes_in_group("player_shots"):
+					s.queue_free()
+				await process_frame
+		# Full flight hover bonus
+		if gs18:
+			gs18.grant_armor_piece("flight", "head", true)
+			gs18.grant_armor_piece("flight", "torso", true)
+			gs18.grant_armor_piece("flight", "arms", true)
+		if p18.has_method("_sync_armor_from_state"):
+			p18._sync_armor_from_state()
+		if p18.has_method("has_full_flight") and p18.has_method("_hover_max"):
+			if not p18.has_full_flight():
+				errors.append("Player should report full flight set")
+			elif float(p18._hover_max()) <= float(p18.HOVER_DURATION) + 0.001:
+				errors.append("Full flight should extend hover duration")
+			else:
+				print("OK full flight hover max=", p18._hover_max())
+		else:
+			errors.append("Player missing full flight hover helpers")
+		# SonicSlash scene smoke
+		var sss = load("res://scenes/combat/SonicSlashShot.tscn")
+		if sss == null:
+			errors.append("SonicSlashShot.tscn failed to load")
+		else:
+			var ss = sss.instantiate()
+			root.add_child(ss)
+			if ss.has_method("setup"):
+				ss.setup(1)
+			await process_frame
+			if int(ss.damage) != 6:
+				errors.append("Sonic Slash damage expected 6, got %d" % int(ss.damage))
+			else:
+				print("OK SonicSlashShot damage=6")
+			ss.queue_free()
+			await process_frame
+		p18.queue_free()
+		await process_frame
+		if gs18:
+			gs18._armor_owned.clear()
+			gs18._armor_equipped.clear()
+			if gs18.has_method("select_miku"):
+				gs18.select_miku()
+		print("OK v0.18 armor ability checks")
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

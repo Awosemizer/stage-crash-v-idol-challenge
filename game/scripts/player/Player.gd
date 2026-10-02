@@ -4,7 +4,8 @@ extends CharacterBody2D
 ## Touch overlay + joypad press those same actions — do not hardcode keys here.
 ## GDD refs (px/frame @ 60fps, tile 16px): run 1.5, jump 4.5, grav 0.25,
 ## wall-jump H 2.5, slide 12 frames. Wall-jump always available.
-## Miku: Buster (tap/carga). Teto: Sable melee (sin proyectil por defecto).
+## Miku: Buster (tap/carga; Nv4 con Flight arms). Teto: Sable (+ Sonic Slash con Flight arms).
+## Encore Guard: Barrier Pulse (Miku) / Counter Guard (Teto). Flight set completo: hover+.
 ## Ambos: Beat Blaze tras vencer a Beatfire Man. Personaje desde GameState.
 
 # --- Tunables (converted to px/s / px/s²) ---
@@ -62,11 +63,21 @@ const TETO_ACCEL_MULT := 0.85
 
 # Stage Flight torso — short air hover (45 frames @ 60fps)
 const HOVER_DURATION := 45.0 / 60.0  # 0.75 s fuel
+const HOVER_DURATION_FULL := 60.0 / 60.0  # full Stage Flight set bonus
 const HOVER_COOLDOWN := 0.40
 const HOVER_HOLD_Y := 18.0           # max fall while hovering
 const HOVER_LIFT := -12.0            # slight upward assist when falling
 
+# Encore Guard specials
+const BARRIER_DURATION := 0.50
+const BARRIER_COOLDOWN := 0.85
+const DOUBLE_SLIDE_WINDOW := 0.30
+const PARRY_WINDOW := 0.16
+const COUNTER_DAMAGE := 4
+const SONIC_CHARGE := 0.45  # hold attack for Sonic Slash (Flight arms)
+
 const BusterShotScene := preload("res://scenes/combat/BusterShot.tscn")
+const SonicSlashShotScene := preload("res://scenes/combat/SonicSlashShot.tscn")
 const BeatBlazeShotScene := preload("res://scenes/combat/BeatBlazeShot.tscn")
 const EchoGaleShotScene := preload("res://scenes/combat/EchoGaleShot.tscn")
 const NeonArcShotScene := preload("res://scenes/combat/NeonArcShot.tscn")
@@ -133,10 +144,21 @@ var _hover_cd := 0.0
 var _is_hovering := false
 var _has_flight_torso := false
 var _has_flight_arms := false
+var _has_flight_head := false
+var _has_full_flight := false
 var _has_encore_torso := false
 var _has_encore_legs := false
+var _has_encore_head := false
 var _thruster: ColorRect = null
 var _wind_force := Vector2.ZERO
+# Encore specials / Teto charge
+var _barrier_timer := 0.0
+var _barrier_cd := 0.0
+var _slide_tap_window := 0.0
+var _parry_window := 0.0
+var _barrier_visual: ColorRect = null
+var _parry_visual: ColorRect = null
+var _pending_saber_after_parry := false
 var _key3_held := false
 var _key4_held := false
 var _key5_held := false
@@ -155,6 +177,7 @@ func _ready() -> void:
 		charge_aura.visible = false
 	_setup_saber_hitbox()
 	_ensure_thruster()
+	_ensure_barrier_visuals()
 	_sync_armor_from_state()
 	hp_changed.emit(hp, max_hp)
 	_emit_weapon()
@@ -188,7 +211,7 @@ func _physics_process(delta: float) -> void:
 	# Gravity / wall slide / Stage Flight hover
 	_is_hovering = false
 	if on_floor:
-		_hover_fuel = HOVER_DURATION
+		_hover_fuel = _hover_max()
 	elif not _is_sliding:
 		# Solo en ápice/caída — no cancelar el impulso del salto
 		var want_hover := (
@@ -218,9 +241,22 @@ func _physics_process(delta: float) -> void:
 	if not _is_hovering and Input.is_action_just_released("jump") and velocity.y < 0.0:
 		velocity.y *= JUMP_CUT_MULT
 
-	# Slide start
-	if _can_slide(on_floor) and Input.is_action_just_pressed("slide"):
-		_start_slide()
+	# Slide start (+ Miku Encore Barrier Pulse via double-tap slide)
+	if Input.is_action_just_pressed("slide"):
+		if (
+			_can_slide(on_floor)
+			and _has_encore_torso
+			and not _is_teto
+			and _slide_tap_window > 0.0
+			and _barrier_cd <= 0.0
+		):
+			_activate_barrier_pulse()
+			_slide_tap_window = 0.0
+			_start_slide()
+		elif _can_slide(on_floor):
+			_start_slide()
+			if _has_encore_torso and not _is_teto:
+				_slide_tap_window = DOUBLE_SLIDE_WINDOW
 
 	# Horizontal move (locked briefly after wall-jump)
 	var input_x := Input.get_axis("move_left", "move_right")
@@ -598,11 +634,34 @@ func _setup_saber_hitbox() -> void:
 
 
 func _handle_saber() -> void:
-	if _charging:
+	## Teto: tap = sable (+ Counter Guard con Encore torso).
+	## Hold con Flight arms = Sonic Slash al soltar.
+	if Input.is_action_just_pressed("attack"):
+		# Encore Counter Guard: brief parry window before swing
+		if _has_encore_torso and _saber_timer <= 0.0 and _parry_window <= 0.0:
+			_parry_window = PARRY_WINDOW
+			_pending_saber_after_parry = not _has_flight_arms
+		if _has_flight_arms:
+			_charging = true
+			_charge_time = 0.0
+		elif not _has_encore_torso:
+			_swing_saber()
+	elif _charging and Input.is_action_pressed("attack"):
+		_charge_time += get_physics_process_delta_time()
+	elif _charging and Input.is_action_just_released("attack"):
+		var charged := _has_flight_arms and _charge_time >= SONIC_CHARGE
 		_charging = false
 		_charge_time = 0.0
-	if Input.is_action_just_pressed("attack"):
-		_swing_saber()
+		_pending_saber_after_parry = false
+		_parry_window = 0.0
+		if charged:
+			_fire_sonic_slash()
+		else:
+			_swing_saber()
+	elif not Input.is_action_pressed("attack"):
+		if _charging:
+			_charging = false
+			_charge_time = 0.0
 
 
 func _swing_saber() -> void:
@@ -645,6 +704,7 @@ func _end_saber() -> void:
 		saber_shape.disabled = true
 	if saber_visual:
 		saber_visual.visible = false
+		saber_visual.color = Color(0.95, 0.55, 0.65, 0.85)
 
 
 func _position_saber() -> void:
@@ -1002,6 +1062,17 @@ func _tick_timers(delta: float) -> void:
 	_slide_cd = maxf(_slide_cd - delta, 0.0)
 	_invuln = maxf(_invuln - delta, 0.0)
 	_hover_cd = maxf(_hover_cd - delta, 0.0)
+	_barrier_cd = maxf(_barrier_cd - delta, 0.0)
+	_slide_tap_window = maxf(_slide_tap_window - delta, 0.0)
+	if _barrier_timer > 0.0:
+		_barrier_timer = maxf(_barrier_timer - delta, 0.0)
+		if _barrier_timer <= 0.0:
+			_end_barrier_pulse()
+	if _parry_window > 0.0:
+		_parry_window = maxf(_parry_window - delta, 0.0)
+		if _parry_window <= 0.0 and _pending_saber_after_parry:
+			_pending_saber_after_parry = false
+			_swing_saber()
 	if _is_sliding:
 		_slide_timer -= delta
 		if _slide_timer <= 0.0 or not is_on_floor():
@@ -1137,10 +1208,12 @@ func _update_visual() -> void:
 	elif _saber_timer > 0.0:
 		base_mod = Color(1.15, 1.05, 1.05, 1.0)
 
-	# Aura de carga solo con Buster
+	# Aura de carga: Buster (Miku) o Sonic Slash (Teto + Flight arms)
 	var lv := 0
 	if get_weapon_id() == WEAPON_BUSTER and _charging:
 		lv = _charge_level_from_time(_charge_time)
+	elif get_weapon_id() == WEAPON_SABER and _charging and _has_flight_arms:
+		lv = 3 if _charge_time >= SONIC_CHARGE else (2 if _charge_time >= 0.2 else 0)
 	if charge_aura:
 		if lv >= 2:
 			charge_aura.visible = true
@@ -1169,7 +1242,12 @@ func _update_visual() -> void:
 
 	if _is_hovering:
 		base_mod = base_mod.lerp(Color(0.85, 1.05, 1.2, 1.0), 0.35)
+	if _barrier_timer > 0.0:
+		base_mod = base_mod.lerp(Color(0.55, 0.85, 1.0, 1.0), 0.45)
+	if _parry_window > 0.0:
+		base_mod = base_mod.lerp(Color(1.0, 0.75, 0.35, 1.0), 0.5)
 	_update_thruster()
+	_update_barrier_visuals()
 
 	if _invuln > 0.0:
 		base_mod.a = 0.45 if fmod(_invuln, 0.06) < 0.03 else 1.0
@@ -1208,6 +1286,13 @@ func take_damage(amount: int) -> void:
 
 func _take_hit(amount: int) -> void:
 	if _invuln > 0.0:
+		return
+	# Counter Guard: timed parry → counter slash, no damage
+	if _parry_window > 0.0 and _is_teto and _has_encore_torso:
+		_trigger_counter_guard()
+		return
+	# Barrier Pulse absorbs hits while active
+	if _barrier_timer > 0.0:
 		return
 	# Hard: +2 daño de contacto / golpes
 	if GameState and GameState.has_method("scale_incoming_damage"):
@@ -1267,8 +1352,11 @@ func _on_armor_changed(_set_id: String) -> void:
 func _sync_armor_from_state() -> void:
 	_has_flight_torso = false
 	_has_flight_arms = false
+	_has_flight_head = false
+	_has_full_flight = false
 	_has_encore_torso = false
 	_has_encore_legs = false
+	_has_encore_head = false
 	var gs := _game_state()
 	if gs != null and gs.has_method("has_flight_torso_equipped"):
 		_has_flight_torso = bool(gs.has_flight_torso_equipped())
@@ -1278,6 +1366,14 @@ func _sync_armor_from_state() -> void:
 		_has_flight_arms = bool(gs.has_flight_arms_equipped())
 	elif gs != null and gs.has_method("is_armor_equipped"):
 		_has_flight_arms = bool(gs.is_armor_equipped("flight", "arms"))
+	if gs != null and gs.has_method("has_flight_head_equipped"):
+		_has_flight_head = bool(gs.has_flight_head_equipped())
+	elif gs != null and gs.has_method("is_armor_equipped"):
+		_has_flight_head = bool(gs.is_armor_equipped("flight", "head"))
+	if gs != null and gs.has_method("has_full_flight_equipped"):
+		_has_full_flight = bool(gs.has_full_flight_equipped())
+	else:
+		_has_full_flight = _has_flight_torso and _has_flight_arms and _has_flight_head
 	if gs != null and gs.has_method("has_encore_torso_equipped"):
 		_has_encore_torso = bool(gs.has_encore_torso_equipped())
 	elif gs != null and gs.has_method("is_armor_equipped"):
@@ -1286,23 +1382,33 @@ func _sync_armor_from_state() -> void:
 		_has_encore_legs = bool(gs.has_encore_legs_equipped())
 	elif gs != null and gs.has_method("is_armor_equipped"):
 		_has_encore_legs = bool(gs.is_armor_equipped("encore", "legs"))
+	if gs != null and gs.has_method("has_encore_head_equipped"):
+		_has_encore_head = bool(gs.has_encore_head_equipped())
+	elif gs != null and gs.has_method("is_armor_equipped"):
+		_has_encore_head = bool(gs.is_armor_equipped("encore", "head"))
+	# Cap fuel if set bonus lost mid-air
+	_hover_fuel = minf(_hover_fuel, _hover_max())
 
 
 func on_armor_pickup(set_id: String, piece_id: String, _display_name: String = "") -> void:
 	## Llamado por ArmorPickup tras grant en GameState.
 	_sync_armor_from_state()
 	if set_id == "flight" and piece_id == "torso":
-		_hover_fuel = HOVER_DURATION
+		_hover_fuel = _hover_max()
 		_hover_cd = 0.0
 		print("Player: Stage Flight torso equipado — hover listo")
 	elif set_id == "flight" and piece_id == "arms":
-		print("Player: Stage Flight brazos — carga Nv4 + daño+")
+		print("Player: Stage Flight brazos — Miku Nv4 / Teto Sonic Slash")
+	elif set_id == "flight" and piece_id == "head":
+		print("Player: Stage Flight casco — radar / menos oscuridad")
 	elif set_id == "encore" and piece_id == "torso":
-		print("Player: Encore Guard torso — defensa + hyper armor slide")
+		print("Player: Encore Guard torso — defensa + Barrier/Counter")
 	elif set_id == "encore" and piece_id == "legs":
 		print("Player: Encore Guard piernas — más i-frames en slide")
 	elif set_id == "encore" and piece_id == "head":
 		print("Player: Encore Guard casco — revelación de debilidades")
+	if _has_full_flight:
+		print("Player: Stage Flight completo — hover prolongado")
 
 
 func has_flight_hover() -> bool:
@@ -1326,7 +1432,10 @@ func is_hovering() -> bool:
 
 
 func get_hover_fuel_ratio() -> float:
-	return clampf(_hover_fuel / HOVER_DURATION, 0.0, 1.0)
+	var mx := _hover_max()
+	if mx <= 0.0:
+		return 0.0
+	return clampf(_hover_fuel / mx, 0.0, 1.0)
 
 
 func _ensure_thruster() -> void:
@@ -1353,3 +1462,189 @@ func _update_thruster() -> void:
 		_thruster.position = Vector2(-_thruster.size.x * 0.5, 10.0)
 	else:
 		_thruster.visible = false
+
+
+func _hover_max() -> float:
+	return HOVER_DURATION_FULL if _has_full_flight else HOVER_DURATION
+
+
+func has_full_flight() -> bool:
+	return _has_full_flight
+
+
+func has_flight_head() -> bool:
+	return _has_flight_head
+
+
+func has_encore_head() -> bool:
+	return _has_encore_head
+
+
+func is_barrier_active() -> bool:
+	return _barrier_timer > 0.0
+
+
+func is_parrying() -> bool:
+	return _parry_window > 0.0
+
+
+func try_block_projectile(shot: Node) -> bool:
+	## Barrera / Counter absorben proyectiles enemigos. Devuelve true si bloqueó.
+	if shot == null:
+		return false
+	if _barrier_timer > 0.0:
+		_reflect_enemy_shot(shot)
+		return true
+	if _parry_window > 0.0 and _is_teto and _has_encore_torso:
+		_trigger_counter_guard()
+		return true
+	return false
+
+
+func _activate_barrier_pulse() -> void:
+	## Miku + Encore torso: escudo breve que refleja proyectiles chicos.
+	if _is_teto or not _has_encore_torso:
+		return
+	if _barrier_cd > 0.0 or _barrier_timer > 0.0:
+		return
+	_barrier_timer = BARRIER_DURATION
+	_barrier_cd = BARRIER_COOLDOWN
+	_invuln = maxf(_invuln, BARRIER_DURATION)
+	if AudioManager:
+		AudioManager.play_sfx("shoot", 0.75)
+	print("Player: Barrier Pulse")
+
+
+func _end_barrier_pulse() -> void:
+	_barrier_timer = 0.0
+
+
+func _reflect_enemy_shot(shot: Node) -> void:
+	## Absorbe proyectil enemigo y dispara un buster Nv1 de rebote (stub reflect).
+	## Caller (enemy shot) is responsible for queue_free on the incoming shot.
+	if shot == null or not is_instance_valid(shot):
+		return
+	var origin := global_position + Vector2(facing * SHOT_SPAWN_X, SHOT_SPAWN_Y)
+	if shot is Node2D:
+		origin = (shot as Node2D).global_position
+	var bounce: Area2D = BusterShotScene.instantiate()
+	var parent_node := get_parent()
+	if parent_node == null:
+		parent_node = get_tree().current_scene
+	if parent_node == null:
+		return
+	parent_node.add_child(bounce)
+	bounce.global_position = origin
+	if bounce.has_method("setup"):
+		bounce.setup(facing, 1)
+
+
+func _trigger_counter_guard() -> void:
+	## Teto + Encore: parry exitoso → i-frames + slash potenciado + dash corto.
+	_parry_window = 0.0
+	_pending_saber_after_parry = false
+	_charging = false
+	_charge_time = 0.0
+	_invuln = maxf(_invuln, 0.35)
+	velocity.x = facing * 120.0
+	velocity.y = minf(velocity.y, -40.0)
+	_swing_saber_counter()
+	if AudioManager:
+		AudioManager.play_sfx("shoot", 1.15)
+	print("Player: Counter Guard!")
+
+
+func _swing_saber_counter() -> void:
+	## Como _swing_saber pero daño COUNTER_DAMAGE y fuerza re-swing.
+	if saber_hitbox == null:
+		return
+	_saber_hit_ids.clear()
+	_saber_timer = SABER_DURATION * 1.25
+	_saber_cd = SABER_COOLDOWN * 0.85
+	_position_saber()
+	saber_hitbox.monitoring = true
+	if saber_shape:
+		saber_shape.disabled = false
+	if saber_visual:
+		saber_visual.visible = true
+		saber_visual.color = Color(1.0, 0.85, 0.3, 0.9)
+	for a in saber_hitbox.get_overlapping_areas():
+		_saber_try_hit_counter(a)
+	for b in saber_hitbox.get_overlapping_bodies():
+		_saber_try_hit_counter(b)
+
+
+func _saber_try_hit_counter(target: Node) -> void:
+	if target == null or _saber_timer <= 0.0:
+		return
+	if target.is_in_group("player") or target.is_in_group("player_shots"):
+		return
+	var id := target.get_instance_id()
+	if _saber_hit_ids.has(id):
+		return
+	if target.is_in_group("enemies") or target.has_method("take_damage"):
+		_saber_hit_ids[id] = true
+		if target.has_method("take_damage"):
+			target.take_damage(COUNTER_DAMAGE)
+
+
+func _fire_sonic_slash() -> void:
+	## Teto + Flight arms: onda de corte a media distancia.
+	if not _has_flight_arms:
+		return
+	var live := get_tree().get_nodes_in_group("player_shots")
+	if live.size() >= MAX_SHOTS:
+		_swing_saber()
+		return
+	if AudioManager:
+		AudioManager.play_sfx("shoot", 0.85)
+	var shot: Area2D = SonicSlashShotScene.instantiate()
+	var parent_node := get_parent()
+	if parent_node == null:
+		parent_node = get_tree().current_scene
+	parent_node.add_child(shot)
+	shot.global_position = global_position + Vector2(facing * (SHOT_SPAWN_X + 6.0), SHOT_SPAWN_Y)
+	if shot.has_method("setup"):
+		shot.setup(facing)
+	print("Player: Sonic Slash")
+
+
+func _ensure_barrier_visuals() -> void:
+	if _barrier_visual == null or not is_instance_valid(_barrier_visual):
+		_barrier_visual = ColorRect.new()
+		_barrier_visual.name = "BarrierPulseVisual"
+		_barrier_visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_barrier_visual.visible = false
+		_barrier_visual.z_index = 2
+		_barrier_visual.size = Vector2(28, 36)
+		_barrier_visual.color = Color(0.4, 0.8, 1.0, 0.35)
+		add_child(_barrier_visual)
+	if _parry_visual == null or not is_instance_valid(_parry_visual):
+		_parry_visual = ColorRect.new()
+		_parry_visual.name = "ParryGuardVisual"
+		_parry_visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_parry_visual.visible = false
+		_parry_visual.z_index = 2
+		_parry_visual.size = Vector2(18, 24)
+		_parry_visual.color = Color(1.0, 0.8, 0.3, 0.45)
+		add_child(_parry_visual)
+
+
+func _update_barrier_visuals() -> void:
+	if _barrier_visual:
+		if _barrier_timer > 0.0:
+			_barrier_visual.visible = true
+			var pulse := 0.25 + 0.35 * absf(sin(Time.get_ticks_msec() * 0.025))
+			_barrier_visual.color = Color(0.35, 0.85, 1.0, pulse)
+			_barrier_visual.size = Vector2(30, 38)
+			_barrier_visual.position = Vector2(-15, -22)
+		else:
+			_barrier_visual.visible = false
+	if _parry_visual:
+		if _parry_window > 0.0:
+			_parry_visual.visible = true
+			var ox := 10.0 * float(facing)
+			_parry_visual.position = Vector2(ox - 9.0, -18)
+			_parry_visual.color = Color(1.0, 0.82, 0.3, 0.35 + 0.3 * absf(sin(Time.get_ticks_msec() * 0.04)))
+		else:
+			_parry_visual.visible = false
