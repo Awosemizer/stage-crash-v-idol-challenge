@@ -8,9 +8,9 @@ signal hp_changed(current: int, maximum: int)
 const HP_MAX := 28
 const CONTACT_DAMAGE := 4
 const GRAVITY := 560.0
-const DASH_H := 120.0
+const DASH_H := 104.0
 const BEAT_NORMAL := 0.85
-const BEAT_RAGE := 0.55
+const BEAT_RAGE := 0.64
 const HIT_FLASH := 0.12
 const INVULN_ON_HIT := 0.08
 const TELEGRAPH := 0.58
@@ -30,6 +30,8 @@ var _active := false
 var _facing := -1
 var _telegraph_t := 0.0
 var _dash_t := 0.0
+var _next_attack := "zone"
+var _contact_grace := 0.0
 
 @onready var visual: ColorRect = $Visual
 var _sprite_art: Sprite2D
@@ -81,6 +83,7 @@ func _physics_process(delta: float) -> void:
 
 	_flash = maxf(_flash - delta, 0.0)
 	_invuln = maxf(_invuln - delta, 0.0)
+	_contact_grace = maxf(_contact_grace - delta, 0.0)
 	_update_facing()
 	_flicker_static(delta)
 
@@ -123,17 +126,28 @@ func _tick_idle(delta: float) -> void:
 		2:
 			_do_burst()
 		3:
-			_start_dash()
+			_start_dash_tell()
 	_phase += 1
 
 
 func _start_telegraph() -> void:
 	_state = State.TELEGRAPH
-	_telegraph_t = TELEGRAPH if hp > HP_MAX / 2 else TELEGRAPH * 0.82
+	_next_attack = "zone"
+	_telegraph_t = TELEGRAPH if hp > HP_MAX / 2 else TELEGRAPH * 0.9
 	velocity.x = 0.0
 	if telegraph:
 		telegraph.visible = true
 		telegraph.color = Color(0.9, 0.85, 1.0, 0.45)
+
+
+func _start_dash_tell() -> void:
+	_state = State.TELEGRAPH
+	_next_attack = "dash"
+	_telegraph_t = 0.32 if hp > HP_MAX / 2 else 0.26
+	velocity.x = 0.0
+	if telegraph:
+		telegraph.visible = true
+		telegraph.color = Color(1.0, 0.55, 0.85, 0.65)
 
 
 func _tick_telegraph(delta: float) -> void:
@@ -141,7 +155,10 @@ func _tick_telegraph(delta: float) -> void:
 	if telegraph:
 		telegraph.color.a = 0.25 + 0.4 * absf(sin(Time.get_ticks_msec() * 0.035))
 	if _telegraph_t <= 0.0:
-		_do_zone()
+		if _next_attack == "dash":
+			_start_dash()
+		else:
+			_do_zone()
 
 
 func _do_zone() -> void:
@@ -156,11 +173,13 @@ func _do_zone() -> void:
 		global_position + Vector2(float(_facing) * 56.0, -8),
 	]
 	if player:
-		targets.append(Vector2(player.global_position.x, global_position.y - 8.0))
+		# Lead ahead of the player so the zone is a dodge, not a spawn-on-feet hit.
+		var lead := 34.0 if player.global_position.x >= global_position.x else -34.0
+		targets.append(Vector2(player.global_position.x + lead, global_position.y - 8.0))
 	if hp <= HP_MAX / 2:
-		targets.append(global_position + Vector2(float(-_facing) * 72.0, -8))
+		targets.append(global_position + Vector2(float(-_facing) * 80.0, -8))
 	for pos in targets:
-		_spawn_zone(pos, 1.8 if hp > HP_MAX / 2 else 2.2)
+		_spawn_zone(pos, 1.45 if hp > HP_MAX / 2 else 1.65)
 	_state = State.IDLE
 	_beat = _beat_interval()
 
@@ -170,8 +189,9 @@ func _do_burst() -> void:
 	if telegraph:
 		telegraph.visible = false
 	# Ring of zones around boss
-	for i in range(3 if hp > HP_MAX / 2 else 5):
-		var ang := float(i) * TAU / float(3 if hp > HP_MAX / 2 else 5)
+	var burst_n := 3 if hp > HP_MAX / 2 else 4
+	for i in range(burst_n):
+		var ang := float(i) * TAU / float(burst_n)
 		var offset := Vector2(cos(ang), sin(ang) * 0.35) * 48.0
 		_spawn_zone(global_position + offset + Vector2(0, -10), 1.4)
 	_state = State.IDLE
@@ -181,7 +201,8 @@ func _do_burst() -> void:
 func _start_dash() -> void:
 	_state = State.DASH
 	_update_facing()
-	_dash_t = 0.32 if hp > HP_MAX / 2 else 0.26
+	_dash_t = 0.30 if hp > HP_MAX / 2 else 0.24
+	_contact_grace = 0.12
 	velocity.x = float(_facing) * DASH_H
 	velocity.y = 0.0
 	if telegraph:
@@ -195,7 +216,7 @@ func _tick_dash(delta: float) -> void:
 		_spawn_zone(global_position + Vector2(-40, -8), 1.2)
 		_spawn_zone(global_position + Vector2(40, -8), 1.2)
 		_state = State.IDLE
-		_beat = _beat_interval() * 0.55
+		_beat = _beat_interval() * 0.8
 
 
 func _spawn_zone(pos: Vector2, life: float = 1.8) -> void:
@@ -206,7 +227,7 @@ func _spawn_zone(pos: Vector2, life: float = 1.8) -> void:
 	parent_node.add_child(zone)
 	zone.global_position = pos
 	if zone.has_method("setup"):
-		zone.setup(life, 3 if hp > HP_MAX / 2 else 4)
+		zone.setup(life, 3, 0.30)
 
 
 func _flicker_static(_delta: float) -> void:
@@ -307,6 +328,8 @@ func _check_contact_overlap() -> void:
 
 
 func _hurt_player(body: Node) -> void:
+	if _contact_grace > 0.0:
+		return
 	if body == null or not body.is_in_group("player"):
 		return
 	if body.has_method("is_invulnerable") and body.is_invulnerable():

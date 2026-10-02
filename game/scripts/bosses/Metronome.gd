@@ -9,12 +9,12 @@ signal tick_pulse(phase: int)
 const HP_MAX := 28
 const CONTACT_DAMAGE := 4
 const GRAVITY := 560.0
-const DASH_H := 140.0
+const DASH_H := 112.0
 const BEAT_NORMAL := 0.65  ## intervalo fijo de ataque
-const BEAT_RAGE := 0.48
+const BEAT_RAGE := 0.56
 const HIT_FLASH := 0.12
 const INVULN_ON_HIT := 0.08
-const TELEGRAPH := 0.52
+const TELEGRAPH := 0.58
 
 enum State { IDLE, TELEGRAPH, VOLLEY, DASH, DEAD }
 
@@ -32,6 +32,8 @@ var _facing := -1
 var _telegraph_t := 0.0
 var _dash_t := 0.0
 var _tick_side := 1
+var _next_attack := "volley"
+var _contact_grace := 0.0
 
 @onready var visual: ColorRect = $Visual
 var _sprite_art: Sprite2D
@@ -83,6 +85,7 @@ func _physics_process(delta: float) -> void:
 
 	_flash = maxf(_flash - delta, 0.0)
 	_invuln = maxf(_invuln - delta, 0.0)
+	_contact_grace = maxf(_contact_grace - delta, 0.0)
 	_update_facing()
 	_swing_pendulum(delta)
 
@@ -123,19 +126,30 @@ func _tick_idle(delta: float) -> void:
 		0, 1:
 			_start_telegraph()
 		2:
-			_do_volley()
+			_start_telegraph()
 		3:
-			_start_dash()
+			_start_dash_tell()
 	_phase += 1
 
 
 func _start_telegraph() -> void:
 	_state = State.TELEGRAPH
-	_telegraph_t = TELEGRAPH if hp > HP_MAX / 2 else TELEGRAPH * 0.85
+	_next_attack = "volley"
+	_telegraph_t = TELEGRAPH if hp > HP_MAX / 2 else TELEGRAPH * 0.9
 	velocity.x = 0.0
 	if telegraph:
 		telegraph.visible = true
 		telegraph.color = Color(0.85, 0.8, 0.4, 0.5)
+
+
+func _start_dash_tell() -> void:
+	_state = State.TELEGRAPH
+	_next_attack = "dash"
+	_telegraph_t = 0.34 if hp > HP_MAX / 2 else 0.28
+	velocity.x = 0.0
+	if telegraph:
+		telegraph.visible = true
+		telegraph.color = Color(0.95, 0.45, 0.35, 0.7)
 
 
 func _tick_telegraph(delta: float) -> void:
@@ -143,7 +157,10 @@ func _tick_telegraph(delta: float) -> void:
 	if telegraph:
 		telegraph.color.a = 0.3 + 0.35 * absf(sin(Time.get_ticks_msec() * 0.03))
 	if _telegraph_t <= 0.0:
-		_do_volley()
+		if _next_attack == "dash":
+			_start_dash()
+		else:
+			_do_volley()
 
 
 func _do_volley() -> void:
@@ -153,13 +170,13 @@ func _do_volley() -> void:
 	_update_facing()
 	_tick_side *= -1
 	tick_pulse.emit(_tick_side)
-	var count := 4 if hp <= HP_MAX / 2 else 3
-	for i in count:
-		var ang := deg_to_rad(-18.0 + float(i) * 12.0)
+	# Three needles with a readable gap — no extra side shot stacked on the fan.
+	var spreads := [-20.0, 0.0, 20.0]
+	for i in spreads.size():
+		var ang := deg_to_rad(spreads[i])
 		var dir := Vector2(float(_facing), 0.0).rotated(ang)
-		_spawn_needle(dir, 125.0 + float(i) * 12.0)
-	# Fixed-interval side needle (tick/tock)
-	_spawn_needle(Vector2(float(_tick_side), -0.15), 150.0)
+		var spd := 118.0 if hp > HP_MAX / 2 else 132.0
+		_spawn_needle(dir, spd)
 	_state = State.IDLE
 	_beat = _beat_interval()
 
@@ -167,7 +184,8 @@ func _do_volley() -> void:
 func _start_dash() -> void:
 	_state = State.DASH
 	_update_facing()
-	_dash_t = 0.35 if hp > HP_MAX / 2 else 0.28
+	_dash_t = 0.32 if hp > HP_MAX / 2 else 0.26
+	_contact_grace = 0.12
 	velocity.x = float(_facing) * DASH_H
 	velocity.y = 0.0
 	if telegraph:
@@ -181,7 +199,7 @@ func _tick_dash(delta: float) -> void:
 		_spawn_needle(Vector2(-1, -0.4), 110.0)
 		_spawn_needle(Vector2(1, -0.4), 110.0)
 		_state = State.IDLE
-		_beat = _beat_interval() * 0.55
+		_beat = _beat_interval() * 0.85
 
 
 func _spawn_needle(dir: Vector2, spd: float = 130.0) -> void:
@@ -293,6 +311,8 @@ func _check_contact_overlap() -> void:
 
 
 func _hurt_player(body: Node) -> void:
+	if _contact_grace > 0.0:
+		return
 	if body == null or not body.is_in_group("player"):
 		return
 	if body.has_method("is_invulnerable") and body.is_invulnerable():

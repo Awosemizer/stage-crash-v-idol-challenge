@@ -20,7 +20,7 @@ const MAX_FALL := 360.0          # terminal fall (~6 px/frame)
 const WALL_SLIDE_SPEED := 60.0   # slower descent on wall
 const WALL_JUMP_H := 150.0       # 2.5 px/frame away from wall
 const WALL_JUMP_V := -255.0      # slightly less than grounded jump
-const WALL_JUMP_LOCK := 0.16     # brief horizontal lock after wall-jump (touch)
+const WALL_JUMP_LOCK := 0.12     # brief lock; same-direction steer still works (v0.31)
 const SLIDE_SPEED := 180.0       # short dash along ground
 const SLIDE_DURATION := 0.22     # ~13 frames @ 60fps — slightly more reliable
 const SLIDE_COOLDOWN := 0.10     # snappier re-slide on touch
@@ -62,9 +62,11 @@ const WEAPON_QUAKE_DROP := "quake_drop"
 const WEAPON_TEMPO_SPIKE := "tempo_spike"
 const WEAPON_STATIC_VEIL := "static_veil"
 
-const SABER_DURATION := 0.18
+const SABER_DURATION := 0.16     # visual swing
+const SABER_ACTIVE := 0.12       # hitbox only on the front of the swing
 const SABER_DAMAGE := 2
-const SABER_COOLDOWN := 0.22
+const SABER_COOLDOWN := 0.28     # readable recovery — not a blender
+const SPECIAL_FIRE_CD := 0.18    # stolen weapons: tap cadence, not ammo dump
 const TETO_RUN_MULT := 0.88
 const TETO_JUMP_MULT := 0.94
 const TETO_ACCEL_MULT := 0.85
@@ -151,6 +153,7 @@ var _charge_rings: Dictionary = {}
 var _prev_charge_lv := 0
 var _saber_timer := 0.0
 var _saber_cd := 0.0
+var _special_cd := 0.0
 var _saber_hit_ids: Dictionary = {}  # instance_id -> true this swing
 var _run_speed := RUN_SPEED
 var _jump_vel := JUMP_VELOCITY
@@ -269,8 +272,9 @@ func _physics_process(delta: float) -> void:
 				velocity.y = move_toward(velocity.y, HOVER_LIFT, 600.0 * delta)
 			if _hover_fuel <= 0.0:
 				_hover_cd = HOVER_COOLDOWN
-		elif on_wall and velocity.y > 0.0:
-			velocity.y = minf(velocity.y + GRAVITY * delta, WALL_SLIDE_SPEED)
+		elif on_wall and velocity.y > 0.0 and _holding_into_wall(wall_dir):
+			# Cling only while pushing into the wall — grazing a corner no longer sticks.
+			velocity.y = minf(velocity.y + GRAVITY * delta * 0.45, WALL_SLIDE_SPEED)
 		else:
 			velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL)
 
@@ -299,8 +303,9 @@ func _physics_process(delta: float) -> void:
 	# Horizontal move (locked briefly after wall-jump)
 	var input_x := Input.get_axis("move_left", "move_right")
 	if _wall_lock > 0.0:
-		# Keep drifting away from wall; ignore opposite input slightly
-		pass
+		# Keep the push; allow steering away from the wall, ignore input back into it.
+		if input_x * float(_wall_lock_dir) > 0.15:
+			velocity.x = move_toward(velocity.x, input_x * _run_speed, _accel_air * delta)
 	elif _is_sliding:
 		velocity.x = facing * SLIDE_SPEED
 	else:
@@ -317,8 +322,11 @@ func _physics_process(delta: float) -> void:
 	if _jump_buffer > 0.0:
 		if _coyote > 0.0 and not _is_sliding:
 			_do_jump()
-		elif (on_wall or _wall_coyote > 0.0) and not on_floor and not _is_sliding:
-			_do_wall_jump(wall_dir if wall_dir != 0 else _last_wall_dir)
+		elif not on_floor and not _is_sliding and (on_wall or _wall_coyote > 0.0):
+			var wd := wall_dir if wall_dir != 0 else _last_wall_dir
+			# Neutral or into the wall: wall-jump. Holding away falls off (no stolen jump).
+			if _holding_into_wall(wd) or (on_wall and absf(input_x) < 0.12):
+				_do_wall_jump(wd)
 
 	_handle_attack(delta)
 
@@ -766,6 +774,12 @@ func _tick_saber(delta: float) -> void:
 	if _saber_timer > 0.0:
 		_saber_timer -= delta
 		_position_saber()
+		# Active frames are the front of the swing; the rest is recovery (visual only).
+		if _saber_timer <= SABER_DURATION - SABER_ACTIVE:
+			if saber_hitbox:
+				saber_hitbox.monitoring = false
+			if saber_shape:
+				saber_shape.disabled = true
 		if _saber_timer <= 0.0:
 			_end_saber()
 
@@ -784,8 +798,10 @@ func _end_saber() -> void:
 func _position_saber() -> void:
 	if saber_hitbox == null:
 		return
-	# Flip hitbox offset with facing
-	var ox := 16.0 * float(facing)
+	# Slightly longer reach, shorter vertical so low swings don't hit above the arc.
+	if saber_shape and saber_shape.shape is RectangleShape2D:
+		(saber_shape.shape as RectangleShape2D).size = Vector2(26, 16)
+	var ox := 18.0 * float(facing)
 	if saber_shape:
 		saber_shape.position = Vector2(ox, -6.0)
 	if saber_visual:
@@ -831,6 +847,8 @@ func _handle_beat_blaze() -> void:
 
 
 func _fire_beat_blaze() -> void:
+	if not _begin_special_shot():
+		return
 	if AudioManager:
 		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
@@ -845,6 +863,7 @@ func _fire_beat_blaze() -> void:
 	ammo -= cost
 	_weapons[_weapon_index]["ammo"] = ammo
 	_emit_weapon()
+	_commit_special_shot()
 	var shot: Area2D = BeatBlazeShotScene.instantiate()
 	var parent_node := get_parent()
 	if parent_node == null:
@@ -864,6 +883,8 @@ func _handle_echo_gale() -> void:
 
 
 func _fire_echo_gale() -> void:
+	if not _begin_special_shot():
+		return
 	if AudioManager:
 		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
@@ -878,6 +899,7 @@ func _fire_echo_gale() -> void:
 	ammo -= cost
 	_weapons[_weapon_index]["ammo"] = ammo
 	_emit_weapon()
+	_commit_special_shot()
 	var shot: Area2D = EchoGaleShotScene.instantiate()
 	var parent_node := get_parent()
 	if parent_node == null:
@@ -897,6 +919,8 @@ func _handle_neon_arc() -> void:
 
 
 func _fire_neon_arc() -> void:
+	if not _begin_special_shot():
+		return
 	if AudioManager:
 		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
@@ -911,6 +935,7 @@ func _fire_neon_arc() -> void:
 	ammo -= cost
 	_weapons[_weapon_index]["ammo"] = ammo
 	_emit_weapon()
+	_commit_special_shot()
 	var shot: Area2D = NeonArcShotScene.instantiate()
 	var parent_node := get_parent()
 	if parent_node == null:
@@ -931,6 +956,8 @@ func _handle_freeze_sample() -> void:
 
 
 func _fire_freeze_sample() -> void:
+	if not _begin_special_shot():
+		return
 	if AudioManager:
 		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
@@ -945,6 +972,7 @@ func _fire_freeze_sample() -> void:
 	ammo -= cost
 	_weapons[_weapon_index]["ammo"] = ammo
 	_emit_weapon()
+	_commit_special_shot()
 	var shot: Area2D = FreezeSampleShotScene.instantiate()
 	var parent_node := get_parent()
 	if parent_node == null:
@@ -964,6 +992,8 @@ func _handle_petal_chorus() -> void:
 
 
 func _fire_petal_chorus() -> void:
+	if not _begin_special_shot():
+		return
 	if AudioManager:
 		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
@@ -978,6 +1008,7 @@ func _fire_petal_chorus() -> void:
 	ammo -= cost
 	_weapons[_weapon_index]["ammo"] = ammo
 	_emit_weapon()
+	_commit_special_shot()
 	var shot: Area2D = PetalChorusShotScene.instantiate()
 	var parent_node := get_parent()
 	if parent_node == null:
@@ -997,6 +1028,8 @@ func _handle_quake_drop() -> void:
 
 
 func _fire_quake_drop() -> void:
+	if not _begin_special_shot():
+		return
 	if AudioManager:
 		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
@@ -1011,6 +1044,7 @@ func _fire_quake_drop() -> void:
 	ammo -= cost
 	_weapons[_weapon_index]["ammo"] = ammo
 	_emit_weapon()
+	_commit_special_shot()
 	var shot: Area2D = QuakeDropShotScene.instantiate()
 	var parent_node := get_parent()
 	if parent_node == null:
@@ -1032,6 +1066,8 @@ func _handle_tempo_spike() -> void:
 
 
 func _fire_tempo_spike() -> void:
+	if not _begin_special_shot():
+		return
 	if AudioManager:
 		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
@@ -1046,6 +1082,7 @@ func _fire_tempo_spike() -> void:
 	ammo -= cost
 	_weapons[_weapon_index]["ammo"] = ammo
 	_emit_weapon()
+	_commit_special_shot()
 	var shot: Area2D = TempoSpikeShotScene.instantiate()
 	var parent_node := get_parent()
 	if parent_node == null:
@@ -1065,6 +1102,8 @@ func _handle_static_veil() -> void:
 
 
 func _fire_static_veil() -> void:
+	if not _begin_special_shot():
+		return
 	if AudioManager:
 		AudioManager.play_sfx("shoot")
 	var w := get_current_weapon()
@@ -1079,6 +1118,7 @@ func _fire_static_veil() -> void:
 	ammo -= cost
 	_weapons[_weapon_index]["ammo"] = ammo
 	_emit_weapon()
+	_commit_special_shot()
 	var shot: Area2D = StaticVeilShotScene.instantiate()
 	var parent_node := get_parent()
 	if parent_node == null:
@@ -1159,6 +1199,7 @@ func _tick_timers(delta: float) -> void:
 	_slide_cd = maxf(_slide_cd - delta, 0.0)
 	_invuln = maxf(_invuln - delta, 0.0)
 	_hover_cd = maxf(_hover_cd - delta, 0.0)
+	_special_cd = maxf(_special_cd - delta, 0.0)
 	_barrier_cd = maxf(_barrier_cd - delta, 0.0)
 	_slide_tap_window = maxf(_slide_tap_window - delta, 0.0)
 	if _barrier_timer > 0.0:
@@ -1267,6 +1308,22 @@ func _maybe_tutorial_slide() -> void:
 	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
 	if gs != null and gs.has_method("try_show_tutorial"):
 		gs.try_show_tutorial("slide", "SLIDE / DASH", "DASH bajo obstáculos · i-frames cortos")
+
+func _holding_into_wall(wall_dir: int) -> bool:
+	## wall_dir -1 = wall on the left. Positive product means the stick pushes into it.
+	if wall_dir == 0:
+		return false
+	var input_x := Input.get_axis("move_left", "move_right")
+	return input_x * float(wall_dir) > 0.2
+
+
+func _begin_special_shot() -> bool:
+	return _special_cd <= 0.0
+
+
+func _commit_special_shot() -> void:
+	_special_cd = SPECIAL_FIRE_CD
+
 
 func _is_on_wall_solid() -> bool:
 	return wall_ray_l.is_colliding() or wall_ray_r.is_colliding() or is_on_wall()
@@ -1421,13 +1478,14 @@ func apply_touch_camera_feel() -> void:
 		return
 	camera.offset = Vector2(0, -22)
 	camera.position_smoothing_enabled = true
-	camera.position_smoothing_speed = 10.0
+	camera.position_smoothing_speed = 14.0
 	camera.drag_horizontal_enabled = true
 	camera.drag_vertical_enabled = true
-	camera.drag_left_margin = 0.22
-	camera.drag_right_margin = 0.22
-	camera.drag_top_margin = 0.18
-	camera.drag_bottom_margin = 0.45
+	# Tighter drag so the view doesn't lag a full body-length behind jumps.
+	camera.drag_left_margin = 0.12
+	camera.drag_right_margin = 0.12
+	camera.drag_top_margin = 0.12
+	camera.drag_bottom_margin = 0.28
 
 
 func _check_hazards_and_pits() -> void:
@@ -1563,10 +1621,18 @@ func is_invulnerable() -> bool:
 
 
 func get_charge_level() -> int:
-	## Para tests / HUD futuro.
-	if not _charging or get_weapon_id() != WEAPON_BUSTER:
+	## Para HUD: 0 idle, 1–4 Buster, 1–3 Sonic Slash.
+	if not _charging:
 		return 0
-	return _charge_level_from_time(_charge_time)
+	if get_weapon_id() == WEAPON_BUSTER:
+		return _charge_level_from_time(_charge_time)
+	if get_weapon_id() == WEAPON_SABER and _has_flight_arms:
+		if _charge_time >= SONIC_CHARGE:
+			return 3
+		if _charge_time >= 0.2:
+			return 2
+		return 1
+	return 0
 
 func _on_armor_changed(_set_id: String) -> void:
 	_sync_armor_from_state()

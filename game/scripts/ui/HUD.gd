@@ -28,6 +28,9 @@ var _hp_bg: ColorRect
 var _hp_fill: ColorRect
 var _hp_label: Label
 var _weapon_label: Label
+var _charge_label: Label
+var _ammo_bar_bg: ColorRect
+var _ammo_bar_fill: ColorRect
 var _tank_icons: Array[ColorRect] = []
 var _armor_slots: Array[ColorRect] = []
 var _pause_btn: Panel
@@ -63,6 +66,7 @@ func _process(delta: float) -> void:
 	if _ammo_flash > 0.0:
 		_ammo_flash = maxf(_ammo_flash - delta, 0.0)
 		_refresh_weapon()
+	_refresh_charge()
 	_boss_poll_t -= delta
 	if _boss_poll_t <= 0.0:
 		_boss_poll_t = 0.35
@@ -243,10 +247,29 @@ func _build_ui() -> void:
 
 	_weapon_label = Label.new()
 	_weapon_label.name = "WeaponLabel"
-	_weapon_label.add_theme_font_size_override("font_size", 9)
+	_weapon_label.add_theme_font_size_override("font_size", 10)
 	_weapon_label.modulate = Color(0.85, 0.95, 1.0, 0.95)
 	_weapon_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(_weapon_label)
+
+	_ammo_bar_bg = ColorRect.new()
+	_ammo_bar_bg.name = "AmmoBarBg"
+	_ammo_bar_bg.color = Color(0.08, 0.08, 0.12, 0.8)
+	_ammo_bar_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ammo_bar_bg.visible = false
+	_root.add_child(_ammo_bar_bg)
+	_ammo_bar_fill = ColorRect.new()
+	_ammo_bar_fill.name = "AmmoBarFill"
+	_ammo_bar_fill.color = Color(1.0, 0.72, 0.28, 1.0)
+	_ammo_bar_fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_ammo_bar_bg.add_child(_ammo_bar_fill)
+
+	_charge_label = Label.new()
+	_charge_label.name = "ChargeLabel"
+	_charge_label.add_theme_font_size_override("font_size", 9)
+	_charge_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_charge_label.visible = false
+	_root.add_child(_charge_label)
 
 	_weakness_label = Label.new()
 	_weakness_label.name = "WeaknessHint"
@@ -421,17 +444,25 @@ func _layout() -> void:
 	_hp_label.position = Vector2(_hp_bg.position.x, top + HP_BAR_H + 3.0)
 	_hp_label.size = Vector2(HP_BAR_W + 20.0, 10.0)
 
-	_weapon_label.position = Vector2(left, top + PORTRAIT_SIZE + 2.0)
-	_weapon_label.size = Vector2(140.0, 10.0)
+	_weapon_label.position = Vector2(left, top + PORTRAIT_SIZE + 1.0)
+	_weapon_label.size = Vector2(176.0, 12.0)
+	if _ammo_bar_bg:
+		_ammo_bar_bg.position = Vector2(left, top + PORTRAIT_SIZE + 13.0)
+		_ammo_bar_bg.size = Vector2(72.0, 4.0)
+		_refresh_weapon()
+	if _charge_label:
+		_charge_label.position = Vector2(left + PORTRAIT_SIZE + HP_BAR_W + 8.0, top)
+		_charge_label.size = Vector2(52.0, 12.0)
 
 	if _weakness_label:
-		_weakness_label.position = Vector2(left, top + PORTRAIT_SIZE + 22.0)
-		_weakness_label.size = Vector2(160.0, 10.0)
+		_weakness_label.position = Vector2(left, top + PORTRAIT_SIZE + 20.0)
+		_weakness_label.size = Vector2(168.0, 10.0)
 
 	var tank_y: float = top + PORTRAIT_SIZE + 12.0
 	for i in _tank_icons.size():
 		_tank_icons[i].size = Vector2(TANK_SIZE, TANK_SIZE)
-		_tank_icons[i].position = Vector2(left + i * (TANK_SIZE + 2.0), tank_y)
+		# Sit to the right of the ammo bar so tanks don't cover the weapon text.
+		_tank_icons[i].position = Vector2(left + 78.0 + i * (TANK_SIZE + 2.0), tank_y)
 
 	_pause_btn.size = Vector2(PAUSE_BTN, PAUSE_BTN)
 	_pause_btn.position = Vector2(right - PAUSE_BTN, top)
@@ -575,19 +606,56 @@ func _refresh_tanks() -> void:
 func _refresh_weapon() -> void:
 	if _weapon_label == null:
 		return
-	if _weapon_id != "buster" and _weapon_ammo >= 0:
-		_weapon_label.text = "Arma: %s %d/%d" % [weapon_name, _weapon_ammo, maxi(_weapon_max_ammo, 0)]
+	var finite := _weapon_id != "buster" and _weapon_id != "saber" and _weapon_ammo >= 0
+	if finite:
+		var cap := maxi(_weapon_max_ammo, 1)
+		var ratio := clampf(float(_weapon_ammo) / float(cap), 0.0, 1.0)
+		_weapon_label.text = "%s  %d/%d" % [weapon_name, _weapon_ammo, cap]
 		if _weapon_ammo <= 0:
-			# Empty ammo — flash red/white
 			var pulse := 1.0 if _ammo_flash <= 0.0 else (0.55 + 0.45 * absf(sin(_ammo_flash * 22.0)))
 			_weapon_label.modulate = Color(1.0, 0.25 + 0.2 * pulse, 0.25, pulse)
 			if _ammo_flash <= 0.0:
 				_weapon_label.modulate = Color(1.0, 0.35, 0.35, 0.95)
+		elif ratio <= 0.28:
+			_weapon_label.modulate = Color(1.0, 0.85, 0.35, 0.95)
 		else:
-			_weapon_label.modulate = Color(1.0, 0.7, 0.35, 0.95)
+			_weapon_label.modulate = Color(1.0, 0.78, 0.4, 0.95)
+		if _ammo_bar_bg:
+			_ammo_bar_bg.visible = true
+			_ammo_bar_fill.size = Vector2(72.0 * ratio, 4.0)
+			_ammo_bar_fill.color = Color(1.0, 0.35, 0.3, 1.0) if ratio <= 0.28 else Color(1.0, 0.72, 0.28, 1.0)
 	else:
 		_weapon_label.text = "Arma: %s" % weapon_name
 		_weapon_label.modulate = Color(0.85, 0.95, 1.0, 0.95)
+		if _ammo_bar_bg:
+			_ammo_bar_bg.visible = false
+
+
+func _refresh_charge() -> void:
+	if _charge_label == null:
+		return
+	var lv := 0
+	var tree := get_tree()
+	if tree:
+		var nodes := tree.get_nodes_in_group("player")
+		if not nodes.is_empty() and nodes[0].has_method("get_charge_level"):
+			lv = int(nodes[0].get_charge_level())
+	if lv <= 0:
+		_charge_label.visible = false
+		return
+	_charge_label.visible = true
+	var pips := ""
+	for i in 4:
+		pips += "●" if i < lv else "○"
+	_charge_label.text = pips
+	if lv >= 4:
+		_charge_label.modulate = Color(0.85, 0.45, 1.0, 1.0)
+	elif lv >= 3:
+		_charge_label.modulate = Color(1.0, 0.92, 0.35, 1.0)
+	elif lv >= 2:
+		_charge_label.modulate = Color(0.45, 0.9, 1.0, 1.0)
+	else:
+		_charge_label.modulate = Color(0.75, 0.9, 1.0, 0.85)
 
 
 func _on_armor_changed(_set_id: String = "") -> void:

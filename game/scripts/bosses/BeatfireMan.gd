@@ -14,7 +14,7 @@ const JUMP_V := -260.0
 const JUMP_H := 110.0
 const POUND_V := 420.0
 const BEAT_NORMAL := 0.78
-const BEAT_RAGE := 0.50
+const BEAT_RAGE := 0.58
 const TELEGRAPH := 0.78
 const HIT_FLASH := 0.12
 const INVULN_ON_HIT := 0.08
@@ -33,6 +33,7 @@ var _telegraph_t := 0.0
 var _alive := true
 var _active := false
 var _facing := -1
+var _contact_grace := 0.0
 
 @onready var visual: ColorRect = $Visual
 var _sprite_art: Sprite2D
@@ -82,6 +83,7 @@ func _physics_process(delta: float) -> void:
 
 	_flash = maxf(_flash - delta, 0.0)
 	_invuln = maxf(_invuln - delta, 0.0)
+	_contact_grace = maxf(_contact_grace - delta, 0.0)
 	_update_facing()
 	_apply_gravity(delta)
 
@@ -106,6 +108,7 @@ func _physics_process(delta: float) -> void:
 			_beat = _beat_interval() * 0.25
 		elif _state == State.POUND and is_on_floor():
 			velocity.x = 0.0
+			_contact_grace = 0.16
 			_spawn_pound_shock()
 			_state = State.IDLE
 			_beat = _beat_interval() * 0.4
@@ -148,7 +151,7 @@ func _do_jump() -> void:
 func _do_shoot() -> void:
 	_state = State.SHOOT
 	_update_facing()
-	var count := 3 if hp <= HP_MAX / 2 else 2
+	var count := 2
 	var base := Vector2(float(_facing), 0.0)
 	for i in count:
 		var ang := deg_to_rad(-12.0 + i * 12.0)
@@ -177,6 +180,7 @@ func _tick_telegraph(delta: float) -> void:
 
 func _do_pound() -> void:
 	_state = State.POUND
+	_contact_grace = 0.10
 	velocity.x = 0.0
 	velocity.y = POUND_V
 	if telegraph:
@@ -195,7 +199,7 @@ func _spawn_fireball(dir: Vector2, spd: float = 140.0) -> void:
 	if parent_node == null:
 		parent_node = get_tree().current_scene
 	parent_node.add_child(fb)
-	fb.global_position = global_position + Vector2(_facing * 10.0, -18.0)
+	fb.global_position = global_position + Vector2(_facing * 22.0, -16.0)
 	if fb.has_method("setup"):
 		fb.setup(dir, spd)
 
@@ -293,6 +297,8 @@ func _check_contact_overlap() -> void:
 
 
 func _hurt_player(body: Node) -> void:
+	if _contact_grace > 0.0:
+		return
 	if body == null or not body.is_in_group("player"):
 		return
 	if body.has_method("is_invulnerable") and body.is_invulnerable():

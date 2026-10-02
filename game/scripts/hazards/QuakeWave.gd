@@ -10,6 +10,7 @@ extends Area2D
 var velocity := Vector2.ZERO
 var _life := 1.6
 var _hurt_cd := 0.0
+var _arm := 0.12
 
 @onready var visual: ColorRect = $Visual
 @onready var collision: CollisionShape2D = $CollisionShape2D
@@ -56,6 +57,7 @@ func _apply_look() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_arm = maxf(_arm - delta, 0.0)
 	_hurt_cd = maxf(_hurt_cd - delta, 0.0)
 	position += velocity * delta
 	_life -= delta
@@ -80,6 +82,8 @@ func _hurt_overlaps() -> void:
 
 
 func _hurt(body: Node) -> void:
+	if _arm > 0.0:
+		return
 	if body == null or not body.is_in_group("player"):
 		return
 	if body.has_method("is_invulnerable") and body.is_invulnerable():

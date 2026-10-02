@@ -21,6 +21,8 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 
 Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome / LevelStaticShadow.
 
+**v0.31:** Feel/balance — wall-cling only while holding in, wall-jump no longer steals a jump when holding away, tighter camera drag, saber active frames + recovery, special-weapon fire cadence, HUD charge pips + ammo bar, fairer Beatfire/Metronome/Static Shadow/Bassquake telegraphs.
+
 **v0.30:** Stability/QA — expanded smoke (Title→Select→BossSelect→all stages), save roundtrip for fortress_segment/tutorials/touch prefs, hitstop/pause time_scale guards, AudioManager missing-stream safety.
 
 **v0.29:** Fortress + ending polish — hub stage list/progress, CORE-9 marked on Boss Select, ending skip + tap-advance, credits scroll, Core Shaft fall-death softlock fix, midboss/CORE-9 HUD HP wire + fairness, fortress checkpoints/seal bypass.

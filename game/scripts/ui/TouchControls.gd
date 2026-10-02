@@ -13,7 +13,7 @@ const _SafeArea := preload("res://scripts/ui/SafeArea.gd")
 ## When true, overlay stays up even if a joypad is connected.
 @export var show_touch_always: bool = false
 @export_range(0.2, 1.0, 0.05) var opacity: float = 0.50
-@export_range(0.15, 0.6, 0.05) var stick_deadzone: float = 0.28
+@export_range(0.12, 0.6, 0.05) var stick_deadzone: float = 0.18
 
 # Larger hit targets for thumbs on phone landscape
 const STICK_R := 44.0
@@ -420,16 +420,17 @@ func _update_stick_from_local(local_pos: Vector2) -> void:
 
 func _set_move_actions(v: Vector2) -> void:
 	var want := {"move_left": false, "move_right": false, "move_up": false, "move_down": false}
-	if v.length() >= stick_deadzone:
-		var angle := snappedf(v.angle() / (PI * 0.25), 1.0) * (PI * 0.25)
-		var dir := Vector2.from_angle(angle)
-		if dir.x < -0.4:
+	# Per-axis deadzone: small horizontal pushes run, vertical needs a clearer tilt.
+	var dz := stick_deadzone
+	if absf(v.x) >= dz:
+		if v.x < 0.0:
 			want["move_left"] = true
-		elif dir.x > 0.4:
+		else:
 			want["move_right"] = true
-		if dir.y < -0.4:
+	if absf(v.y) >= dz * 1.2:
+		if v.y < 0.0:
 			want["move_up"] = true
-		elif dir.y > 0.4:
+		else:
 			want["move_down"] = true
 
 	for action in want.keys():

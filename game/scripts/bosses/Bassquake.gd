@@ -11,9 +11,9 @@ const HP_MAX := 28
 const CONTACT_DAMAGE := 4
 const GRAVITY := 640.0
 const JUMP_V := -240.0
-const STOMP_V := 420.0
+const STOMP_V := 380.0
 const BEAT_NORMAL := 0.78
-const BEAT_RAGE := 0.52
+const BEAT_RAGE := 0.64
 const HIT_FLASH := 0.12
 const INVULN_ON_HIT := 0.08
 const TELEGRAPH := 0.70
@@ -32,6 +32,7 @@ var _alive := true
 var _active := false
 var _facing := -1
 var _telegraph_t := 0.0
+var _contact_grace := 0.0
 
 @onready var visual: ColorRect = $Visual
 var _sprite_art: Sprite2D
@@ -80,6 +81,7 @@ func _physics_process(delta: float) -> void:
 
 	_flash = maxf(_flash - delta, 0.0)
 	_invuln = maxf(_invuln - delta, 0.0)
+	_contact_grace = maxf(_contact_grace - delta, 0.0)
 	_update_facing()
 
 	if _active:
@@ -125,7 +127,7 @@ func _tick_idle(delta: float) -> void:
 
 func _start_telegraph() -> void:
 	_state = State.TELEGRAPH
-	_telegraph_t = TELEGRAPH if hp > HP_MAX / 2 else TELEGRAPH * 0.82
+	_telegraph_t = TELEGRAPH if hp > HP_MAX / 2 else 0.62
 	velocity.x = 0.0
 	if telegraph:
 		telegraph.visible = true
@@ -150,42 +152,49 @@ func _do_stomp() -> void:
 
 func _tick_stomp(_delta: float) -> void:
 	if is_on_floor() and velocity.y >= 0.0:
+		_contact_grace = 0.20
 		_spawn_quake_waves()
 		quake_pulse.emit(1.0 if hp <= HP_MAX / 2 else 0.7)
 		velocity.x = 0.0
 		_state = State.IDLE
-		_beat = _beat_interval() * 0.45
+		_beat = _beat_interval() * 0.7
 
 
 func _start_jump() -> void:
 	_state = State.JUMP
 	_update_facing()
 	velocity.y = JUMP_V
-	velocity.x = float(_facing) * 85.0
+	velocity.x = float(_facing) * 72.0
+	if telegraph:
+		telegraph.visible = true
+		telegraph.color = Color(0.95, 0.7, 0.2, 0.45)
 
 
 func _tick_jump(_delta: float) -> void:
 	if is_on_floor() and velocity.y >= 0.0:
+		_contact_grace = 0.18
+		if telegraph:
+			telegraph.visible = false
 		_spawn_quake_waves()
 		quake_pulse.emit(0.55)
 		velocity.x = 0.0
 		_state = State.IDLE
-		_beat = _beat_interval() * 0.4
+		_beat = _beat_interval() * 0.65
 
 
 func _spawn_quake_waves() -> void:
 	var parent_node := get_parent()
 	if parent_node == null:
 		parent_node = get_tree().current_scene
-	var count := 2 if hp > HP_MAX / 2 else 3
-	for i in count:
+	# Two waves, opposite sides, different speeds — a gap to jump, not a wall.
+	for i in 2:
 		var wave: Area2D = QuakeWaveScene.instantiate()
 		parent_node.add_child(wave)
-		wave.global_position = global_position + Vector2(0, -2)
-		var dir := _facing if i % 2 == 0 else -_facing
-		if i >= 2:
-			dir = _facing
-		var spd := 100.0 + float(i) * 25.0
+		wave.global_position = global_position + Vector2(float(1 if i == 0 else -1) * 18.0, -2)
+		var dir := 1 if i == 0 else -1
+		var spd := 86.0 if i == 0 else 124.0
+		if hp <= HP_MAX / 2:
+			spd += 10.0
 		if wave.has_method("setup"):
 			wave.setup(dir, spd, 3)
 
@@ -280,6 +289,8 @@ func _check_contact_overlap() -> void:
 
 
 func _hurt_player(body: Node) -> void:
+	if _contact_grace > 0.0:
+		return
 	if body == null or not body.is_in_group("player"):
 		return
 	if body.has_method("is_invulnerable") and body.is_invulnerable():

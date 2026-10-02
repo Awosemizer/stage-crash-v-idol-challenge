@@ -10,6 +10,7 @@ const LIFETIME := 2.2
 var damage := DAMAGE
 var velocity := Vector2.ZERO
 var _life := LIFETIME
+var _arm := 0.08  # don't hit the frame they spawn inside the boss/player
 
 @onready var visual: ColorRect = $Visual
 @onready var collision: CollisionShape2D = $CollisionShape2D
@@ -46,6 +47,7 @@ func _apply_look() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_arm = maxf(_arm - delta, 0.0)
 	position += velocity * delta
 	_life -= delta
 	if _life <= 0.0:
@@ -56,6 +58,8 @@ func _on_body_entered(body: Node) -> void:
 	if body == null:
 		return
 	if body.is_in_group("player"):
+		if _arm > 0.0:
+			return
 		if body.has_method("try_block_projectile") and body.try_block_projectile(self):
 			queue_free()
 			return
