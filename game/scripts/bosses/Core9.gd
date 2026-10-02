@@ -9,11 +9,11 @@ signal hp_changed(current: int, maximum: int)
 signal phase_changed(phase: int)
 
 const HP_MAX := 56
-const CONTACT_DAMAGE := 4
+const CONTACT_DAMAGE := 3
 const GRAVITY := 500.0
-const BEAT_P1 := 0.7
-const BEAT_P2 := 0.55
-const BEAT_P3 := 0.45
+const BEAT_P1 := 0.85
+const BEAT_P2 := 0.7
+const BEAT_P3 := 0.58
 const HIT_FLASH := 0.1
 const INVULN_ON_HIT := 0.06
 const PHASE2_HP := 38

@@ -20,13 +20,17 @@ const MAX_FALL := 360.0          # terminal fall (~6 px/frame)
 const WALL_SLIDE_SPEED := 60.0   # slower descent on wall
 const WALL_JUMP_H := 150.0       # 2.5 px/frame away from wall
 const WALL_JUMP_V := -255.0      # slightly less than grounded jump
-const WALL_JUMP_LOCK := 0.12     # brief horizontal lock after wall-jump
+const WALL_JUMP_LOCK := 0.16     # brief horizontal lock after wall-jump (touch)
 const SLIDE_SPEED := 180.0       # short dash along ground
-const SLIDE_DURATION := 0.20     # 12 frames @ 60fps
-const SLIDE_COOLDOWN := 0.15
-const COYOTE_TIME := 0.08
-const JUMP_BUFFER := 0.10
-const INVULN_SLIDE := 0.12       # stub i-frames at slide start
+const SLIDE_DURATION := 0.22     # ~13 frames @ 60fps — slightly more reliable
+const SLIDE_COOLDOWN := 0.10     # snappier re-slide on touch
+const COYOTE_TIME := 0.12        # forgiving ledge jumps (touch)
+const JUMP_BUFFER := 0.14        # early jump press still counts
+const WALL_COYOTE := 0.10        # brief wall memory for touch wall-jump
+const SLIDE_BUFFER := 0.12       # press slide slightly before landing
+const SLIDE_AIR_GRACE := 0.06    # don't cancel slide on 1–2-frame air blip
+const INVULN_SLIDE := 0.14       # stub i-frames at slide start
+const HURT_FLASH := 0.22         # clear red/white flash on hit
 const RESPAWN_Y := 400.0         # fall death threshold (level-relative)
 
 # Buster charge (Mega Man–style)
@@ -103,11 +107,16 @@ signal weapon_changed(weapon_id: String, display_name: String, ammo: int, max_am
 var facing := 1  # 1 = right, -1 = left
 var _coyote := 0.0
 var _jump_buffer := 0.0
+var _wall_coyote := 0.0
+var _last_wall_dir := 0  # remembered while wall-coyote active
 var _wall_lock := 0.0
 var _wall_lock_dir := 0
 var _slide_timer := 0.0
 var _slide_cd := 0.0
+var _slide_buffer := 0.0
+var _slide_air_timer := 0.0
 var _invuln := 0.0
+var _hurt_flash := 0.0
 var _is_sliding := false
 var _spawn_pos := Vector2.ZERO
 var max_hp := 28
@@ -207,10 +216,23 @@ func _physics_process(delta: float) -> void:
 	else:
 		_coyote = maxf(_coyote - delta, 0.0)
 
+	if on_wall and not on_floor:
+		_wall_coyote = WALL_COYOTE
+		if wall_dir != 0:
+			_last_wall_dir = wall_dir
+	else:
+		_wall_coyote = maxf(_wall_coyote - delta, 0.0)
+
 	if Input.is_action_just_pressed("jump"):
 		_jump_buffer = JUMP_BUFFER
 	else:
 		_jump_buffer = maxf(_jump_buffer - delta, 0.0)
+
+	# Slide buffer — early press still fires on landing
+	if Input.is_action_just_pressed("slide"):
+		_slide_buffer = SLIDE_BUFFER
+	else:
+		_slide_buffer = maxf(_slide_buffer - delta, 0.0)
 
 	# Gravity / wall slide / Stage Flight hover
 	_is_hovering = false
@@ -245,11 +267,12 @@ func _physics_process(delta: float) -> void:
 	if not _is_hovering and Input.is_action_just_released("jump") and velocity.y < 0.0:
 		velocity.y *= JUMP_CUT_MULT
 
-	# Slide start (+ Miku Encore Barrier Pulse via double-tap slide)
-	if Input.is_action_just_pressed("slide"):
+	# Slide start (+ buffer + Miku Encore Barrier Pulse via double-tap slide)
+	var want_slide := Input.is_action_just_pressed("slide") or _slide_buffer > 0.0
+	if want_slide and _can_slide(on_floor):
+		_slide_buffer = 0.0
 		if (
-			_can_slide(on_floor)
-			and _has_encore_torso
+			_has_encore_torso
 			and not _is_teto
 			and _slide_tap_window > 0.0
 			and _barrier_cd <= 0.0
@@ -257,7 +280,7 @@ func _physics_process(delta: float) -> void:
 			_activate_barrier_pulse()
 			_slide_tap_window = 0.0
 			_start_slide()
-		elif _can_slide(on_floor):
+		else:
 			_start_slide()
 			if _has_encore_torso and not _is_teto:
 				_slide_tap_window = DOUBLE_SLIDE_WINDOW
@@ -279,12 +302,12 @@ func _physics_process(delta: float) -> void:
 			var fric := FRICTION_GROUND if on_floor else _accel_air * 0.35
 			velocity.x = move_toward(velocity.x, 0.0, fric * delta)
 
-	# Jump / wall-jump
+	# Jump / wall-jump (wall coyote helps touch timing)
 	if _jump_buffer > 0.0:
 		if _coyote > 0.0 and not _is_sliding:
 			_do_jump()
-		elif on_wall and not on_floor:
-			_do_wall_jump(wall_dir)
+		elif (on_wall or _wall_coyote > 0.0) and not on_floor and not _is_sliding:
+			_do_wall_jump(wall_dir if wall_dir != 0 else _last_wall_dir)
 
 	_handle_attack(delta)
 
@@ -1119,9 +1142,14 @@ func _tick_timers(delta: float) -> void:
 		if _parry_window <= 0.0 and _pending_saber_after_parry:
 			_pending_saber_after_parry = false
 			_swing_saber()
+	_hurt_flash = maxf(_hurt_flash - delta, 0.0)
 	if _is_sliding:
 		_slide_timer -= delta
-		if _slide_timer <= 0.0 or not is_on_floor():
+		if is_on_floor():
+			_slide_air_timer = 0.0
+		else:
+			_slide_air_timer += delta
+		if _slide_timer <= 0.0 or _slide_air_timer > SLIDE_AIR_GRACE:
 			_end_slide()
 
 
@@ -1132,6 +1160,8 @@ func _can_slide(on_floor: bool) -> bool:
 func _start_slide() -> void:
 	_is_sliding = true
 	_slide_timer = SLIDE_DURATION
+	_slide_air_timer = 0.0
+	_slide_buffer = 0.0
 	if AudioManager:
 		AudioManager.play_sfx("slide")
 	# Encore Guard: legs = longer slide i-frames; torso = hyper armor
@@ -1178,6 +1208,7 @@ func _do_wall_jump(wall_dir: int) -> void:
 	_wall_lock = WALL_JUMP_LOCK
 	_wall_lock_dir = push
 	_coyote = 0.0
+	_wall_coyote = 0.0
 	_jump_buffer = 0.0
 	if AudioManager:
 		AudioManager.play_sfx("wall_jump")
@@ -1302,8 +1333,16 @@ func _update_visual() -> void:
 	_update_thruster()
 	_update_barrier_visuals()
 
-	if _invuln > 0.0:
-		base_mod.a = 0.45 if fmod(_invuln, 0.06) < 0.03 else 1.0
+	# Hurt flash: strong red/white pulses so damage reads clearly on phone screens
+	if _hurt_flash > 0.0:
+		var pulse := fmod(_hurt_flash * 18.0, 1.0)
+		if pulse < 0.5:
+			base_mod = Color(1.55, 0.28, 0.32, 1.0)
+		else:
+			base_mod = Color(1.35, 1.35, 1.35, 1.0)
+	elif _invuln > 0.0:
+		# Remaining i-frames: alpha blink
+		base_mod.a = 0.4 if fmod(_invuln, 0.08) < 0.04 else 1.0
 	else:
 		base_mod.a = 1.0
 	visual.modulate = base_mod
@@ -1379,10 +1418,11 @@ func _take_hit(amount: int) -> void:
 		GameState.note_player_damaged()
 	if AudioManager:
 		AudioManager.play_sfx("hurt")
+	_hurt_flash = HURT_FLASH
 	# Cancel charge on hit
 	_charging = false
 	_charge_time = 0.0
-	velocity = Vector2(-facing * 80.0, -120.0)
+	velocity = Vector2(-facing * 90.0, -130.0)
 	hp_changed.emit(hp, max_hp)
 	if hp <= 0:
 		_respawn()

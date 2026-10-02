@@ -377,7 +377,7 @@ func _layout() -> void:
 	# Centered pause panel — large touch targets + weapon strip
 	var pw := minf(280.0, area.size.x * 0.92)
 	var btn_h := maxf(_SafeArea.MIN_BTN_H, minf(_SafeArea.PREFERRED_BTN_H, 40.0))
-	var strip_h := 56.0
+	var strip_h := 64.0
 	var ph := 28.0 + btn_h * 2.0 + 24.0 + strip_h + 18.0
 	ph = minf(ph, area.size.y * 0.92)
 	_pause_panel.size = Vector2(pw, ph)
@@ -570,7 +570,7 @@ func _rebuild_weapon_strip() -> void:
 		var btn := Button.new()
 		btn.name = "Wpn_%s" % wid
 		btn.text = short
-		btn.custom_minimum_size = Vector2(56, 28)
+		btn.custom_minimum_size = Vector2(60, 30)
 		btn.add_theme_font_size_override("font_size", 9)
 		btn.process_mode = Node.PROCESS_MODE_ALWAYS
 		btn.focus_mode = Control.FOCUS_NONE

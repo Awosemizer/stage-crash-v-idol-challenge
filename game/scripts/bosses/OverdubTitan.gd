@@ -6,9 +6,9 @@ signal died
 signal hp_changed(current: int, maximum: int)
 
 const HP_MAX := 22
-const CONTACT_DAMAGE := 4
+const CONTACT_DAMAGE := 3
 const GRAVITY := 600.0
-const BEAT := 0.9
+const BEAT := 1.15
 const HIT_FLASH := 0.1
 const INVULN_ON_HIT := 0.08
 
@@ -60,7 +60,7 @@ func activate() -> void:
 	_active = true
 	if AudioManager and AudioManager.has_method("play_boss_intro"):
 		AudioManager.play_boss_intro()
-	_beat = 0.35
+	_beat = 0.55
 	_state = State.IDLE
 	_phase = 0
 
@@ -74,7 +74,7 @@ func _physics_process(delta: float) -> void:
 
 	if _state == State.SLAM:
 		_slam_t -= delta
-		velocity.y = 280.0
+		velocity.y = 220.0
 		if is_on_floor() or _slam_t <= 0.0:
 			velocity = Vector2.ZERO
 			_do_wave()
@@ -107,11 +107,11 @@ func _tick_idle(delta: float) -> void:
 
 func _start_slam() -> void:
 	_state = State.SLAM
-	_slam_t = 0.55
+	_slam_t = 0.70
 	# Hop up a bit then slam
-	velocity.y = -160.0
+	velocity.y = -130.0
 	_update_facing()
-	velocity.x = float(_facing) * 40.0
+	velocity.x = float(_facing) * 28.0
 
 
 func _do_wave() -> void:
@@ -127,7 +127,7 @@ func _do_wave() -> void:
 		if wave.has_method("setup"):
 			wave.setup(side)
 	_state = State.IDLE
-	_beat = BEAT if hp > HP_MAX / 2 else BEAT * 0.6
+	_beat = BEAT if hp > HP_MAX / 2 else BEAT * 0.75
 
 
 func _update_facing() -> void:

@@ -6,7 +6,7 @@
 size = Vector2(22, 36)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_contact"]
-size = Vector2(24, 38)
+size = Vector2(22, 36)
 
 [node name="RefrainUnit" type="CharacterBody2D"]
 collision_layer = 8

@@ -3642,8 +3642,8 @@ func _initialize() -> void:
 	var title_src := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
 	if "PanelChrome" not in title_src and "panel_chrome" not in title_src:
 		errors.append("TitleScreen should use panel chrome")
-	if "0.19" not in title_src and "0.20" not in title_src and "0.22" not in title_src:
-		errors.append("TitleScreen version should mention 0.19 or 0.20 or 0.22")
+	if "0.19" not in title_src and "0.20" not in title_src and "0.22" not in title_src and "0.24" not in title_src and "0.25" not in title_src:
+		errors.append("TitleScreen version should mention 0.19+ / 0.25")
 	# Boss intro on Beatfire
 	var bf_src := FileAccess.get_file_as_string("res://scripts/bosses/BeatfireMan.gd")
 	if "play_boss_intro" not in bf_src:
@@ -3654,8 +3654,8 @@ func _initialize() -> void:
 
 	# --- v0.20 landscape + Beatfire touch playability ---
 	var proj := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.23.0-proto"' not in proj and 'config/version="0.22.0-proto"' not in proj and 'config/version="0.21.0-proto"' not in proj:
-		errors.append("project.godot version should be 0.23.0-proto")
+	if 'config/version="0.25.0-proto"' not in proj and 'config/version="0.24.0-proto"' not in proj and 'config/version="0.23.0-proto"' not in proj:
+		errors.append("project.godot version should be 0.25.0-proto")
 	else:
 		print("OK project version present")
 	if 'window/stretch/mode="canvas_items"' not in proj:
@@ -3868,7 +3868,90 @@ func _initialize() -> void:
 			print("OK HUD live WeaponStrip node")
 		hud_live.queue_free()
 		await process_frame
+
 	print("OK v0.23 touch weapon switching")
+
+	# --- v0.24 touch Attack/Slide no-overlap ---
+	var touch_24 := FileAccess.get_file_as_string("res://scripts/ui/TouchControls.gd")
+	if "CLUSTER_GAP" not in touch_24 or "SLIDE_GAP" not in touch_24:
+		errors.append("TouchControls should enforce CLUSTER_GAP / SLIDE_GAP between face buttons")
+	else:
+		print("OK TouchControls face-button gaps")
+	if "_assert_no_overlap" not in touch_24:
+		errors.append("TouchControls should assert no face-button overlap")
+	else:
+		print("OK TouchControls overlap asserts")
+	if "DASH" not in touch_24:
+		errors.append("TouchControls slide label should read DASH")
+	var pl_cam := FileAccess.get_file_as_string("res://scripts/player/Player.gd")
+	if "apply_touch_camera_feel" not in pl_cam:
+		errors.append("Player should expose apply_touch_camera_feel")
+	else:
+		print("OK Player touch camera feel")
+	print("OK v0.24 touch layout + feel")
+
+	# --- v0.25 feel polish ---
+	var pl_25 := FileAccess.get_file_as_string("res://scripts/player/Player.gd")
+	if "WALL_COYOTE" not in pl_25:
+		errors.append("Player missing WALL_COYOTE for touch wall-jump")
+	else:
+		print("OK Player WALL_COYOTE")
+	if "SLIDE_BUFFER" not in pl_25:
+		errors.append("Player missing SLIDE_BUFFER")
+	else:
+		print("OK Player SLIDE_BUFFER")
+	if "HURT_FLASH" not in pl_25 or "_hurt_flash" not in pl_25:
+		errors.append("Player missing HURT_FLASH / clearer hurt feedback")
+	else:
+		print("OK Player hurt flash")
+	if "COYOTE_TIME := 0.12" not in pl_25:
+		errors.append("Player coyote should be >= 0.12 for touch")
+	if "JUMP_BUFFER := 0.14" not in pl_25:
+		errors.append("Player jump buffer should be >= 0.14 for touch")
+	var refrain := FileAccess.get_file_as_string("res://scripts/bosses/RefrainUnit.gd")
+	if "const BEAT := 1.0" not in refrain and "const BEAT := 0.95" not in refrain:
+		errors.append("RefrainUnit should be slowed for fortress fairness")
+	else:
+		print("OK RefrainUnit fairness beat")
+	var overdub := FileAccess.get_file_as_string("res://scripts/bosses/OverdubTitan.gd")
+	if "const BEAT := 1.15" not in overdub and "const BEAT := 1.1" not in overdub:
+		errors.append("OverdubTitan should be slowed for fortress fairness")
+	else:
+		print("OK OverdubTitan fairness beat")
+	# Boss contact boxes should match body (not body+2 cheap pads)
+	var bf_tscn := FileAccess.get_file_as_string("res://scenes/bosses/BeatfireMan.tscn")
+	if "RectangleShape2D_contact" not in bf_tscn:
+		errors.append("BeatfireMan missing contact shape")
+	elif "Vector2(24, 38)" in bf_tscn:
+		errors.append("BeatfireMan contact still oversized (24,38)")
+	else:
+		print("OK BeatfireMan fairer contact")
+	var refrain_tscn := FileAccess.get_file_as_string("res://scenes/bosses/RefrainUnit.tscn")
+	if "Vector2(24, 38)" in refrain_tscn:
+		errors.append("RefrainUnit contact still oversized (24,38)")
+	else:
+		print("OK RefrainUnit fairer contact")
+	var title_25 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
+	if "tight" not in title_25 and "0.25" not in title_25:
+		errors.append("TitleScreen should handle tight landscape / show 0.25")
+	else:
+		print("OK TitleScreen tight/version")
+	var bsel_25 := FileAccess.get_file_as_string("res://scripts/ui/BossSelect.gd")
+	if "row_need" not in bsel_25 and "clip_text" not in bsel_25:
+		errors.append("BossSelect should scale footer row to avoid clipping")
+	else:
+		print("OK BossSelect no-clip footer")
+	var hud_25 := FileAccess.get_file_as_string("res://scripts/ui/HUD.gd")
+	if "Vector2(60, 30)" not in hud_25 and "strip_h := 64" not in hud_25:
+		errors.append("HUD weapon strip touch targets should be enlarged in 0.25")
+	else:
+		print("OK HUD weapon strip touch size")
+	var rays := FileAccess.get_file_as_string("res://scenes/player/Player.tscn")
+	if "Vector2(-12, 0)" not in rays or "Vector2(12, 0)" not in rays:
+		errors.append("Player wall rays should be extended for touch wall-jump")
+	else:
+		print("OK Player wall rays extended")
+	print("OK v0.25 feel polish")
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

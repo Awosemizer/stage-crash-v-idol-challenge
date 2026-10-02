@@ -6,9 +6,9 @@ signal died
 signal hp_changed(current: int, maximum: int)
 
 const HP_MAX := 18
-const CONTACT_DAMAGE := 3
+const CONTACT_DAMAGE := 2
 const GRAVITY := 700.0
-const BEAT := 0.75
+const BEAT := 1.0
 const HIT_FLASH := 0.1
 const INVULN_ON_HIT := 0.07
 
@@ -60,7 +60,7 @@ func activate() -> void:
 	_active = true
 	if AudioManager and AudioManager.has_method("play_boss_intro"):
 		AudioManager.play_boss_intro()
-	_beat = 0.4
+	_beat = 0.55
 	_state = State.IDLE
 	# Copy one simple pattern for the fight
 	_copy_mode = 0 if (Time.get_ticks_msec() % 2 == 0) else 1
@@ -109,20 +109,20 @@ func _tick_idle(delta: float) -> void:
 func _do_copy_shot() -> void:
 	_state = State.COPY_SHOT
 	_update_facing()
-	var count := 2 if hp > HP_MAX / 2 else 3
+	var count := 1 if hp > HP_MAX / 2 else 2
 	for i in count:
 		var ang := deg_to_rad(-8.0 + float(i) * 8.0)
 		var dir := Vector2(float(_facing), 0.0).rotated(ang)
 		_spawn_shot(dir)
 	_state = State.IDLE
-	_beat = BEAT if hp > HP_MAX / 2 else BEAT * 0.65
+	_beat = BEAT if hp > HP_MAX / 2 else BEAT * 0.75
 
 
 func _start_dash() -> void:
 	_state = State.COPY_DASH
 	_update_facing()
-	_dash_t = 0.28
-	velocity.x = float(_facing) * 140.0
+	_dash_t = 0.22
+	velocity.x = float(_facing) * 110.0
 	velocity.y = 0.0
 
 
@@ -131,7 +131,7 @@ func _tick_dash(delta: float) -> void:
 	if _dash_t <= 0.0:
 		velocity.x = 0.0
 		_state = State.IDLE
-		_beat = BEAT * 0.8
+		_beat = BEAT * 1.0
 
 
 func _spawn_shot(dir: Vector2) -> void:

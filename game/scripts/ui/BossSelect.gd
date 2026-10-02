@@ -183,18 +183,25 @@ func _layout() -> void:
 		sub.position = Vector2(area.position.x, area.position.y + 14.0)
 		sub.size = Vector2(area.size.x, 10)
 
-	# Footer buttons sit at bottom of safe area
-	var btn_h := maxf(_SafeArea.MIN_BTN_H, minf(_SafeArea.PREFERRED_BTN_H, 32.0))
+	# Footer buttons sit at bottom of safe area — scale widths so they never clip
+	var btn_h := maxf(_SafeArea.MIN_BTN_H, minf(_SafeArea.PREFERRED_BTN_H, 30.0))
 	var footer_y := area.end.y - btn_h
 	var back := get_node_or_null("BackButton") as Button
 	var ach := get_node_or_null("AchievementsButton") as Button
 	var diff := get_node_or_null("DiffButton") as Button
 	var char_lbl := get_node_or_null("CharLabel") as Label
 
-	var gap := 6.0
-	var back_w := 72.0
-	var ach_w := 72.0
-	var diff_w := 80.0
+	var gap := 4.0
+	var back_w := 64.0
+	var ach_w := 64.0
+	var diff_w := 72.0
+	var char_min := 48.0
+	var row_need := back_w + ach_w + diff_w + char_min + gap * 3.0
+	if row_need > area.size.x:
+		var scale := area.size.x / row_need
+		back_w = floorf(back_w * scale)
+		ach_w = floorf(ach_w * scale)
+		diff_w = floorf(diff_w * scale)
 	if back:
 		back.position = Vector2(area.position.x, footer_y)
 		back.size = Vector2(back_w, btn_h)
@@ -205,31 +212,33 @@ func _layout() -> void:
 		diff.position = Vector2(area.position.x + back_w + ach_w + gap * 2.0, footer_y)
 		diff.size = Vector2(diff_w, btn_h)
 	if char_lbl:
-		char_lbl.position = Vector2(area.position.x + back_w + ach_w + diff_w + gap * 3.0, footer_y + 6.0)
-		char_lbl.size = Vector2(maxf(area.end.x - char_lbl.position.x, 40.0), 16)
+		var cx := area.position.x + back_w + ach_w + diff_w + gap * 3.0
+		char_lbl.position = Vector2(cx, footer_y + maxf((btn_h - 14.0) * 0.5, 2.0))
+		char_lbl.size = Vector2(maxf(area.end.x - cx, 8.0), 14)
+		char_lbl.clip_text = true
 
 	var footer := get_node_or_null("Footer") as Label
 	if footer:
-		footer.position = Vector2(area.position.x, footer_y - 12.0)
+		footer.position = Vector2(area.position.x, footer_y - 11.0)
 		footer.size = Vector2(area.size.x, 10)
+		footer.clip_text = true
 
-	# Grid fills remaining middle band — must fit 3×3 without clipping
-	var grid_top := area.position.y + HEADER_H + 4.0
-	var grid_bottom := footer_y - 14.0
-	var grid_h := maxf(grid_bottom - grid_top, 96.0)
+	# Grid fills remaining middle band — MUST fit 3×3 without clipping footer/header
+	var grid_top := area.position.y + HEADER_H + 2.0
+	var grid_bottom := footer_y - 12.0
+	var grid_h := maxf(grid_bottom - grid_top, 84.0)
 	var grid_w := area.size.x
 	_cell_w = floorf((grid_w - CELL_GAP * 2.0) / 3.0)
 	_cell_h = floorf((grid_h - CELL_GAP * 2.0) / 3.0)
-	# Keep cells tappable (≥44 when possible; never below ~36)
-	_cell_h = maxf(_cell_h, 36.0)
-	_cell_w = maxf(_cell_w, 72.0)
-	# If height blew past available, shrink to fit
+	# Clamp to available space first (prevents overflow), then raise floor if room
+	_cell_w = maxf(_cell_w, 1.0)
+	_cell_h = maxf(_cell_h, 1.0)
 	var need_h := _cell_h * 3.0 + CELL_GAP * 2.0
 	if need_h > grid_h:
-		_cell_h = floorf((grid_h - CELL_GAP * 2.0) / 3.0)
+		_cell_h = maxf(floorf((grid_h - CELL_GAP * 2.0) / 3.0), 28.0)
 	var need_w := _cell_w * 3.0 + CELL_GAP * 2.0
 	if need_w > grid_w:
-		_cell_w = floorf((grid_w - CELL_GAP * 2.0) / 3.0)
+		_cell_w = maxf(floorf((grid_w - CELL_GAP * 2.0) / 3.0), 56.0)
 
 	var grid := get_node_or_null("BossGrid") as Control
 	if grid == null:

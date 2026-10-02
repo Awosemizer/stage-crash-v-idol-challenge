@@ -143,7 +143,7 @@ func _build_ui() -> void:
 
 	var ver := Label.new()
 	ver.name = "Version"
-	ver.text = "v0.24.0-proto · touch layout + feel"
+	ver.text = "v0.25.0-proto · feel polish"
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ver.add_theme_font_size_override("font_size", 7)
 	ver.modulate = Color(0.55, 0.6, 0.7, 0.75)
@@ -155,18 +155,22 @@ func _layout() -> void:
 	var area: Rect2 = _SafeArea.content_rect()
 	var vp: Vector2 = _SafeArea.viewport_size()
 	var ox := _SafeArea.center_x(DESIGN_W, area)
+	# Compact header when vertical space is tight (short phones / tall safe insets)
+	var tight := area.size.y < 200.0
+	var header_h := 78.0 if tight else 96.0
 
 	var accent := get_node_or_null("AccentBar") as ColorRect
 	if accent:
-		accent.position = Vector2(0, area.position.y + 42.0)
+		accent.position = Vector2(0, area.position.y + (34.0 if tight else 42.0))
 		accent.size = Vector2(vp.x, 3)
 	var accent2 := get_node_or_null("AccentBar2") as ColorRect
 	if accent2:
-		accent2.position = Vector2(0, area.position.y + 46.0)
+		accent2.position = Vector2(0, area.position.y + (38.0 if tight else 46.0))
 		accent2.size = Vector2(vp.x, 2)
 
 	var chrome := get_node_or_null("PanelChrome") as Control
 	if chrome:
+		chrome.visible = not tight
 		chrome.position = Vector2(ox + 30, area.position.y + 6.0)
 		chrome.size = Vector2(220, 56)
 
@@ -176,38 +180,44 @@ func _layout() -> void:
 
 	var title := get_node_or_null("Title") as Label
 	if title:
-		title.position = Vector2(area.position.x, area.position.y + 8.0)
-		title.size = Vector2(area.size.x, 22)
+		title.position = Vector2(area.position.x, area.position.y + (4.0 if tight else 8.0))
+		title.size = Vector2(area.size.x, 20)
+		title.add_theme_font_size_override("font_size", 14 if tight else 16)
 
 	var subtitle := get_node_or_null("Subtitle") as Label
 	if subtitle:
-		subtitle.position = Vector2(area.position.x, area.position.y + 52.0)
-		subtitle.size = Vector2(area.size.x, 22)
+		subtitle.position = Vector2(area.position.x, area.position.y + (26.0 if tight else 52.0))
+		subtitle.size = Vector2(area.size.x, 20)
+		subtitle.add_theme_font_size_override("font_size", 15 if tight else 18)
 
 	var tag := get_node_or_null("Tagline") as Label
 	if tag:
-		tag.position = Vector2(area.position.x, area.position.y + 74.0)
+		tag.position = Vector2(area.position.x, area.position.y + (48.0 if tight else 74.0))
 		tag.size = Vector2(area.size.x, 12)
 
 	var banner := get_node_or_null("TitleBanner") as Control
 	if banner:
+		# Hide banner on tight layouts so it never overlaps the button stack
+		banner.visible = not tight
 		banner.position = Vector2(ox + 40, area.position.y + 88.0)
 		banner.size = Vector2(200, 24)
 
 	var mp := get_node_or_null("PortraitMiku") as Control
 	if mp:
-		mp.position = Vector2(area.position.x + 4.0, area.position.y + 100.0)
+		mp.visible = not tight
+		mp.position = Vector2(area.position.x + 4.0, area.position.y + header_h)
 	var tp := get_node_or_null("PortraitTeto") as Control
 	if tp:
-		tp.position = Vector2(area.end.x - 36.0, area.position.y + 100.0)
+		tp.visible = not tight
+		tp.position = Vector2(area.end.x - 36.0, area.position.y + header_h)
 
-	# Primary stack: Continuar / Nueva / Logros — prefer 44px
-	var btn_w := 160.0
-	var stack_top := area.position.y + 100.0
-	var stack_bottom := area.end.y - 36.0
+	# Primary stack: Continuar / Nueva / Logros — prefer 44px; reserve mute+version strip
+	var btn_w := minf(160.0, area.size.x - 24.0)
+	var stack_top := area.position.y + header_h
+	var stack_bottom := area.end.y - 30.0
 	var avail := maxf(stack_bottom - stack_top, 90.0)
-	var btn_h := _SafeArea.btn_h(avail, 3, 8.0, true)
-	var bx := ox + (DESIGN_W - btn_w) * 0.5
+	var btn_h := _SafeArea.btn_h(avail, 3, 6.0, true)
+	var bx := area.position.x + (area.size.x - btn_w) * 0.5
 
 	var continue_btn := get_node_or_null("ContinueButton") as Button
 	var new_btn := get_node_or_null("NewGameButton") as Button
@@ -217,23 +227,25 @@ func _layout() -> void:
 		continue_btn.size = Vector2(btn_w, btn_h)
 		continue_btn.add_theme_font_size_override("font_size", 12 if btn_h >= 36.0 else 10)
 	if new_btn:
-		new_btn.position = Vector2(bx, stack_top + btn_h + 8.0)
+		new_btn.position = Vector2(bx, stack_top + btn_h + 6.0)
 		new_btn.size = Vector2(btn_w, btn_h)
 		new_btn.add_theme_font_size_override("font_size", 12 if btn_h >= 36.0 else 10)
 	if ach_btn:
-		ach_btn.position = Vector2(bx, stack_top + (btn_h + 8.0) * 2.0)
+		ach_btn.position = Vector2(bx, stack_top + (btn_h + 6.0) * 2.0)
 		ach_btn.size = Vector2(btn_w, maxf(btn_h * 0.85, _SafeArea.MIN_BTN_H))
 		ach_btn.add_theme_font_size_override("font_size", 11 if btn_h >= 36.0 else 9)
 
 	var mute := get_node_or_null("MuteButton") as Button
 	if mute:
-		mute.size = Vector2(100, maxf(_SafeArea.MIN_BTN_H_SECONDARY, 24.0))
+		mute.size = Vector2(96, maxf(_SafeArea.MIN_BTN_H_SECONDARY, 22.0))
 		mute.position = Vector2(area.end.x - mute.size.x, area.end.y - mute.size.y)
 
 	var ver := get_node_or_null("Version") as Label
 	if ver:
-		ver.position = Vector2(area.position.x, area.end.y - 14.0)
-		ver.size = Vector2(maxf(area.size.x - 110.0, 80.0), 12)
+		# Keep clear of mute button (left side)
+		ver.position = Vector2(area.position.x, area.end.y - 12.0)
+		ver.size = Vector2(maxf(area.size.x - mute.size.x - 8.0, 60.0), 12)
+		ver.clip_text = true
 
 
 func _on_continue_pressed() -> void:
