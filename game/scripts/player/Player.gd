@@ -44,6 +44,7 @@ const SLIDE_OFFSET := Vector2(0, 5)
 const WEAPON_BUSTER := "buster"
 const WEAPON_SABER := "saber"
 const WEAPON_BEAT_BLAZE := "beat_blaze"
+const WEAPON_ECHO_GALE := "echo_gale"
 
 const SABER_DURATION := 0.18
 const SABER_DAMAGE := 2
@@ -60,6 +61,7 @@ const HOVER_LIFT := -12.0            # slight upward assist when falling
 
 const BusterShotScene := preload("res://scenes/combat/BusterShot.tscn")
 const BeatBlazeShotScene := preload("res://scenes/combat/BeatBlazeShot.tscn")
+const EchoGaleShotScene := preload("res://scenes/combat/EchoGaleShot.tscn")
 
 signal hp_changed(current: int, maximum: int)
 signal weapon_changed(weapon_id: String, display_name: String, ammo: int, max_ammo: int)
@@ -112,6 +114,8 @@ var _hover_cd := 0.0
 var _is_hovering := false
 var _has_flight_torso := false
 var _thruster: ColorRect = null
+var _wind_force := Vector2.ZERO
+var _key3_held := false
 
 
 func _ready() -> void:
@@ -216,6 +220,11 @@ func _physics_process(delta: float) -> void:
 
 	_handle_attack(delta)
 
+	# Wind currents (Echo Wind stage)
+	if _wind_force.length_squared() > 0.01 and not _is_sliding:
+		velocity += _wind_force
+	_wind_force = Vector2.ZERO
+
 	move_and_slide()
 	_update_visual()
 	_check_hazards_and_pits()
@@ -229,15 +238,19 @@ func _handle_weapon_switch() -> void:
 		_cycle_weapon(1)
 	elif Input.is_action_just_pressed("weapon_prev"):
 		_cycle_weapon(-1)
-	# Number keys 1–2 as fallback (edge-triggered)
+	# Number keys 1–3 as fallback (edge-triggered)
 	var k1 := Input.is_physical_key_pressed(KEY_1)
 	var k2 := Input.is_physical_key_pressed(KEY_2)
+	var k3 := Input.is_physical_key_pressed(KEY_3)
 	if k1 and not _key1_held:
 		_select_weapon_by_id(WEAPON_SABER if _is_teto else WEAPON_BUSTER)
 	if k2 and not _key2_held and _has_weapon(WEAPON_BEAT_BLAZE):
 		_select_weapon_by_id(WEAPON_BEAT_BLAZE)
+	if k3 and not _key3_held and _has_weapon(WEAPON_ECHO_GALE):
+		_select_weapon_by_id(WEAPON_ECHO_GALE)
 	_key1_held = k1
 	_key2_held = k2
+	_key3_held = k3
 
 
 func _cycle_weapon(dir: int) -> void:
@@ -283,12 +296,18 @@ func get_weapon_id() -> String:
 
 
 func grant_weapon(weapon_id: String) -> void:
-	## Otorga arma robada de jefe (p.ej. Beat Blaze tras victoria).
+	## Otorga arma robada de jefe (Beat Blaze / Echo Gale).
+	var gs := _game_state()
+	if gs != null and gs.has_method("unlock_weapon"):
+		gs.unlock_weapon(weapon_id)
 	if _has_weapon(weapon_id):
-		# Refill ammo if already owned
+		# Refill ammo if already owned and select it
 		for i in _weapons.size():
 			if str(_weapons[i].get("id", "")) == weapon_id:
 				_weapons[i]["ammo"] = int(_weapons[i].get("max_ammo", 28))
+				_weapon_index = i
+				_charging = false
+				_charge_time = 0.0
 				_emit_weapon()
 				return
 		return
@@ -305,6 +324,19 @@ func grant_weapon(weapon_id: String) -> void:
 		_charge_time = 0.0
 		_emit_weapon()
 		print("Player: arma otorgada Beat Blaze")
+	elif weapon_id == WEAPON_ECHO_GALE:
+		_weapons.append({
+			"id": WEAPON_ECHO_GALE,
+			"name": "Echo Gale",
+			"ammo": 28,
+			"max_ammo": 28,
+			"cost": 1,
+		})
+		_weapon_index = _weapons.size() - 1
+		_charging = false
+		_charge_time = 0.0
+		_emit_weapon()
+		print("Player: arma otorgada Echo Gale")
 
 
 func _emit_weapon() -> void:
@@ -328,6 +360,8 @@ func _handle_attack(delta: float) -> void:
 	var wid := get_weapon_id()
 	if wid == WEAPON_BEAT_BLAZE:
 		_handle_beat_blaze()
+	elif wid == WEAPON_ECHO_GALE:
+		_handle_echo_gale()
 	elif wid == WEAPON_SABER:
 		_handle_saber()
 	else:
@@ -361,6 +395,18 @@ func _apply_character_from_state() -> void:
 	_weapon_index = 0
 	if visual:
 		visual.color = _body_color
+	_restore_unlocked_weapons()
+
+
+func _restore_unlocked_weapons() -> void:
+	## Otorga armas ya desbloqueadas en GameState (Beat Blaze / Echo Gale).
+	var gs := _game_state()
+	if gs == null or not gs.has_method("get_unlocked_weapons"):
+		return
+	for wid in gs.get_unlocked_weapons():
+		grant_weapon(str(wid))
+	# Keep default primary selected after restore
+	_select_weapon_by_id(WEAPON_SABER if _is_teto else WEAPON_BUSTER)
 
 
 func _game_state() -> Node:
@@ -501,6 +547,36 @@ func _fire_beat_blaze() -> void:
 	_weapons[_weapon_index]["ammo"] = ammo
 	_emit_weapon()
 	var shot: Area2D = BeatBlazeShotScene.instantiate()
+	var parent_node := get_parent()
+	if parent_node == null:
+		parent_node = get_tree().current_scene
+	parent_node.add_child(shot)
+	shot.global_position = global_position + Vector2(facing * SHOT_SPAWN_X, SHOT_SPAWN_Y)
+	if shot.has_method("setup"):
+		shot.setup(facing)
+
+
+func _handle_echo_gale() -> void:
+	if _charging:
+		_charging = false
+		_charge_time = 0.0
+	if Input.is_action_just_pressed("attack"):
+		_fire_echo_gale()
+
+
+func _fire_echo_gale() -> void:
+	var w := get_current_weapon()
+	var ammo: int = int(w.get("ammo", 0))
+	var cost: int = int(w.get("cost", 1))
+	if ammo < cost:
+		return
+	var live := get_tree().get_nodes_in_group("player_shots")
+	if live.size() >= MAX_SHOTS:
+		return
+	ammo -= cost
+	_weapons[_weapon_index]["ammo"] = ammo
+	_emit_weapon()
+	var shot: Area2D = EchoGaleShotScene.instantiate()
 	var parent_node := get_parent()
 	if parent_node == null:
 		parent_node = get_tree().current_scene
@@ -713,6 +789,11 @@ func _check_hazards_and_pits() -> void:
 func take_hit(amount: int) -> void:
 	## Alias kept for hazards / slide collisions.
 	take_damage(amount)
+
+
+func apply_wind(force: Vector2) -> void:
+	## Acumula empuje de corrientes (WindCurrent) este frame.
+	_wind_force += force
 
 
 func take_damage(amount: int) -> void:

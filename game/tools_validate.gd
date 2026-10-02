@@ -34,6 +34,16 @@ func _initialize() -> void:
 		"res://scenes/combat/Fireball.tscn",
 		"res://scenes/enemies/MetBeat.tscn",
 		"res://scenes/bosses/BeatfireMan.tscn",
+		"res://scripts/levels/LevelEchoWind.gd",
+		"res://scripts/bosses/EchoWind.gd",
+		"res://scripts/combat/WindGust.gd",
+		"res://scripts/combat/EchoGaleShot.gd",
+		"res://scripts/hazards/WindCurrent.gd",
+		"res://scenes/levels/LevelEchoWind.tscn",
+		"res://scenes/bosses/EchoWind.tscn",
+		"res://scenes/combat/WindGust.tscn",
+		"res://scenes/combat/EchoGaleShot.tscn",
+		"res://scenes/hazards/WindCurrent.tscn",
 	]
 	for p in paths:
 		if not ResourceLoader.exists(p):
@@ -141,6 +151,13 @@ func _initialize() -> void:
 	else:
 		print("OK CharacterSelect → BossSelect")
 
+	# BossSelect must route Echo Wind to LevelEchoWind
+	var bsel_src = FileAccess.get_file_as_string("res://scripts/ui/BossSelect.gd")
+	if "LevelEchoWind.tscn" not in bsel_src:
+		errors.append("BossSelect should load LevelEchoWind for echo_wind")
+	else:
+		print("OK BossSelect → LevelEchoWind")
+
 	# Boss select UI
 	var boss_sel_packed: PackedScene = load("res://scenes/ui/BossSelect.tscn")
 	if boss_sel_packed:
@@ -186,6 +203,26 @@ func _initialize() -> void:
 				errors.append("CORE-9 should show BLOQUEADO")
 			else:
 				print("OK CORE-9 locked status=", cst.text)
+		# Echo Wind playable cell
+		var echo_cell = null
+		if grid:
+			for c in grid.get_children():
+				if str(c.get_meta("boss_id", "")) == "echo_wind":
+					echo_cell = c
+					break
+		if echo_cell == null:
+			errors.append("BossSelect missing Echo Wind cell")
+		else:
+			var est = echo_cell.get_node_or_null("SelectButton/StatusLabel")
+			if est and "Pronto" in est.text:
+				errors.append("Echo Wind should be playable, got: " + est.text)
+			elif est:
+				print("OK Echo Wind status=", est.text)
+			var esecret = echo_cell.get_node_or_null("SelectButton/SecretStub")
+			if esecret == null and gs != null and gs.has_pending_armor_secret("echo_wind"):
+				errors.append("Echo Wind missing SecretStub for pending helmet")
+			elif esecret:
+				print("OK Echo Wind SecretStub present")
 		# Greyed Pronto on a locked boss
 		var pronto_ok := false
 		if grid:
@@ -230,6 +267,8 @@ func _initialize() -> void:
 	if gs:
 		gs.beatfire_defeated = false
 		gs._bosses_defeated.clear()
+		if "_weapons_unlocked" in gs:
+			gs._weapons_unlocked.clear()
 		if gs.is_beatfire_defeated():
 			errors.append("beatfire_defeated should start false")
 		else:
@@ -260,6 +299,8 @@ func _initialize() -> void:
 		# Leave defeated true for later boss-kill path consistency, then reset before level
 		gs.beatfire_defeated = false
 		gs._bosses_defeated.clear()
+		if "_weapons_unlocked" in gs:
+			gs._weapons_unlocked.clear()
 
 	# Main scene should be Title
 	var main_path: String = str(ProjectSettings.get_setting("application/run/main_scene", ""))
@@ -623,6 +664,275 @@ func _initialize() -> void:
 		await process_frame
 	else:
 		errors.append("BeatfireMan.tscn failed to load")
+
+	# Echo Wind boss smoke + Beat Blaze weakness ×3
+	var ewb_packed: PackedScene = load("res://scenes/bosses/EchoWind.tscn")
+	if ewb_packed:
+		var ewb = ewb_packed.instantiate()
+		root.add_child(ewb)
+		await process_frame
+		if not ewb.is_in_group("enemies") or not ewb.is_in_group("bosses"):
+			errors.append("EchoWind missing enemies/bosses group")
+		else:
+			print("OK EchoWind groups")
+		if not ewb.is_in_group("weak_to_beat_blaze"):
+			errors.append("EchoWind missing weak_to_beat_blaze group")
+		else:
+			print("OK EchoWind weak_to_beat_blaze")
+		if int(ewb.hp) != 28:
+			errors.append("EchoWind HP expected 28")
+		else:
+			print("OK EchoWind hp=", ewb.hp)
+		var eblocked = ewb.take_damage(3)
+		if eblocked != false or int(ewb.hp) != 28:
+			errors.append("Inactive EchoWind should ignore damage")
+		else:
+			print("OK inactive EchoWind ignores damage")
+		if ewb.has_method("activate"):
+			ewb.activate()
+		ewb.take_damage(2)
+		if int(ewb.hp) != 26:
+			errors.append("EchoWind HP expected 26 after 2 dmg")
+		else:
+			print("OK EchoWind took dmg hp=", ewb.hp)
+		# Weakness via BeatBlazeShot
+		ewb._invuln = 0.0
+		var blaze = load("res://scenes/combat/BeatBlazeShot.tscn").instantiate()
+		root.add_child(blaze)
+		blaze.global_position = ewb.global_position
+		if blaze.has_method("_try_hit"):
+			blaze._try_hit(ewb)
+		await process_frame
+		# damage 2 * 3 = 6 → hp 20
+		if int(ewb.hp) != 20:
+			errors.append("Beat Blaze weakness expected hp 20 (26-6), got %d" % int(ewb.hp))
+		else:
+			print("OK Beat Blaze ×3 vs EchoWind hp=", ewb.hp)
+		if is_instance_valid(blaze):
+			blaze.queue_free()
+		ewb.queue_free()
+		await process_frame
+	else:
+		errors.append("EchoWind.tscn failed to load")
+
+	# Echo Gale weapon smoke on Player
+	var eg_player_packed: PackedScene = load("res://scenes/player/Player.tscn")
+	if eg_player_packed:
+		if gs:
+			gs.select_miku()
+		var egp = eg_player_packed.instantiate()
+		root.add_child(egp)
+		await process_frame
+		egp.grant_weapon("echo_gale")
+		await process_frame
+		if str(egp.get_weapon_id()) != "echo_gale":
+			errors.append("grant_weapon echo_gale failed")
+		else:
+			print("OK grant_weapon echo_gale")
+		var egw: Dictionary = egp.get_current_weapon()
+		if int(egw.get("ammo", 0)) != 28:
+			errors.append("Echo Gale ammo expected 28")
+		else:
+			print("OK Echo Gale ammo=", egw.get("ammo"))
+		if egp.has_method("_fire_echo_gale"):
+			egp._fire_echo_gale()
+			await process_frame
+			var gale_shots = root.get_tree().get_nodes_in_group("player_shots")
+			var found_gale := false
+			for s in gale_shots:
+				if s.get_script() and "EchoGale" in str(s.get_script().resource_path):
+					found_gale = true
+				elif "damage" in s and int(s.damage) == 2:
+					found_gale = true
+			if not found_gale and gale_shots.is_empty():
+				errors.append("EchoGaleShot not spawned")
+			else:
+				print("OK EchoGaleShot spawned count=", gale_shots.size())
+				egw = egp.get_current_weapon()
+				if int(egw.get("ammo", 28)) != 27:
+					errors.append("Echo Gale ammo not consumed")
+				else:
+					print("OK Echo Gale ammo consumed=", egw.get("ammo"))
+				for sh in gale_shots:
+					sh.queue_free()
+		# Wind push API
+		if not egp.has_method("apply_wind"):
+			errors.append("Player missing apply_wind")
+		else:
+			egp.apply_wind(Vector2(50, 0))
+			if egp._wind_force.x < 40.0:
+				errors.append("apply_wind did not accumulate")
+			else:
+				print("OK apply_wind force=", egp._wind_force)
+			egp._wind_force = Vector2.ZERO
+		egp.queue_free()
+		await process_frame
+	else:
+		errors.append("Player.tscn failed for Echo Gale test")
+
+	# WindCurrent smoke
+	var wc_packed: PackedScene = load("res://scenes/hazards/WindCurrent.tscn")
+	if wc_packed:
+		var wc = wc_packed.instantiate()
+		root.add_child(wc)
+		await process_frame
+		if not wc.is_in_group("wind_currents"):
+			errors.append("WindCurrent not in wind_currents group")
+		else:
+			print("OK WindCurrent group")
+		wc.queue_free()
+		await process_frame
+	else:
+		errors.append("WindCurrent.tscn failed to load")
+
+	# GameState echo_wind defeat + weapon unlock
+	if gs:
+		gs.beatfire_defeated = false
+		gs._bosses_defeated.clear()
+		# keep prior unlocks from tests; ensure echo mark works
+		gs.mark_boss_defeated("echo_wind")
+		if not gs.is_boss_defeated("echo_wind"):
+			errors.append("mark echo_wind defeated failed")
+		else:
+			print("OK echo_wind defeated in GameState")
+		if not gs.has_weapon_unlocked("echo_gale"):
+			errors.append("echo_gale should unlock on echo_wind defeat")
+		else:
+			print("OK echo_gale unlocked")
+		# Rebuild BossSelect checkmark for echo
+		var bsel_e = load("res://scenes/ui/BossSelect.tscn").instantiate()
+		root.add_child(bsel_e)
+		await process_frame
+		var grid_e = bsel_e.get_node_or_null("BossGrid")
+		var echo_check := false
+		if grid_e:
+			for c in grid_e.get_children():
+				if str(c.get_meta("boss_id", "")) == "echo_wind":
+					var chk = c.get_node_or_null("SelectButton/Checkmark")
+					var st = c.get_node_or_null("SelectButton/StatusLabel")
+					if chk != null or (st and "VENCIDO" in st.text):
+						echo_check = true
+						print("OK Echo Wind checkmark/VENCIDO after defeat")
+		if not echo_check:
+			errors.append("BossSelect missing Echo Wind checkmark after defeat")
+		bsel_e.queue_free()
+		await process_frame
+		gs._bosses_defeated.clear()
+		# leave weapons unlocked for level restore test
+
+	# Instantiate LevelEchoWind
+	var echo_level_packed: PackedScene = load("res://scenes/levels/LevelEchoWind.tscn")
+	if echo_level_packed:
+		if gs:
+			gs._armor_owned.clear()
+			gs._armor_equipped.clear()
+		var elvl = echo_level_packed.instantiate()
+		root.add_child(elvl)
+		print("OK instantiate LevelEchoWind, children=", elvl.get_child_count())
+		await process_frame
+		await process_frame
+		var eent = elvl.get_node_or_null("Entities")
+		if eent == null:
+			errors.append("LevelEchoWind Entities missing")
+		else:
+			var ep = eent.get_node_or_null("Player")
+			if ep == null:
+				errors.append("Player not spawned in LevelEchoWind")
+			else:
+				print("OK EchoWind level player spawned")
+			var eboss = 0
+			var emet = 0
+			for c in eent.get_children():
+				if c.is_in_group("bosses") or str(c.name).begins_with("Echo"):
+					eboss += 1
+				elif c.is_in_group("enemies") or str(c.name).begins_with("Met"):
+					emet += 1
+			if emet < 2:
+				errors.append("Expected >=2 MetBeat in LevelEchoWind, got %d" % emet)
+			else:
+				print("OK MetBeat in LevelEchoWind=", emet)
+			if eboss < 1:
+				errors.append("Expected EchoWind boss in level")
+			else:
+				print("OK EchoWind boss in level")
+			if eent.get_node_or_null("ArenaTrigger") == null:
+				errors.append("LevelEchoWind ArenaTrigger missing")
+			else:
+				print("OK LevelEchoWind ArenaTrigger")
+			var helm = eent.get_node_or_null("FlightHelmetPickup")
+			if helm == null:
+				errors.append("FlightHelmetPickup missing in LevelEchoWind")
+			else:
+				print("OK FlightHelmetPickup at ", helm.position)
+		var ehaz = elvl.get_node_or_null("Hazards")
+		var wind_n := 0
+		if ehaz:
+			for c in ehaz.get_children():
+				if c.is_in_group("wind_currents") or str(c.name).begins_with("Wind"):
+					wind_n += 1
+		if wind_n < 2:
+			errors.append("Expected >=2 WindCurrent in LevelEchoWind, got %d" % wind_n)
+		else:
+			print("OK WindCurrent count=", wind_n)
+		if elvl.get_node_or_null("HUD") == null:
+			errors.append("HUD missing in LevelEchoWind")
+		else:
+			print("OK HUD in LevelEchoWind")
+		if elvl.get_node_or_null("TouchControls") == null:
+			errors.append("TouchControls missing in LevelEchoWind")
+		else:
+			print("OK TouchControls in LevelEchoWind")
+		# Helmet pickup → armor head (2/3 if torso also — grant torso first)
+		if gs:
+			gs.grant_armor_piece("flight", "torso", true)
+		var helm2 = eent.get_node_or_null("FlightHelmetPickup") if eent else null
+		var ep2 = eent.get_node_or_null("Player") if eent else null
+		if helm2 and ep2 and helm2.has_method("_collect"):
+			helm2._collect(ep2)
+			await process_frame
+			if gs and not gs.has_armor_piece("flight", "head"):
+				errors.append("Helmet pickup did not grant head")
+			else:
+				print("OK flight head owned count=", gs.get_armor_owned_count("flight") if gs else -1)
+			if gs and int(gs.get_armor_owned_count("flight")) < 2:
+				errors.append("Expected armor 2/3 after torso+head")
+			else:
+				print("OK Stage Flight armor 2/3")
+		# Boss kill path
+		if elvl.has_method("_start_boss_fight"):
+			elvl._start_boss_fight()
+			await process_frame
+			var boss_e = eent.get_node_or_null("EchoWind") if eent else null
+			if boss_e and boss_e.has_method("take_damage"):
+				while is_instance_valid(boss_e) and int(boss_e.hp) > 0:
+					boss_e.take_damage(7)
+					await process_frame
+				await process_frame
+				await process_frame
+				var ep3 = eent.get_node_or_null("Player") if eent else null
+				if ep3 and ep3.has_method("_has_weapon"):
+					if not ep3._has_weapon("echo_gale"):
+						errors.append("Echo Wind defeat did not grant Echo Gale")
+					else:
+						print("OK Echo Wind defeat granted Echo Gale")
+				if gs and not gs.is_boss_defeated("echo_wind"):
+					errors.append("Echo Wind defeat did not set GameState")
+				else:
+					print("OK GameState echo_wind defeated after win")
+				var win_e = elvl.get_node_or_null("WinBanner")
+				if win_e == null:
+					print("WARN Echo Wind WinBanner not found immediately")
+				else:
+					print("OK Echo Wind WinBanner")
+					var ret_e = win_e.get_node_or_null("Root/Panel/ReturnBossSelect")
+					if ret_e == null:
+						errors.append("Echo Wind WinBanner missing ReturnBossSelect")
+					else:
+						print("OK Echo Wind ReturnBossSelect")
+		elvl.queue_free()
+		await process_frame
+	else:
+		errors.append("LevelEchoWind.tscn failed to load")
 
 	# Instantiate main scene briefly
 	var packed: PackedScene = load("res://scenes/levels/Level01.tscn")

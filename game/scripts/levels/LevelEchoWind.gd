@@ -1,0 +1,459 @@
+extends Node2D
+## Echo Wind — etapa viento/torres. Corrientes, wall-jump, secreto casco Stage Flight.
+## Arena final: Echo Wind → otorga Echo Gale.
+
+const SpikeScene := preload("res://scenes/hazards/Spike.tscn")
+const WindCurrentScene := preload("res://scenes/hazards/WindCurrent.tscn")
+const PlayerScene := preload("res://scenes/player/Player.tscn")
+const TouchControlsScene := preload("res://scenes/ui/TouchControls.tscn")
+const HUDScene := preload("res://scenes/ui/HUD.tscn")
+const MetBeatScene := preload("res://scenes/enemies/MetBeat.tscn")
+const EchoWindScene := preload("res://scenes/bosses/EchoWind.tscn")
+const BreakableBlockScene := preload("res://scenes/props/BreakableBlock.tscn")
+const ArmorPickupScene := preload("res://scenes/pickups/ArmorPickup.tscn")
+
+const COL_FLOOR := Color(0.22, 0.45, 0.42, 1.0)
+const COL_WALL := Color(0.15, 0.32, 0.38, 1.0)
+const COL_ACCENT := Color(0.45, 0.9, 0.75, 1.0)
+const COL_BG := Color(0.06, 0.1, 0.14, 1.0)
+const COL_ARENA := Color(0.18, 0.4, 0.38, 1.0)
+const COL_GATE := Color(0.25, 0.7, 0.6, 1.0)
+const COL_TOWER := Color(0.28, 0.55, 0.52, 1.0)
+
+const LEVEL_RIGHT := 1472.0
+const ARENA_LEFT := 1136.0
+const ARENA_FLOOR_Y := 176.0
+const GATE_X := 1120.0
+
+@onready var geometry: Node2D = $Geometry
+@onready var hazards: Node2D = $Hazards
+@onready var entities: Node2D = $Entities
+@onready var bg: ColorRect = $ParallaxBG/BG
+
+var _gate_body: StaticBody2D = null
+var _gate_visual: ColorRect = null
+var _boss: Node = null
+var _boss_started := false
+var _boss_defeated := false
+var _win_banner: CanvasLayer = null
+var _arena_trigger: Area2D = null
+var _player: CharacterBody2D = null
+
+
+func _ready() -> void:
+	bg.color = COL_BG
+	bg.offset_right = LEVEL_RIGHT + 64.0
+	_build_course()
+	_spawn_enemies()
+	_build_boss_arena()
+	_spawn_player()
+	_add_hud()
+	_add_touch_controls()
+
+
+func _build_course() -> void:
+	# Torres + plataformas con huecos de wall-jump y corrientes
+	var solids: Array = [
+		[0, 176, 128, 48, COL_FLOOR],
+		# Torre 1
+		[144, 112, 32, 112, COL_TOWER],
+		[144, 96, 48, 16, COL_ACCENT],
+		[208, 144, 48, 16, COL_FLOOR],
+		# Torre 2 (alta)
+		[288, 64, 32, 160, COL_TOWER],
+		[288, 48, 64, 16, COL_ACCENT],
+		[368, 128, 48, 16, COL_FLOOR],
+		# Wall-jump corridor (torres enfrentadas)
+		[448, 48, 16, 160, COL_WALL],
+		[528, 16, 16, 192, COL_WALL],
+		[448, 192, 96, 32, COL_FLOOR],
+		# Ledge alta salida
+		[544, 64, 64, 16, COL_ACCENT],
+		# Secreto casco (alcoba izq)
+		[336, 0, 16, 64, COL_WALL],
+		[352, 0, 112, 16, COL_WALL],
+		[352, 48, 96, 16, COL_ACCENT],
+		[336, 48, 16, 16, COL_WALL],
+		# Torre media + viento
+		[640, 96, 40, 128, COL_TOWER],
+		[640, 80, 56, 16, COL_FLOOR],
+		[720, 128, 48, 16, COL_FLOOR],
+		# Slide tunnel teal
+		[800, 176, 128, 48, COL_FLOOR],
+		[800, 112, 128, 48, COL_WALL],
+		# Final stretch
+		[960, 160, 160, 64, COL_FLOOR],
+		[1088, 160, 48, 64, COL_FLOOR],
+		[-32, 0, 32, 224, COL_WALL],
+	]
+
+	for s in solids:
+		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
+
+	for i in range(4):
+		_add_spike(240.0 + i * 16.0, 200.0)
+
+	_add_wind(200.0, 120.0, Vector2(85.0, -10.0), Vector2(72, 40))
+	_add_wind(400.0, 100.0, Vector2(-70.0, 0.0), Vector2(56, 48))
+	_add_wind(680.0, 100.0, Vector2(90.0, -5.0), Vector2(80, 44))
+
+	_build_secret_helmet()
+
+	var label := Label.new()
+	label.text = "JEFE →"
+	label.position = Vector2(1080, 136)
+	label.add_theme_font_size_override("font_size", 8)
+	label.modulate = Color(0.45, 0.95, 0.8)
+	geometry.add_child(label)
+
+	var theme_lbl := Label.new()
+	theme_lbl.text = "TORRES DEL ECO"
+	theme_lbl.position = Vector2(16, 8)
+	theme_lbl.add_theme_font_size_override("font_size", 7)
+	theme_lbl.modulate = Color(0.5, 0.9, 0.85, 0.7)
+	geometry.add_child(theme_lbl)
+
+
+func _add_wind(x: float, y: float, force: Vector2, size: Vector2) -> void:
+	var wind: Area2D = WindCurrentScene.instantiate()
+	wind.position = Vector2(x, y)
+	wind.push_force = force
+	# Resize visual + collision
+	var vis: ColorRect = wind.get_node_or_null("Visual")
+	if vis:
+		vis.size = size
+		vis.position = -size * 0.5
+	var col: CollisionShape2D = wind.get_node_or_null("CollisionShape2D")
+	if col and col.shape is RectangleShape2D:
+		var shp := (col.shape as RectangleShape2D).duplicate()
+		shp.size = size
+		col.shape = shp
+	var arrow: Label = wind.get_node_or_null("Arrow")
+	if arrow:
+		arrow.text = "→→" if force.x >= 0.0 else "←←"
+		arrow.position = Vector2(-20, -8)
+	hazards.add_child(wind)
+
+
+func _build_boss_arena() -> void:
+	_add_rect_platform(ARENA_LEFT, ARENA_FLOOR_Y, 320.0, 48.0, COL_ARENA)
+	_add_rect_platform(ARENA_LEFT, 0.0, 320.0, 24.0, COL_WALL)
+	_add_rect_platform(LEVEL_RIGHT - 16.0, 0.0, 32.0, 224.0, COL_WALL)
+	_add_rect_platform(ARENA_LEFT + 24.0, 112.0, 40.0, 12.0, COL_ACCENT)
+	_add_rect_platform(ARENA_LEFT + 256.0, 112.0, 40.0, 12.0, COL_ACCENT)
+	# Soft wind in arena
+	_add_wind(ARENA_LEFT + 160.0, 100.0, Vector2(40.0, -15.0), Vector2(100, 56))
+
+	_gate_visual = ColorRect.new()
+	_gate_visual.name = "GateVisual"
+	_gate_visual.size = Vector2(12, 80)
+	_gate_visual.position = Vector2(GATE_X, 80)
+	_gate_visual.color = Color(COL_GATE.r, COL_GATE.g, COL_GATE.b, 0.35)
+	geometry.add_child(_gate_visual)
+
+	var gate_lbl := Label.new()
+	gate_lbl.text = "PUERTA"
+	gate_lbl.position = Vector2(GATE_X - 8, 64)
+	gate_lbl.add_theme_font_size_override("font_size", 6)
+	gate_lbl.modulate = Color(0.5, 0.95, 0.8, 0.8)
+	geometry.add_child(gate_lbl)
+
+	_arena_trigger = Area2D.new()
+	_arena_trigger.name = "ArenaTrigger"
+	_arena_trigger.collision_layer = 0
+	_arena_trigger.collision_mask = 2
+	_arena_trigger.monitoring = true
+	_arena_trigger.monitorable = false
+	var trig_shape := RectangleShape2D.new()
+	trig_shape.size = Vector2(24, 96)
+	var trig_col := CollisionShape2D.new()
+	trig_col.shape = trig_shape
+	_arena_trigger.position = Vector2(ARENA_LEFT + 40.0, 128.0)
+	_arena_trigger.add_child(trig_col)
+	entities.add_child(_arena_trigger)
+	_arena_trigger.body_entered.connect(_on_arena_entered)
+
+	_boss = EchoWindScene.instantiate()
+	_boss.name = "EchoWind"
+	_boss.position = Vector2(ARENA_LEFT + 200.0, ARENA_FLOOR_Y)
+	entities.add_child(_boss)
+	if _boss.has_signal("died"):
+		_boss.died.connect(_on_boss_died)
+
+
+func _on_arena_entered(body: Node) -> void:
+	if _boss_started or _boss_defeated:
+		return
+	if body == null or not body.is_in_group("player"):
+		return
+	_start_boss_fight()
+
+
+func _start_boss_fight() -> void:
+	_boss_started = true
+	_close_gate()
+	if _player and _player.has_method("set_spawn_pos"):
+		_player.set_spawn_pos(Vector2(ARENA_LEFT + 48.0, ARENA_FLOOR_Y - 20.0))
+	if _player:
+		var cam: Camera2D = _player.get_node_or_null("Camera2D")
+		if cam:
+			cam.limit_left = int(ARENA_LEFT)
+			cam.limit_right = int(LEVEL_RIGHT)
+			cam.limit_top = 0
+			cam.limit_bottom = 224
+	if _boss and _boss.has_method("activate"):
+		_boss.activate()
+	_show_banner("¡ECHO WIND!", Color(0.45, 0.95, 0.8), 1.6)
+	print("LevelEchoWind: combate vs Echo Wind iniciado")
+
+
+func _close_gate() -> void:
+	if _gate_body != null:
+		return
+	_gate_body = StaticBody2D.new()
+	_gate_body.name = "BossGate"
+	_gate_body.collision_layer = 1
+	_gate_body.collision_mask = 0
+	_gate_body.position = Vector2(GATE_X + 6.0, 128.0)
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(12, 96)
+	var col := CollisionShape2D.new()
+	col.shape = shape
+	_gate_body.add_child(col)
+	geometry.add_child(_gate_body)
+	if _gate_visual:
+		_gate_visual.color = COL_GATE
+		_gate_visual.size = Vector2(12, 96)
+		_gate_visual.position = Vector2(GATE_X, 80)
+
+
+func _open_gate() -> void:
+	if _gate_body and is_instance_valid(_gate_body):
+		_gate_body.queue_free()
+		_gate_body = null
+	if _gate_visual:
+		_gate_visual.color = Color(0.3, 0.9, 0.55, 0.55)
+
+
+func _on_boss_died() -> void:
+	_boss_defeated = true
+	_open_gate()
+	if GameState.has_method("mark_boss_defeated"):
+		GameState.mark_boss_defeated(GameState.BOSS_ECHO_WIND)
+	if _player:
+		var cam: Camera2D = _player.get_node_or_null("Camera2D")
+		if cam:
+			cam.limit_left = 0
+			cam.limit_right = int(LEVEL_RIGHT)
+	if _player and _player.has_method("grant_weapon"):
+		_player.grant_weapon("echo_gale")
+	_show_win_banner()
+	print("LevelEchoWind: Echo Wind derrotado — Echo Gale otorgado")
+
+
+func _show_win_banner() -> void:
+	if _win_banner and is_instance_valid(_win_banner):
+		_win_banner.queue_free()
+	_win_banner = CanvasLayer.new()
+	_win_banner.name = "WinBanner"
+	_win_banner.layer = 80
+	add_child(_win_banner)
+	var root := Control.new()
+	root.name = "Root"
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_STOP
+	_win_banner.add_child(root)
+	var panel := Panel.new()
+	panel.name = "Panel"
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.05, 0.1, 0.12, 0.92)
+	sb.set_border_width_all(2)
+	sb.border_color = Color(0.4, 0.95, 0.75, 1.0)
+	sb.set_corner_radius_all(4)
+	panel.add_theme_stylebox_override("panel", sb)
+	panel.size = Vector2(196, 96)
+	panel.position = Vector2(30, 56)
+	root.add_child(panel)
+	var title := Label.new()
+	title.name = "Title"
+	title.text = "¡VICTORIA!"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 14)
+	title.modulate = Color(0.55, 1.0, 0.85, 1.0)
+	title.position = Vector2(0, 6)
+	title.size = Vector2(196, 18)
+	panel.add_child(title)
+	var sub := Label.new()
+	sub.name = "Subtitle"
+	sub.text = "Arma obtenida: Echo Gale"
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sub.add_theme_font_size_override("font_size", 7)
+	sub.modulate = Color(0.5, 0.95, 0.75, 1.0)
+	sub.position = Vector2(0, 26)
+	sub.size = Vector2(196, 14)
+	panel.add_child(sub)
+	var back_btn := Button.new()
+	back_btn.name = "ReturnBossSelect"
+	back_btn.text = "Volver al selector"
+	back_btn.add_theme_font_size_override("font_size", 8)
+	back_btn.position = Vector2(28, 48)
+	back_btn.size = Vector2(140, 24)
+	var bn := StyleBoxFlat.new()
+	bn.bg_color = Color(0.12, 0.4, 0.45, 0.95)
+	bn.set_border_width_all(2)
+	bn.border_color = Color(0.4, 0.95, 0.85, 1.0)
+	bn.set_corner_radius_all(3)
+	var bh := bn.duplicate()
+	bh.bg_color = bn.bg_color.lightened(0.12)
+	var bp := bn.duplicate()
+	bp.bg_color = bn.bg_color.darkened(0.15)
+	back_btn.add_theme_stylebox_override("normal", bn)
+	back_btn.add_theme_stylebox_override("hover", bh)
+	back_btn.add_theme_stylebox_override("pressed", bp)
+	back_btn.add_theme_stylebox_override("focus", bh)
+	back_btn.pressed.connect(_return_to_boss_select)
+	panel.add_child(back_btn)
+	var hint := Label.new()
+	hint.name = "AutoHint"
+	hint.text = "Auto en 6s…"
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.add_theme_font_size_override("font_size", 5)
+	hint.modulate = Color(0.7, 0.8, 0.85, 0.7)
+	hint.position = Vector2(0, 78)
+	hint.size = Vector2(196, 10)
+	panel.add_child(hint)
+	get_tree().create_timer(6.0).timeout.connect(func () -> void:
+		if is_instance_valid(self) and _boss_defeated:
+			_return_to_boss_select()
+	)
+
+
+func _return_to_boss_select() -> void:
+	get_tree().change_scene_to_file("res://scenes/ui/BossSelect.tscn")
+
+
+func _show_banner(text: String, color: Color, duration: float) -> void:
+	var layer := CanvasLayer.new()
+	layer.layer = 75
+	add_child(layer)
+	var lbl := Label.new()
+	lbl.text = text
+	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	lbl.add_theme_font_size_override("font_size", 12)
+	lbl.modulate = color
+	lbl.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	lbl.position = Vector2(48, 24)
+	lbl.size = Vector2(160, 20)
+	layer.add_child(lbl)
+	get_tree().create_timer(duration).timeout.connect(func () -> void:
+		if is_instance_valid(layer):
+			layer.queue_free()
+	)
+
+
+func _build_secret_helmet() -> void:
+	## Alcoba secreta: casco Stage Flight (radar stub) — 2/3 si ya hay torso.
+	_add_breakable(456.0, 32.0)
+	_add_breakable(456.0, 48.0)
+	var pickup: Area2D = ArmorPickupScene.instantiate()
+	pickup.name = "FlightHelmetPickup"
+	pickup.position = Vector2(392.0, 40.0)
+	pickup.armor_set = "flight"
+	pickup.armor_piece = "head"
+	pickup.display_name_es = "Casco Stage Flight"
+	if "toast_hint_es" in pickup:
+		pickup.toast_hint_es = "Radar Stage Flight (stub)"
+	entities.add_child(pickup)
+	var hint := Label.new()
+	hint.name = "SecretHint"
+	hint.text = "¿…?"
+	hint.position = Vector2(460, 20)
+	hint.add_theme_font_size_override("font_size", 6)
+	hint.modulate = Color(0.55, 0.95, 0.85, 0.55)
+	geometry.add_child(hint)
+	var room_lbl := Label.new()
+	room_lbl.text = "SECRETO"
+	room_lbl.position = Vector2(360, 12)
+	room_lbl.add_theme_font_size_override("font_size", 6)
+	room_lbl.modulate = Color(0.45, 0.95, 0.9, 0.7)
+	geometry.add_child(room_lbl)
+	print("LevelEchoWind: secreto Stage Flight (casco) en alcoba x~392")
+
+
+func _add_breakable(x: float, y: float) -> void:
+	var block: StaticBody2D = BreakableBlockScene.instantiate()
+	block.position = Vector2(x, y)
+	geometry.add_child(block)
+
+
+func _spawn_enemies() -> void:
+	_add_met(100.0, 176.0)
+	_add_met(360.0, 128.0)
+	_add_met(840.0, 176.0)
+
+
+func _add_met(x: float, floor_y: float) -> void:
+	var met: Area2D = MetBeatScene.instantiate()
+	met.position = Vector2(x, floor_y)
+	entities.add_child(met)
+
+
+func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) -> void:
+	var body := StaticBody2D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	body.position = Vector2(x + w * 0.5, y + h * 0.5)
+
+	var visual := ColorRect.new()
+	visual.size = Vector2(w, h)
+	visual.position = Vector2(-w * 0.5, -h * 0.5)
+	visual.color = color
+	body.add_child(visual)
+
+	var edge := ColorRect.new()
+	edge.size = Vector2(w, 2)
+	edge.position = Vector2(-w * 0.5, -h * 0.5)
+	edge.color = color.lightened(0.25)
+	body.add_child(edge)
+
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(w, h)
+	var col := CollisionShape2D.new()
+	col.shape = shape
+	body.add_child(col)
+
+	geometry.add_child(body)
+
+
+func _add_spike(x: float, y: float) -> void:
+	var spike: Area2D = SpikeScene.instantiate()
+	spike.position = Vector2(x, y)
+	hazards.add_child(spike)
+
+
+func _spawn_player() -> void:
+	_player = PlayerScene.instantiate()
+	_player.name = "Player"
+	_player.position = Vector2(48, 150)
+	entities.add_child(_player)
+	var cam: Camera2D = _player.get_node("Camera2D")
+	cam.limit_left = 0
+	cam.limit_top = 0
+	cam.limit_right = int(LEVEL_RIGHT)
+	cam.limit_bottom = 224
+	cam.make_current()
+
+
+func _add_hud() -> void:
+	var hud: CanvasLayer = HUDScene.instantiate()
+	hud.name = "HUD"
+	add_child(hud)
+	var player := entities.get_node_or_null("Player")
+	if player and hud.has_method("bind_player"):
+		hud.bind_player(player)
+
+
+func _add_touch_controls() -> void:
+	var touch: CanvasLayer = TouchControlsScene.instantiate()
+	touch.name = "TouchControls"
+	add_child(touch)

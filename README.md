@@ -45,7 +45,7 @@ En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
 
 Archivo listo (debug, un solo archivo, ~27 MB):
 
-**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)**
+**[build/StageCrash-debug.apk (v0.6 — Echo Wind)](./build/StageCrash-debug.apk (v0.6 — Echo Wind))**
 
 1. Descarga el APK desde este repo (botón Raw / Download).
 2. En el teléfono: permite **orígenes desconocidos** / instalar apps desconocidas para el navegador o gestor de archivos.
@@ -62,7 +62,7 @@ Con Godot 4.5, plantillas Android, JDK y Android SDK configurados:
 ./scripts/export_android_debug.sh
 ```
 
-Salida: `build/StageCrash-debug.apk`
+Salida: `build/StageCrash-debug.apk (v0.6 — Echo Wind)`
 
 ---
 
@@ -73,7 +73,7 @@ DISENO.md                 # GDD / diseño
 README.md                 # Este archivo
 docs/ANDROID_EXPORT.md    # Setup export Android
 scripts/export_android_debug.sh
-build/StageCrash-debug.apk
+build/StageCrash-debug.apk (v0.6 — Echo Wind)
 game/                     # Proyecto Godot 4.5
   project.godot
   scenes/  scripts/

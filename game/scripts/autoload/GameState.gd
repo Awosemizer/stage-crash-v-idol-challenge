@@ -38,9 +38,12 @@ var _armor_owned: Dictionary = {}
 ## equipped[set_id][piece_id] = true (proto: auto-equip on pickup)
 var _armor_equipped: Dictionary = {}
 
-## Progreso de jefes — proto: solo Beatfire jugable.
+## Progreso de jefes — proto: Beatfire + Echo Wind jugables.
 var beatfire_defeated: bool = false
 var _bosses_defeated: Dictionary = {}
+
+## Armas desbloqueadas (persisten entre etapas).
+var _weapons_unlocked: Dictionary = {}
 
 
 func select_miku() -> void:
@@ -154,10 +157,13 @@ func mark_boss_defeated(boss_id: String) -> void:
 		if beatfire_defeated:
 			return
 		beatfire_defeated = true
+		unlock_weapon("beat_blaze")
 	else:
 		if bool(_bosses_defeated.get(boss_id, false)):
 			return
 		_bosses_defeated[boss_id] = true
+		if boss_id == BOSS_ECHO_WIND:
+			unlock_weapon("echo_gale")
 	boss_defeated.emit(boss_id)
 	print("GameState: jefe derrotado → %s" % boss_id)
 
@@ -171,10 +177,29 @@ func is_beatfire_defeated() -> bool:
 
 
 func has_pending_armor_secret(boss_id: String) -> bool:
-	## Stub: Beatfire → torso Stage Flight pendiente si no lo tiene.
+	## Stub: Beatfire → torso; Echo Wind → casco Stage Flight.
 	if boss_id == BOSS_BEATFIRE:
 		return not has_armor_piece(ARMOR_SET_FLIGHT, ARMOR_PIECE_TORSO)
+	if boss_id == BOSS_ECHO_WIND:
+		return not has_armor_piece(ARMOR_SET_FLIGHT, ARMOR_PIECE_HEAD)
 	return false
+
+
+func unlock_weapon(weapon_id: String) -> void:
+	_weapons_unlocked[weapon_id] = true
+	print("GameState: arma desbloqueada → %s" % weapon_id)
+
+
+func has_weapon_unlocked(weapon_id: String) -> bool:
+	return bool(_weapons_unlocked.get(weapon_id, false))
+
+
+func get_unlocked_weapons() -> Array:
+	var out: Array = []
+	for k in _weapons_unlocked.keys():
+		if bool(_weapons_unlocked[k]):
+			out.append(str(k))
+	return out
 
 
 func defeated_boss_count() -> int:

@@ -19,7 +19,7 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 /workspace/tools/godot --headless --path /workspace/miku-teto-megaman/game --quit-after 2
 ```
 
-Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01.
+Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind.
 
 ## Controls
 
@@ -30,7 +30,7 @@ Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → 
 | Move | Arrow keys or WASD |
 | Jump | **Z** or Space |
 | Attack / charge Buster | **X** (hold to charge) |
-| Weapon prev / next | **Q** / **E** (also **1** Buster, **2** Beat Blaze) |
+| Weapon prev / next | **Q** / **E** (also **1** Buster/Sable, **2** Beat Blaze, **3** Echo Gale) |
 | Slide | **C** |
 
 **Wall-jump:** press Jump while sliding down / touching a wall (always available).
@@ -83,11 +83,15 @@ Bound at runtime by TouchControls (same actions):
 - `BusterShot` — proyectil Area2D niveles 1–3
 - `BeatBlazeShot` — proyectil naranja (daño 2, munición 28)
 - `BeatfireMan` — jefe piloto HP 28 (salto / fireballs / ground pound al beat)
+- `EchoWind` — 2º jefe HP 28 (flotar / ráfagas / dash); debilidad Beat Blaze ×3
+- `EchoGaleShot` — proyectil verde (daño 2, delay+rebote stub, munición 28)
+- `WindCurrent` — corrientes que empujan al jugador
 - `MetBeat` — enemigo caparazón a ritmo (HP 2, contacto 2)
 - `TouchControls` — mobile overlay + joypad InputMap wiring (CanvasLayer 100)
 - `HUD` — life bar, portrait, weapon label, energy tanks, armor stubs, pause (CanvasLayer 50; Spanish strings)
 - `TitleScreen` / `CharacterSelect` / **`BossSelect`** — flujo de menú (grilla 3×3, CORE-9 bloqueado)
 - `Level01` — platforms, wall-jump, spikes, slide tunnel, **3 Met-Beat**, arena **Beatfire Man**
+- `LevelEchoWind` — torres, corrientes de viento, secreto **casco Stage Flight**, arena **Echo Wind**
 - Victoria jefe → `GameState.beatfire_defeated` + botón/auto a Boss Select
 - Viewport **256×224**, integer stretch, pixel snap, physics 60 Hz
 - Placeholder ColorRect / Polygon2D art (Miku cyan player; no Capcom assets)
