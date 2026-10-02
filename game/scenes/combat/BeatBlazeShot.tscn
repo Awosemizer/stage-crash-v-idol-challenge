@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3 uid="uid://bbeatblazeshot01"]
+
+[ext_resource type="Script" path="res://scripts/combat/BeatBlazeShot.gd" id="1_shot"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_blaze"]
+size = Vector2(10, 6)
+
+[node name="BeatBlazeShot" type="Area2D"]
+collision_layer = 0
+collision_mask = 9
+monitoring = true
+monitorable = true
+script = ExtResource("1_shot")
+
+[node name="Visual" type="ColorRect" parent="."]
+offset_left = -5.0
+offset_top = -3.0
+offset_right = 5.0
+offset_bottom = 3.0
+color = Color(1, 0.45, 0.12, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_blaze")

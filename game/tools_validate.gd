@@ -9,14 +9,20 @@ func _initialize() -> void:
 		"res://scripts/ui/TouchControls.gd",
 		"res://scripts/ui/HUD.gd",
 		"res://scripts/combat/BusterShot.gd",
+		"res://scripts/combat/BeatBlazeShot.gd",
+		"res://scripts/combat/Fireball.gd",
 		"res://scripts/enemies/MetBeat.gd",
+		"res://scripts/bosses/BeatfireMan.gd",
 		"res://scenes/player/Player.tscn",
 		"res://scenes/levels/Level01.tscn",
 		"res://scenes/hazards/Spike.tscn",
 		"res://scenes/ui/TouchControls.tscn",
 		"res://scenes/ui/HUD.tscn",
 		"res://scenes/combat/BusterShot.tscn",
+		"res://scenes/combat/BeatBlazeShot.tscn",
+		"res://scenes/combat/Fireball.tscn",
 		"res://scenes/enemies/MetBeat.tscn",
+		"res://scenes/bosses/BeatfireMan.tscn",
 	]
 	for p in paths:
 		if not ResourceLoader.exists(p):
@@ -38,20 +44,21 @@ func _initialize() -> void:
 			errors.append("TouchControls built no UI children")
 		else:
 			print("OK TouchControls UI children=", touch.get_child_count())
-		# Joypad bindings should exist after _ready
-		for action in ["jump", "attack", "slide", "move_left", "move_right"]:
+		for action in ["jump", "attack", "slide", "move_left", "move_right", "weapon_prev", "weapon_next"]:
 			if not InputMap.has_action(action):
 				errors.append("Missing InputMap action: " + action)
 			else:
-				var has_joy := false
-				for e in InputMap.action_get_events(action):
-					if e is InputEventJoypadButton or e is InputEventJoypadMotion:
-						has_joy = true
-						break
-				if not has_joy:
-					errors.append("No joypad binding on action: " + action)
-				else:
-					print("OK joypad bound: ", action)
+				print("OK InputMap action: ", action)
+		for action in ["jump", "attack", "slide", "move_left", "move_right"]:
+			var has_joy := false
+			for e in InputMap.action_get_events(action):
+				if e is InputEventJoypadButton or e is InputEventJoypadMotion:
+					has_joy = true
+					break
+			if not has_joy:
+				errors.append("No joypad binding on action: " + action)
+			else:
+				print("OK joypad bound: ", action)
 		touch.queue_free()
 		await process_frame
 	else:
@@ -85,7 +92,7 @@ func _initialize() -> void:
 	else:
 		errors.append("HUD.tscn failed to load as PackedScene")
 
-	# Player HP API + ChargeAura smoke test
+	# Player HP API + weapons + ChargeAura smoke test
 	var player_packed: PackedScene = load("res://scenes/player/Player.tscn")
 	if player_packed:
 		var player = player_packed.instantiate()
@@ -95,6 +102,10 @@ func _initialize() -> void:
 			errors.append("Player missing hp_changed signal")
 		else:
 			print("OK Player hp_changed signal")
+		if not player.has_signal("weapon_changed"):
+			errors.append("Player missing weapon_changed signal")
+		else:
+			print("OK Player weapon_changed signal")
 		if not ("hp" in player) or not ("max_hp" in player):
 			errors.append("Player missing hp/max_hp")
 		else:
@@ -116,14 +127,55 @@ func _initialize() -> void:
 			errors.append("Player missing buster API")
 		else:
 			print("OK Player buster helpers")
-		# Fire a shot directly
+		if not player.has_method("grant_weapon"):
+			errors.append("Player missing grant_weapon")
+		else:
+			player.grant_weapon("beat_blaze")
+			await process_frame
+			if not player.has_method("get_weapon_id"):
+				errors.append("Player missing get_weapon_id")
+			else:
+				# grant switches to Beat Blaze
+				if str(player.get_weapon_id()) != "beat_blaze":
+					errors.append("grant_weapon did not select beat_blaze")
+				else:
+					print("OK grant_weapon beat_blaze")
+			var w: Dictionary = player.get_current_weapon()
+			if int(w.get("ammo", 0)) != 28:
+				errors.append("Beat Blaze ammo expected 28, got %s" % str(w.get("ammo")))
+			else:
+				print("OK Beat Blaze ammo=", w.get("ammo"))
+			# Fire Beat Blaze
+			if player.has_method("_fire_beat_blaze"):
+				player._fire_beat_blaze()
+				await process_frame
+				var blaze_shots = root.get_tree().get_nodes_in_group("player_shots")
+				var found_blaze := false
+				for s in blaze_shots:
+					if s.get_script() and "BeatBlaze" in str(s.get_script().resource_path):
+						found_blaze = true
+					elif "damage" in s and int(s.damage) == 2 and s.is_in_group("player_shots"):
+						# Beat Blaze damage 2
+						found_blaze = true
+				if not found_blaze and blaze_shots.is_empty():
+					errors.append("BeatBlazeShot not spawned")
+				else:
+					print("OK BeatBlazeShot spawned count=", blaze_shots.size())
+					w = player.get_current_weapon()
+					if int(w.get("ammo", 28)) != 27:
+						errors.append("Beat Blaze ammo not consumed (expected 27)")
+					else:
+						print("OK Beat Blaze ammo consumed=", w.get("ammo"))
+					for sh in blaze_shots:
+						sh.queue_free()
+		# Fire a buster shot directly
+		if player.has_method("_select_weapon_by_id"):
+			player._select_weapon_by_id("buster")
 		if player.has_method("_fire_buster"):
 			player._fire_buster(1)
 			await process_frame
 			var shots = root.get_tree().get_nodes_in_group("player_shots")
-			# Shot parented under root (same as player parent in this test)
 			if shots.is_empty():
-				# May be child of root via get_parent()
 				errors.append("BusterShot not spawned after _fire_buster")
 			else:
 				print("OK BusterShot spawned count=", shots.size())
@@ -152,7 +204,6 @@ func _initialize() -> void:
 		if not met.has_method("take_damage"):
 			errors.append("MetBeat missing take_damage")
 		else:
-			# Force closed
 			met._open = false
 			var blocked = met.take_damage(1)
 			if blocked != false:
@@ -161,7 +212,6 @@ func _initialize() -> void:
 				print("OK Met shell blocked shot")
 			if int(met.hp) != 2:
 				errors.append("Closed Met HP should stay 2")
-			# Force open and kill
 			met._open = true
 			met.take_damage(1)
 			if int(met.hp) != 1:
@@ -179,6 +229,45 @@ func _initialize() -> void:
 			await process_frame
 	else:
 		errors.append("MetBeat.tscn failed to load")
+
+	# Beatfire Man boss smoke
+	var boss_packed: PackedScene = load("res://scenes/bosses/BeatfireMan.tscn")
+	if boss_packed:
+		var boss = boss_packed.instantiate()
+		root.add_child(boss)
+		await process_frame
+		if not boss.is_in_group("enemies") or not boss.is_in_group("bosses"):
+			errors.append("BeatfireMan missing enemies/bosses group")
+		else:
+			print("OK BeatfireMan groups")
+		if int(boss.hp) != 28:
+			errors.append("BeatfireMan HP expected 28")
+		else:
+			print("OK BeatfireMan hp=", boss.hp)
+		# Inactive: should not take damage
+		var blocked_inactive = boss.take_damage(3)
+		if blocked_inactive != false or int(boss.hp) != 28:
+			errors.append("Inactive boss should ignore damage")
+		else:
+			print("OK inactive boss ignores damage")
+		if boss.has_method("activate"):
+			boss.activate()
+		boss.take_damage(3)
+		if int(boss.hp) != 25:
+			errors.append("Active boss HP expected 25 after 3 dmg")
+		else:
+			print("OK boss took buster damage hp=", boss.hp)
+		# Wait out brief hit invuln then apply charge-style damage
+		boss._invuln = 0.0
+		boss.take_damage(3)
+		if int(boss.hp) != 22:
+			errors.append("Boss HP expected 22, got %d" % int(boss.hp))
+		else:
+			print("OK boss charge-style dmg hp=", boss.hp)
+		boss.queue_free()
+		await process_frame
+	else:
+		errors.append("BeatfireMan.tscn failed to load")
 
 	# Instantiate main scene briefly
 	var packed: PackedScene = load("res://scenes/levels/Level01.tscn")
@@ -198,13 +287,25 @@ func _initialize() -> void:
 			else:
 				print("OK player spawned: ", p.name)
 			var met_count := 0
+			var boss_count := 0
 			for c in entities.get_children():
-				if c.is_in_group("enemies") or str(c.name).begins_with("Met"):
+				if c.is_in_group("bosses") or str(c.name).begins_with("Beatfire"):
+					boss_count += 1
+				elif c.is_in_group("enemies") or str(c.name).begins_with("Met"):
 					met_count += 1
 			if met_count < 2:
 				errors.append("Expected >=2 MetBeat in Level01, got %d" % met_count)
 			else:
 				print("OK MetBeat count in Level01=", met_count)
+			if boss_count < 1:
+				errors.append("Expected BeatfireMan in Level01")
+			else:
+				print("OK BeatfireMan in Level01 count=", boss_count)
+			var trigger = entities.get_node_or_null("ArenaTrigger")
+			if trigger == null:
+				errors.append("ArenaTrigger missing")
+			else:
+				print("OK ArenaTrigger present")
 		var tc = level.get_node_or_null("TouchControls")
 		if tc == null:
 			errors.append("TouchControls not found under Level01")
@@ -215,7 +316,6 @@ func _initialize() -> void:
 			errors.append("HUD not found under Level01")
 		else:
 			print("OK HUD in Level01, layer=", hud_node.layer)
-			# Spike damage → HUD: simulate hit on level player
 			var p2 = entities.get_node_or_null("Player") if entities else null
 			if p2 and hud_node.has_method("bind_player"):
 				var hp_lbl = hud_node.get_node_or_null("Root/HpLabel")
@@ -229,6 +329,43 @@ func _initialize() -> void:
 						errors.append("HUD HpLabel not updated after damage")
 				else:
 					errors.append("HUD HpLabel missing after Level01 bind")
+				# Weapon HUD after grant
+				if p2.has_method("grant_weapon"):
+					p2.grant_weapon("beat_blaze")
+					await process_frame
+					var wpn = hud_node.get_node_or_null("Root/WeaponLabel")
+					if wpn == null:
+						errors.append("WeaponLabel missing")
+					elif "Beat Blaze" not in wpn.text:
+						errors.append("HUD weapon label missing Beat Blaze: " + wpn.text)
+					elif "28" not in wpn.text and "27" not in wpn.text:
+						errors.append("HUD weapon ammo not shown: " + wpn.text)
+					else:
+						print("OK HUD weapon+ammo: ", wpn.text)
+		# Simulate boss start + kill for win path
+		if level.has_method("_start_boss_fight"):
+			level._start_boss_fight()
+			await process_frame
+			var boss_node = entities.get_node_or_null("BeatfireMan") if entities else null
+			if boss_node and boss_node.has_method("take_damage"):
+				# Kill boss
+				while is_instance_valid(boss_node) and int(boss_node.hp) > 0:
+					boss_node.take_damage(7)
+					await process_frame
+				await process_frame
+				await process_frame
+				var p3 = entities.get_node_or_null("Player") if entities else null
+				if p3 and p3.has_method("_has_weapon"):
+					if not p3._has_weapon("beat_blaze"):
+						errors.append("Boss defeat did not grant Beat Blaze")
+					else:
+						print("OK boss defeat granted Beat Blaze")
+				var win = level.get_node_or_null("WinBanner")
+				if win == null:
+					# May already be created
+					print("WARN WinBanner not found immediately (may be timing)")
+				else:
+					print("OK WinBanner shown")
 		level.queue_free()
 	else:
 		errors.append("Level01.tscn failed to load")

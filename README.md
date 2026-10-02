@@ -76,7 +76,7 @@ game/                     # Proyecto Godot 4.5
 
 ## Estado actual (prototipo)
 
-Incluye: correr, saltar, wall-jump, slide, **Buster con carga Nv1–3**, enemigos **Met-Beat**, HUD de vida, controles táctiles, nivel piloto con púas y meta.
+Incluye: correr, saltar, wall-jump, slide, **Buster con carga Nv1–3**, enemigos **Met-Beat**, jefe **Beatfire Man**, arma **Beat Blaze**, HUD de vida/munición, controles táctiles, nivel piloto con arena.
 
 Pendiente: sprites finales estilo densidad X3, 8 jefes, armaduras, audio, menú de título, saves, etc.
 

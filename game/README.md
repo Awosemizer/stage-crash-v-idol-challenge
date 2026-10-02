@@ -30,6 +30,7 @@ Main scene: `scenes/levels/Level01.tscn`.
 | Move | Arrow keys or WASD |
 | Jump | **Z** or Space |
 | Attack / charge Buster | **X** (hold to charge) |
+| Weapon prev / next | **Q** / **E** (also **1** Buster, **2** Beat Blaze) |
 | Slide | **C** |
 
 **Wall-jump:** press Jump while sliding down / touching a wall (always available).
@@ -59,7 +60,7 @@ CanvasLayer **layer 50** (below touch @ 100). Spanish UI.
 | Zone | Element |
 |------|---------|
 | Top-left | Cyan portrait stub (Miku) + HP bar (28 units, `PV x/28`) |
-| Top-left | Weapon label (`Arma: Buster`) + 4 empty Energy Tank icons |
+| Top-left | Weapon label (`Arma: Buster` o `Beat Blaze n/28`) + 4 empty Energy Tank icons |
 | Top-right | Pause (`II` → panel **PAUSA** / **Continuar**, freezes tree) |
 | Top-right | 3 empty armor slots |
 
@@ -78,12 +79,14 @@ Bound at runtime by TouchControls (same actions):
 
 ## What’s in this slice
 
-- `Player.gd` — movement + **Buster charge** (tap Nv1 / hold Nv2–3 + ChargeAura); `hp` / `max_hp` (28)
+- `Player.gd` — movement + **Buster charge** + **weapon stub** (Buster / Beat Blaze); `hp` / `max_hp` (28)
 - `BusterShot` — proyectil Area2D niveles 1–3
+- `BeatBlazeShot` — proyectil naranja (daño 2, munición 28)
+- `BeatfireMan` — jefe piloto HP 28 (salto / fireballs / ground pound al beat)
 - `MetBeat` — enemigo caparazón a ritmo (HP 2, contacto 2)
 - `TouchControls` — mobile overlay + joypad InputMap wiring (CanvasLayer 100)
 - `HUD` — life bar, portrait, weapon label, energy tanks, armor stubs, pause (CanvasLayer 50; Spanish strings)
-- `Level01` — platforms, wall-jump, spikes, slide tunnel, **3 Met-Beat**, META
+- `Level01` — platforms, wall-jump, spikes, slide tunnel, **3 Met-Beat**, arena **Beatfire Man**
 - Viewport **256×224**, integer stretch, pixel snap, physics 60 Hz
 - Placeholder ColorRect / Polygon2D art (Miku cyan player; no Capcom assets)
 
@@ -96,6 +99,9 @@ game/
   scripts/player/Player.gd
   scripts/combat/BusterShot.gd
   scripts/enemies/MetBeat.gd
+  scripts/bosses/BeatfireMan.gd
+  scripts/combat/BeatBlazeShot.gd
+  scripts/combat/Fireball.gd
   scripts/levels/Level01.gd
   scripts/hazards/Hazard.gd
   scripts/ui/TouchControls.gd
@@ -103,6 +109,9 @@ game/
   scenes/player/Player.tscn
   scenes/combat/BusterShot.tscn
   scenes/enemies/MetBeat.tscn
+  scenes/bosses/BeatfireMan.tscn
+  scenes/combat/BeatBlazeShot.tscn
+  scenes/combat/Fireball.tscn
   scenes/levels/Level01.tscn
   scenes/hazards/Spike.tscn
   scenes/ui/TouchControls.tscn
@@ -119,7 +128,7 @@ Expect `VALIDATE_PASS`.
 
 ## Next recommended step
 
-Más enemigos / jefe piloto Beatfire, munición en HUD, Teto saber.
+Selector de etapas, más jefes, Teto sable, arte definitivo.
 
 ## Android debug APK
 

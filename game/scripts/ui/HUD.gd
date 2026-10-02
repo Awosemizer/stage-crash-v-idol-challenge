@@ -35,6 +35,9 @@ var _player: Node = null
 var _hp := 28
 var _max_hp := 28
 var _is_paused := false
+var _weapon_ammo := -1
+var _weapon_max_ammo := -1
+var _weapon_id := "buster"
 
 
 func _ready() -> void:
@@ -54,6 +57,9 @@ func bind_player(player: Node) -> void:
 	if _player != null and _player.has_signal("hp_changed"):
 		if _player.hp_changed.is_connected(_on_player_hp_changed):
 			_player.hp_changed.disconnect(_on_player_hp_changed)
+	if _player != null and _player.has_signal("weapon_changed"):
+		if _player.weapon_changed.is_connected(_on_player_weapon_changed):
+			_player.weapon_changed.disconnect(_on_player_weapon_changed)
 	_player = player
 	if _player == null:
 		return
@@ -64,11 +70,29 @@ func bind_player(player: Node) -> void:
 	if _player.has_signal("hp_changed"):
 		if not _player.hp_changed.is_connected(_on_player_hp_changed):
 			_player.hp_changed.connect(_on_player_hp_changed)
+	if _player.has_signal("weapon_changed"):
+		if not _player.weapon_changed.is_connected(_on_player_weapon_changed):
+			_player.weapon_changed.connect(_on_player_weapon_changed)
+	# Sync current weapon if API present
+	if _player.has_method("get_current_weapon"):
+		var w: Dictionary = _player.get_current_weapon()
+		_on_player_weapon_changed(
+			str(w.get("id", "buster")),
+			str(w.get("name", "Buster")),
+			int(w.get("ammo", -1)),
+			int(w.get("max_ammo", -1))
+		)
 	_refresh_hp_bar()
 
 
 func set_weapon_name(name: String) -> void:
 	weapon_name = name
+	_refresh_weapon()
+
+
+func set_weapon_ammo(ammo: int, max_ammo: int = -1) -> void:
+	_weapon_ammo = ammo
+	_weapon_max_ammo = max_ammo
 	_refresh_weapon()
 
 
@@ -92,6 +116,14 @@ func _on_player_hp_changed(current: int, maximum: int) -> void:
 	_hp = current
 	_max_hp = maximum
 	_refresh_hp_bar()
+
+
+func _on_player_weapon_changed(weapon_id: String, display_name: String, ammo: int, max_ammo: int) -> void:
+	_weapon_id = weapon_id
+	weapon_name = display_name
+	_weapon_ammo = ammo
+	_weapon_max_ammo = max_ammo
+	_refresh_weapon()
 
 
 func _build_ui() -> void:
@@ -223,7 +255,7 @@ func _layout() -> void:
 	_hp_label.size = Vector2(HP_BAR_W + 20.0, 10.0)
 
 	_weapon_label.position = Vector2(SAFE, SAFE + PORTRAIT_SIZE + 2.0)
-	_weapon_label.size = Vector2(80.0, 10.0)
+	_weapon_label.size = Vector2(120.0, 10.0)
 
 	var tank_y := SAFE + PORTRAIT_SIZE + 12.0
 	for i in _tank_icons.size():
@@ -284,8 +316,14 @@ func _refresh_tanks() -> void:
 
 
 func _refresh_weapon() -> void:
-	if _weapon_label:
+	if _weapon_label == null:
+		return
+	if _weapon_id != "buster" and _weapon_ammo >= 0:
+		_weapon_label.text = "Arma: %s %d/%d" % [weapon_name, _weapon_ammo, maxi(_weapon_max_ammo, 0)]
+		_weapon_label.modulate = Color(1.0, 0.7, 0.35, 0.95)
+	else:
 		_weapon_label.text = "Arma: %s" % weapon_name
+		_weapon_label.modulate = Color(0.85, 0.95, 1.0, 0.95)
 
 
 func _on_pause_btn_gui_input(event: InputEvent) -> void:

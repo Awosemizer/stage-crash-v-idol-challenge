@@ -5,6 +5,7 @@ extends CharacterBody2D
 ## GDD refs (px/frame @ 60fps, tile 16px): run 1.5, jump 4.5, grav 0.25,
 ## wall-jump H 2.5, slide 12 frames. Wall-jump always available.
 ## Buster: tap = Nv1 (1 dmg); hold → Nv2 / Nv3 con aura en ColorRect.
+## Armas: Buster + Beat Blaze (tras vencer a Beatfire Man).
 
 # --- Tunables (converted to px/s / px/s²) ---
 const RUN_SPEED := 90.0          # 1.5 px/frame
@@ -40,9 +41,14 @@ const STAND_OFFSET := Vector2(0, -2)
 const SLIDE_SIZE := Vector2(22, 14)
 const SLIDE_OFFSET := Vector2(0, 5)
 
+const WEAPON_BUSTER := "buster"
+const WEAPON_BEAT_BLAZE := "beat_blaze"
+
 const BusterShotScene := preload("res://scenes/combat/BusterShot.tscn")
+const BeatBlazeShotScene := preload("res://scenes/combat/BeatBlazeShot.tscn")
 
 signal hp_changed(current: int, maximum: int)
+signal weapon_changed(weapon_id: String, display_name: String, ammo: int, max_ammo: int)
 
 @onready var visual: ColorRect = $Visual
 @onready var charge_aura: ColorRect = $ChargeAura
@@ -67,6 +73,12 @@ var _alive := true
 
 var _charging := false
 var _charge_time := 0.0
+var _key1_held := false
+var _key2_held := false
+
+## Weapon inventory: owned weapons only. ammo -1 = infinite (Buster).
+var _weapons: Array[Dictionary] = []
+var _weapon_index := 0
 
 
 func _ready() -> void:
@@ -77,7 +89,12 @@ func _ready() -> void:
 	visual.color = Color(0.2, 0.9, 0.95, 1.0)
 	if charge_aura:
 		charge_aura.visible = false
+	_weapons = [
+		{"id": WEAPON_BUSTER, "name": "Buster", "ammo": -1, "max_ammo": -1, "cost": 0},
+	]
+	_weapon_index = 0
 	hp_changed.emit(hp, max_hp)
+	_emit_weapon()
 
 
 func _physics_process(delta: float) -> void:
@@ -85,6 +102,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_tick_timers(delta)
+	_handle_weapon_switch()
 
 	var on_floor := is_on_floor()
 	var on_wall := _is_on_wall_solid()
@@ -139,21 +157,153 @@ func _physics_process(delta: float) -> void:
 		elif on_wall and not on_floor:
 			_do_wall_jump(wall_dir)
 
-	_handle_buster(delta)
+	_handle_attack(delta)
 
 	move_and_slide()
 	_update_visual()
 	_check_hazards_and_pits()
 
 
-func _handle_buster(delta: float) -> void:
+func _handle_weapon_switch() -> void:
+	if _weapons.size() <= 1:
+		# Still allow number keys to no-op cleanly
+		pass
+	if Input.is_action_just_pressed("weapon_next"):
+		_cycle_weapon(1)
+	elif Input.is_action_just_pressed("weapon_prev"):
+		_cycle_weapon(-1)
+	# Number keys 1–2 as fallback (edge-triggered)
+	var k1 := Input.is_physical_key_pressed(KEY_1)
+	var k2 := Input.is_physical_key_pressed(KEY_2)
+	if k1 and not _key1_held:
+		_select_weapon_by_id(WEAPON_BUSTER)
+	if k2 and not _key2_held and _has_weapon(WEAPON_BEAT_BLAZE):
+		_select_weapon_by_id(WEAPON_BEAT_BLAZE)
+	_key1_held = k1
+	_key2_held = k2
+
+
+func _cycle_weapon(dir: int) -> void:
+	if _weapons.is_empty():
+		return
+	_weapon_index = (_weapon_index + dir) % _weapons.size()
+	if _weapon_index < 0:
+		_weapon_index = _weapons.size() - 1
+	# Cancel charge when leaving buster
+	_charging = false
+	_charge_time = 0.0
+	_emit_weapon()
+
+
+func _select_weapon_by_id(wid: String) -> void:
+	for i in _weapons.size():
+		if str(_weapons[i].get("id", "")) == wid:
+			if _weapon_index != i:
+				_weapon_index = i
+				_charging = false
+				_charge_time = 0.0
+				_emit_weapon()
+			return
+
+
+func _has_weapon(wid: String) -> bool:
+	for w in _weapons:
+		if str(w.get("id", "")) == wid:
+			return true
+	return false
+
+
+func get_current_weapon() -> Dictionary:
+	if _weapons.is_empty():
+		return {"id": WEAPON_BUSTER, "name": "Buster", "ammo": -1, "max_ammo": -1, "cost": 0}
+	return _weapons[_weapon_index]
+
+
+func get_weapon_id() -> String:
+	return str(get_current_weapon().get("id", WEAPON_BUSTER))
+
+
+func grant_weapon(weapon_id: String) -> void:
+	## Otorga arma robada de jefe (p.ej. Beat Blaze tras victoria).
+	if _has_weapon(weapon_id):
+		# Refill ammo if already owned
+		for i in _weapons.size():
+			if str(_weapons[i].get("id", "")) == weapon_id:
+				_weapons[i]["ammo"] = int(_weapons[i].get("max_ammo", 28))
+				_emit_weapon()
+				return
+		return
+	if weapon_id == WEAPON_BEAT_BLAZE:
+		_weapons.append({
+			"id": WEAPON_BEAT_BLAZE,
+			"name": "Beat Blaze",
+			"ammo": 28,
+			"max_ammo": 28,
+			"cost": 1,
+		})
+		_weapon_index = _weapons.size() - 1
+		_charging = false
+		_charge_time = 0.0
+		_emit_weapon()
+		print("Player: arma otorgada Beat Blaze")
+
+
+func _emit_weapon() -> void:
+	var w := get_current_weapon()
+	weapon_changed.emit(
+		str(w.get("id", WEAPON_BUSTER)),
+		str(w.get("name", "Buster")),
+		int(w.get("ammo", -1)),
+		int(w.get("max_ammo", -1))
+	)
+
+
+func _handle_attack(delta: float) -> void:
 	if _is_sliding:
-		# Cancel charge while sliding (no fire mid-slide)
 		if _charging:
 			_charging = false
 			_charge_time = 0.0
 		return
 
+	var wid := get_weapon_id()
+	if wid == WEAPON_BEAT_BLAZE:
+		_handle_beat_blaze()
+	else:
+		_handle_buster(delta)
+
+
+func _handle_beat_blaze() -> void:
+	# Tap only — no charge
+	if _charging:
+		_charging = false
+		_charge_time = 0.0
+	if Input.is_action_just_pressed("attack"):
+		_fire_beat_blaze()
+
+
+func _fire_beat_blaze() -> void:
+	var w := get_current_weapon()
+	var ammo: int = int(w.get("ammo", 0))
+	var cost: int = int(w.get("cost", 1))
+	if ammo < cost:
+		return
+	var live := get_tree().get_nodes_in_group("player_shots")
+	if live.size() >= MAX_SHOTS:
+		return
+	ammo -= cost
+	_weapons[_weapon_index]["ammo"] = ammo
+	_emit_weapon()
+	var shot: Area2D = BeatBlazeShotScene.instantiate()
+	var parent_node := get_parent()
+	if parent_node == null:
+		parent_node = get_tree().current_scene
+	parent_node.add_child(shot)
+	shot.global_position = global_position + Vector2(facing * SHOT_SPAWN_X, SHOT_SPAWN_Y)
+	if shot.has_method("setup"):
+		shot.setup(facing)
+
+
+func _handle_buster(delta: float) -> void:
 	if Input.is_action_just_pressed("attack"):
 		_charging = true
 		_charge_time = 0.0
@@ -299,8 +449,10 @@ func _update_visual() -> void:
 	elif _is_sliding:
 		base_col = Color(0.15, 0.7, 0.85, 1.0)
 
-	# Aura de carga sobre el ColorRect del jugador
-	var lv := _charge_level_from_time(_charge_time) if _charging else 0
+	# Aura de carga solo con Buster
+	var lv := 0
+	if get_weapon_id() == WEAPON_BUSTER and _charging:
+		lv = _charge_level_from_time(_charge_time)
 	if charge_aura:
 		if lv >= 2:
 			charge_aura.visible = true
@@ -317,9 +469,11 @@ func _update_visual() -> void:
 				base_col = Color(0.45, 0.85, 1.0, 1.0)
 		else:
 			charge_aura.visible = false
-			if _charging and _charge_time > 0.12:
+			if get_weapon_id() == WEAPON_BUSTER and _charging and _charge_time > 0.12:
 				# Nv1 charging hint: ligero brillo en el cuerpo
 				base_col = Color(0.35, 0.95, 1.0, 1.0)
+			elif get_weapon_id() == WEAPON_BEAT_BLAZE:
+				base_col = Color(0.95, 0.55, 0.25, 1.0)
 
 	if _invuln > 0.0:
 		visual.color = base_col
@@ -377,12 +531,16 @@ func _respawn() -> void:
 	hp_changed.emit(hp, max_hp)
 
 
+func set_spawn_pos(pos: Vector2) -> void:
+	_spawn_pos = pos
+
+
 func is_invulnerable() -> bool:
 	return _invuln > 0.0
 
 
 func get_charge_level() -> int:
 	## Para tests / HUD futuro.
-	if not _charging:
+	if not _charging or get_weapon_id() != WEAPON_BUSTER:
 		return 0
 	return _charge_level_from_time(_charge_time)
