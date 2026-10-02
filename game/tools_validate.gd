@@ -3642,8 +3642,8 @@ func _initialize() -> void:
 	var title_src := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
 	if "PanelChrome" not in title_src and "panel_chrome" not in title_src:
 		errors.append("TitleScreen should use panel chrome")
-	if "0.19" not in title_src and "0.20" not in title_src and "0.22" not in title_src and "0.24" not in title_src and "0.25" not in title_src and "0.26" not in title_src:
-		errors.append("TitleScreen version should mention 0.19+ / 0.26")
+	if "0.19" not in title_src and "0.20" not in title_src and "0.22" not in title_src and "0.24" not in title_src and "0.25" not in title_src and "0.26" not in title_src and "0.27" not in title_src:
+		errors.append("TitleScreen version should mention 0.19+ / 0.27")
 	# Boss intro on Beatfire
 	var bf_src := FileAccess.get_file_as_string("res://scripts/bosses/BeatfireMan.gd")
 	if "play_boss_intro" not in bf_src:
@@ -3654,8 +3654,8 @@ func _initialize() -> void:
 
 	# --- v0.20 landscape + Beatfire touch playability ---
 	var proj := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj and 'config/version="0.24.0-proto"' not in proj:
-		errors.append("project.godot version should be 0.26.0-proto")
+	if 'config/version="0.27.0-proto"' not in proj and 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj:
+		errors.append("project.godot version should be 0.27.0-proto")
 	else:
 		print("OK project version present")
 	if 'window/stretch/mode="canvas_items"' not in proj:
@@ -3932,7 +3932,7 @@ func _initialize() -> void:
 	else:
 		print("OK RefrainUnit fairer contact")
 	var title_25 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "tight" not in title_25 and "0.25" not in title_25 and "0.26" not in title_25:
+	if "tight" not in title_25 and "0.25" not in title_25 and "0.26" not in title_25 and "0.27" not in title_25:
 		errors.append("TitleScreen should handle tight landscape / show 0.25+")
 	else:
 		print("OK TitleScreen tight/version")
@@ -4011,11 +4011,118 @@ func _initialize() -> void:
 	else:
 		print("OK BusterShot hitstop hook")
 	var title_26 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "0.26" not in title_26:
-		errors.append("TitleScreen version should mention 0.26")
+	if "0.26" not in title_26 and "0.27" not in title_26:
+		errors.append("TitleScreen version should mention 0.26+")
 	else:
 		print("OK TitleScreen 0.26")
 	print("OK v0.26 combat/UI polish")
+
+
+	# --- v0.27 checkpoints / feel / touch opts ---
+	var ck_27 := FileAccess.get_file_as_string("res://scripts/props/Checkpoint.gd")
+	if "set_stage_checkpoint" not in ck_27 or "marker_label" not in ck_27:
+		errors.append("Checkpoint.gd missing clear marker / GameState save")
+	else:
+		print("OK Checkpoint marker")
+	if not FileAccess.file_exists("res://scenes/props/Checkpoint.tscn"):
+		errors.append("Checkpoint.tscn missing")
+	else:
+		print("OK Checkpoint.tscn")
+	var gs_27 := FileAccess.get_file_as_string("res://scripts/autoload/GameState.gd")
+	if "begin_stage" not in gs_27 or "get_stage_checkpoint" not in gs_27:
+		errors.append("GameState missing stage checkpoint API")
+	else:
+		print("OK GameState stage checkpoints")
+	if "cycle_touch_btn_size" not in gs_27 or "cycle_touch_opacity" not in gs_27:
+		errors.append("GameState missing touch size/opacity prefs")
+	else:
+		print("OK GameState touch prefs")
+	var pl_27 := FileAccess.get_file_as_string("res://scripts/player/Player.gd")
+	if "RESPAWN_FADE" not in pl_27 or "RESPAWN_INVULN := 0.65" not in pl_27:
+		errors.append("Player should have faster respawn (RESPAWN_FADE / 0.65 invuln)")
+	else:
+		print("OK Player faster respawn")
+	if "spawn_dust_puff" not in pl_27 or "_spawn_jump_dust" not in pl_27:
+		errors.append("Player missing jump dust")
+	else:
+		print("OK Player jump dust")
+	if "_ping_ammo_empty" not in pl_27:
+		errors.append("Player should ping HUD on empty ammo fire")
+	else:
+		print("OK Player ammo empty ping")
+	var hud_27 := FileAccess.get_file_as_string("res://scripts/ui/HUD.gd")
+	if "flash_ammo_empty" not in hud_27:
+		errors.append("HUD missing flash_ammo_empty")
+	else:
+		print("OK HUD ammo empty flash")
+	if "TouchSizeBtn" not in hud_27 or "TouchOpacityBtn" not in hud_27:
+		errors.append("HUD pause should expose touch size S/M/L + opacity")
+	else:
+		print("OK HUD touch options")
+	var touch_27 := FileAccess.get_file_as_string("res://scripts/ui/TouchControls.gd")
+	if "_touch_size_scale" not in touch_27 or "touch_settings_changed" not in touch_27:
+		errors.append("TouchControls should apply GameState size/opacity")
+	else:
+		print("OK TouchControls settings bind")
+	var art_27 := FileAccess.get_file_as_string("res://scripts/art/ArtKit.gd")
+	if "spawn_dust_puff" not in art_27:
+		errors.append("ArtKit missing spawn_dust_puff")
+	else:
+		print("OK ArtKit dust")
+	var l01_27 := FileAccess.get_file_as_string("res://scripts/levels/Level01.gd")
+	if "_add_mid_checkpoints" not in l01_27 or "CheckpointScript.place" not in l01_27:
+		errors.append("Level01 missing mid-stage checkpoints")
+	else:
+		print("OK Level01 checkpoints")
+	var title_27 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
+	if "0.27" not in title_27:
+		errors.append("TitleScreen version should mention 0.27")
+	else:
+		print("OK TitleScreen 0.27")
+	var proj_27 := FileAccess.get_file_as_string("res://project.godot")
+	if 'config/version="0.27.0-proto"' not in proj_27:
+		errors.append("project.godot version should be 0.27.0-proto")
+	else:
+		print("OK project 0.27")
+	# Runtime: Checkpoint place + GameState roundtrip
+	var ck_node = load("res://scenes/props/Checkpoint.tscn")
+	if ck_node == null:
+		errors.append("Could not load Checkpoint.tscn")
+	else:
+		var inst = ck_node.instantiate()
+		if inst == null:
+			errors.append("Checkpoint instantiate failed")
+		else:
+			inst.stage_id = "validate_stage"
+			inst.marker_label = "CK"
+			# Don't need tree for script check
+			if not inst.has_method("activate"):
+				errors.append("Checkpoint missing activate()")
+			else:
+				print("OK Checkpoint activate API")
+			inst.free()
+	var gs_rt = root.get_node_or_null("GameState")
+	if gs_rt == null:
+		gs_rt = root.get_node_or_null("/root/GameState")
+	if gs_rt:
+		gs_rt.begin_stage("validate_stage", true)
+		gs_rt.set_stage_checkpoint(Vector2(100, 50), "validate_stage")
+		var got: Vector2 = gs_rt.get_stage_checkpoint("validate_stage")
+		if got != Vector2(100, 50):
+			errors.append("GameState checkpoint roundtrip failed: %s" % str(got))
+		else:
+			print("OK GameState checkpoint roundtrip")
+		gs_rt.clear_stage_checkpoint("validate_stage")
+		gs_rt.set_touch_btn_size("L")
+		if gs_rt.get_touch_size_scale() < 1.1:
+			errors.append("Touch size L scale expected >1.1")
+		else:
+			print("OK touch size L scale")
+		gs_rt.set_touch_btn_size("M")
+		gs_rt.set_touch_opacity(0.5)
+	else:
+		errors.append("GameState missing for checkpoint runtime check")
+	print("OK v0.27 checkpoints/feel/touch")
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

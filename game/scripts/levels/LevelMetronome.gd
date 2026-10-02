@@ -1,4 +1,6 @@
 extends Node2D
+
+const CheckpointScript := preload("res://scripts/props/Checkpoint.gd")
 ## Metronome (touch-first) — fábrica de relojes / metrónomos. Púas a intervalos fijos.
 ## Secreto: piernas Encore Guard (más i-frames en slide). Arena: Metronome → Tempo Spike.
 
@@ -42,12 +44,15 @@ var _hud: CanvasLayer = null
 
 
 func _ready() -> void:
+	if GameState and GameState.has_method("begin_stage"):
+		GameState.begin_stage("metronome", true)
 	if AudioManager:
 		AudioManager.play_stage_bgm("metronome")
 	bg.color = COL_BG
 	ArtKit.setup_stage_parallax(bg.get_parent(), "metronome", float(LEVEL_RIGHT))
 	bg.offset_right = LEVEL_RIGHT + 64.0
 	_build_course()
+	_add_mid_checkpoints()
 	_spawn_enemies()
 	_build_boss_arena()
 	_spawn_player()
@@ -194,6 +199,8 @@ func _start_boss_fight() -> void:
 	_close_gate()
 	if _player and _player.has_method("set_spawn_pos"):
 		_player.set_spawn_pos(Vector2(ARENA_LEFT + 48.0, ARENA_FLOOR_Y - 20.0))
+	if GameState and GameState.has_method("set_stage_checkpoint"):
+		GameState.set_stage_checkpoint(Vector2(ARENA_LEFT + 48.0, ARENA_FLOOR_Y - 20.0), "metronome")
 	if _player:
 		var cam: Camera2D = _player.get_node_or_null("Camera2D")
 		if cam:
@@ -236,6 +243,8 @@ func _open_gate() -> void:
 
 
 func _on_boss_died() -> void:
+	if GameState and GameState.has_method("clear_stage_checkpoint"):
+		GameState.clear_stage_checkpoint("metronome")
 	if AudioManager:
 		AudioManager.play_victory()
 	_boss_defeated = true
@@ -428,13 +437,25 @@ func _add_spike(x: float, y: float) -> void:
 	hazards.add_child(spike)
 
 
+
+func _add_mid_checkpoints() -> void:
+	## Clear mid-stage markers for metronome (touch-visible cyan pillars).
+	var parent_n: Node = geometry if geometry else self
+	CheckpointScript.place(parent_n, Vector2(432.0, 144.0), "metronome", "CK1")
+	CheckpointScript.place(parent_n, Vector2(992.0, 160.0), "metronome", "CK2")
+
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()
 	_player.name = "Player"
-	_player.position = Vector2(56, 148)
+	var spawn_p := Vector2(56, 148)
+	if GameState and GameState.has_method("get_stage_checkpoint"):
+		var ck: Vector2 = GameState.get_stage_checkpoint("metronome")
+		if ck != Vector2.ZERO:
+			spawn_p = ck
+	_player.position = spawn_p
 	entities.add_child(_player)
 	if _player.has_method("set_spawn_pos"):
-		_player.set_spawn_pos(Vector2(56, 148))
+		_player.set_spawn_pos(spawn_p)
 	var cam: Camera2D = _player.get_node("Camera2D")
 	cam.limit_left = 0
 	cam.limit_top = 0

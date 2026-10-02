@@ -32,8 +32,9 @@ const SLIDE_AIR_GRACE := 0.06    # don't cancel slide on 1–2-frame air blip
 const INVULN_SLIDE := 0.14       # stub i-frames at slide start
 const HURT_FLASH := 0.22         # clear red/white flash on hit
 const RESPAWN_Y := 400.0         # fall death threshold (level-relative)
-const RESPAWN_INVULN := 1.10     # brief i-frames after pit/death respawn
+const RESPAWN_INVULN := 0.65     # brief i-frames after pit/death respawn (snappy)
 const CHECKPOINT_FLASH := 0.28   # spawn ping when checkpoint updates
+const RESPAWN_FADE := 0.12       # quick blackout on death — less frustration
 
 # Buster charge (Mega Man–style)
 const CHARGE_LV2 := 0.45
@@ -120,6 +121,9 @@ var _slide_air_timer := 0.0
 var _invuln := 0.0
 var _hurt_flash := 0.0
 var _checkpoint_flash := 0.0
+var _respawn_fade := 0.0
+var _was_on_floor := false
+var _death_veil: ColorRect = null
 var _is_sliding := false
 var _spawn_pos := Vector2.ZERO
 var max_hp := 28
@@ -211,6 +215,9 @@ func _physics_process(delta: float) -> void:
 	_handle_weapon_switch()
 
 	var on_floor := is_on_floor()
+	if on_floor and not _was_on_floor and velocity.y >= 0.0:
+		_spawn_land_dust()
+	_was_on_floor = on_floor
 	var on_wall := _is_on_wall_solid()
 	var wall_dir := _wall_direction()  # -1 left wall, 1 right wall, 0 none
 
@@ -556,6 +563,13 @@ func grant_weapon(weapon_id: String) -> void:
 		print("Player: arma otorgada Static Veil")
 
 
+
+func _ping_ammo_empty() -> void:
+	_emit_weapon()
+	var hud := get_tree().get_first_node_in_group("hud") if get_tree() else null
+	if hud != null and hud.has_method("flash_ammo_empty"):
+		hud.flash_ammo_empty()
+
 func _emit_weapon() -> void:
 	var w := get_current_weapon()
 	weapon_changed.emit(
@@ -822,6 +836,7 @@ func _fire_beat_blaze() -> void:
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 1))
 	if ammo < cost:
+		_ping_ammo_empty()
 		return
 	var live := get_tree().get_nodes_in_group("player_shots")
 	if live.size() >= MAX_SHOTS:
@@ -854,6 +869,7 @@ func _fire_echo_gale() -> void:
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 1))
 	if ammo < cost:
+		_ping_ammo_empty()
 		return
 	var live := get_tree().get_nodes_in_group("player_shots")
 	if live.size() >= MAX_SHOTS:
@@ -886,6 +902,7 @@ func _fire_neon_arc() -> void:
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 1))
 	if ammo < cost:
+		_ping_ammo_empty()
 		return
 	var live := get_tree().get_nodes_in_group("player_shots")
 	if live.size() >= MAX_SHOTS:
@@ -919,6 +936,7 @@ func _fire_freeze_sample() -> void:
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 1))
 	if ammo < cost:
+		_ping_ammo_empty()
 		return
 	var live := get_tree().get_nodes_in_group("player_shots")
 	if live.size() >= MAX_SHOTS:
@@ -951,6 +969,7 @@ func _fire_petal_chorus() -> void:
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 1))
 	if ammo < cost:
+		_ping_ammo_empty()
 		return
 	var live := get_tree().get_nodes_in_group("player_shots")
 	if live.size() >= MAX_SHOTS:
@@ -983,6 +1002,7 @@ func _fire_quake_drop() -> void:
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 2))
 	if ammo < cost:
+		_ping_ammo_empty()
 		return
 	var live := get_tree().get_nodes_in_group("player_shots")
 	if live.size() >= MAX_SHOTS:
@@ -1017,6 +1037,7 @@ func _fire_tempo_spike() -> void:
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 2))
 	if ammo < cost:
+		_ping_ammo_empty()
 		return
 	var live := get_tree().get_nodes_in_group("player_shots")
 	if live.size() >= MAX_SHOTS:
@@ -1049,6 +1070,7 @@ func _fire_static_veil() -> void:
 	var ammo: int = int(w.get("ammo", 0))
 	var cost: int = int(w.get("cost", 3))
 	if ammo < cost:
+		_ping_ammo_empty()
 		return
 	var live := get_tree().get_nodes_in_group("player_shots")
 	if live.size() >= MAX_SHOTS:
@@ -1149,6 +1171,10 @@ func _tick_timers(delta: float) -> void:
 			_swing_saber()
 	_hurt_flash = maxf(_hurt_flash - delta, 0.0)
 	_checkpoint_flash = maxf(_checkpoint_flash - delta, 0.0)
+	_respawn_fade = maxf(_respawn_fade - delta, 0.0)
+	if _death_veil != null and is_instance_valid(_death_veil):
+		var a := 0.0 if _respawn_fade <= 0.0 else clampf(_respawn_fade / RESPAWN_FADE, 0.0, 1.0) * 0.55
+		_death_veil.color = Color(0, 0, 0, a)
 	if _is_sliding:
 		_slide_timer -= delta
 		if is_on_floor():
@@ -1179,6 +1205,10 @@ func _start_slide() -> void:
 	_apply_slide_shape()
 	velocity.x = facing * SLIDE_SPEED
 	velocity.y = 0.0
+	# slide dust
+	var parent_sl := get_parent()
+	if parent_sl:
+		ArtKit.spawn_dust_puff(parent_sl, global_position + Vector2(-facing * 6.0, 12), facing, 0.7)
 
 
 func _end_slide() -> void:
@@ -1193,6 +1223,7 @@ func _do_jump() -> void:
 	_jump_buffer = 0.0
 	if AudioManager:
 		AudioManager.play_sfx("jump")
+	_spawn_jump_dust()
 	if _is_sliding:
 		_end_slide()
 
@@ -1448,16 +1479,53 @@ func _take_hit(amount: int) -> void:
 
 
 func _respawn() -> void:
+	## Instant tele + short veil — no long death wait.
 	hp = max_hp
 	_invuln = RESPAWN_INVULN
-	_hurt_flash = maxf(_hurt_flash, 0.18)
+	_hurt_flash = 0.0
+	_respawn_fade = RESPAWN_FADE
 	_is_sliding = false
+	_slide_timer = 0.0
 	_charging = false
 	_charge_time = 0.0
+	_saber_timer = 0.0
+	_wall_lock = 0.0
 	_apply_stand_shape()
 	velocity = Vector2.ZERO
 	global_position = _spawn_pos
+	_ensure_death_veil()
 	hp_changed.emit(hp, max_hp)
+
+
+
+func _spawn_jump_dust() -> void:
+	var parent_node := get_parent()
+	if parent_node == null:
+		return
+	ArtKit.spawn_dust_puff(parent_node, global_position + Vector2(0, 12), facing)
+
+
+func _spawn_land_dust() -> void:
+	var parent_node := get_parent()
+	if parent_node == null:
+		return
+	ArtKit.spawn_dust_puff(parent_node, global_position + Vector2(0, 12), facing, 0.85)
+
+
+func _ensure_death_veil() -> void:
+	if _death_veil != null and is_instance_valid(_death_veil):
+		_death_veil.color = Color(0, 0, 0, 0.55)
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 90
+	layer.name = "DeathVeilLayer"
+	add_child(layer)
+	_death_veil = ColorRect.new()
+	_death_veil.name = "DeathVeil"
+	_death_veil.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_death_veil.color = Color(0, 0, 0, 0.55)
+	_death_veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(_death_veil)
 
 
 func set_spawn_pos(pos: Vector2) -> void:

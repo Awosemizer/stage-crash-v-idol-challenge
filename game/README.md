@@ -21,6 +21,8 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 
 Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome / LevelStaticShadow.
 
+**v0.27:** Feel/UI polish — mid-stage checkpoint markers (per stage), faster death respawn, ammo-empty HUD flash, jump dust, pause touch size S/M/L + opacity.
+
 **v0.26:** Combat/UI polish — hitstop, clearer charge, pit respawn i-frames, ATK/DASH gap 20px, Met contact 1, E-Tank toast, BossSelect ✓ + HARD banner.
 
 **v0.25:** Feel polish — coyote/buffer/wall-coyote/slide-buffer, clearer hurt flash, fairer boss contact boxes, fortress midboss retune, Title/BossSelect no-clip, pause weapon strip touch targets.

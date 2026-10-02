@@ -47,6 +47,15 @@ var _weakness_label: Label = null
 var _weapon_strip: HFlowContainer = null
 var _weapon_strip_title: Label = null
 var _weapon_strip_btns: Array = []
+var _ammo_flash := 0.0
+var _touch_size_btn: Button = null
+var _touch_op_btn: Button = null
+
+
+func _process(delta: float) -> void:
+	if _ammo_flash > 0.0:
+		_ammo_flash = maxf(_ammo_flash - delta, 0.0)
+		_refresh_weapon()
 
 
 func _ready() -> void:
@@ -133,6 +142,15 @@ func set_weapon_ammo(ammo: int, max_ammo: int = -1) -> void:
 	_weapon_ammo = ammo
 	_weapon_max_ammo = max_ammo
 	_refresh_weapon()
+	if _weapon_id != "buster" and _weapon_ammo == 0:
+		flash_ammo_empty()
+
+
+func flash_ammo_empty() -> void:
+	## Red blink when special weapon ammo is empty.
+	_ammo_flash = 0.55
+	_refresh_weapon()
+
 
 
 func set_energy_tanks(count: int) -> void:
@@ -173,6 +191,8 @@ func _on_player_weapon_changed(weapon_id: String, display_name: String, ammo: in
 	_weapon_ammo = ammo
 	_weapon_max_ammo = max_ammo
 	_refresh_weapon()
+	if _weapon_id != "buster" and _weapon_ammo == 0:
+		flash_ammo_empty()
 
 
 func _build_ui() -> void:
@@ -309,6 +329,22 @@ func _build_ui() -> void:
 	_weapon_strip.add_theme_constant_override("v_separation", 4)
 	_pause_panel.add_child(_weapon_strip)
 
+	_touch_size_btn = Button.new()
+	_touch_size_btn.name = "TouchSizeBtn"
+	_touch_size_btn.add_theme_font_size_override("font_size", 9)
+	_touch_size_btn.process_mode = Node.PROCESS_MODE_ALWAYS
+	_touch_size_btn.focus_mode = Control.FOCUS_NONE
+	_touch_size_btn.pressed.connect(_on_touch_size_pressed)
+	_pause_panel.add_child(_touch_size_btn)
+
+	_touch_op_btn = Button.new()
+	_touch_op_btn.name = "TouchOpacityBtn"
+	_touch_op_btn.add_theme_font_size_override("font_size", 9)
+	_touch_op_btn.process_mode = Node.PROCESS_MODE_ALWAYS
+	_touch_op_btn.focus_mode = Control.FOCUS_NONE
+	_touch_op_btn.pressed.connect(_on_touch_opacity_pressed)
+	_pause_panel.add_child(_touch_op_btn)
+
 
 func _make_panel(col: Color) -> Panel:
 	var p := Panel.new()
@@ -375,12 +411,13 @@ func _layout() -> void:
 	if _weakness_label and _weakness_label.position.y + 10.0 > max_hud_bottom:
 		_weakness_label.position.y = max_hud_bottom - 12.0
 
-	# Centered pause panel — large touch targets + weapon strip
-	var pw := minf(280.0, area.size.x * 0.92)
-	var btn_h := maxf(_SafeArea.MIN_BTN_H, minf(_SafeArea.PREFERRED_BTN_H, 40.0))
-	var strip_h := 64.0
-	var ph := 28.0 + btn_h * 2.0 + 24.0 + strip_h + 18.0
-	ph = minf(ph, area.size.y * 0.92)
+	# Centered pause panel — large touch targets + weapon strip + touch opts
+	var pw := minf(300.0, area.size.x * 0.94)
+	var btn_h := maxf(_SafeArea.MIN_BTN_H, minf(_SafeArea.PREFERRED_BTN_H, 36.0))
+	var opt_h := maxf(22.0, btn_h * 0.72)
+	var strip_h := 56.0
+	var ph := 28.0 + btn_h * 2.0 + opt_h + 28.0 + strip_h + 16.0
+	ph = minf(ph, area.size.y * 0.94)
 	_pause_panel.size = Vector2(pw, ph)
 	_pause_panel.position = Vector2(
 		area.position.x + (area.size.x - pw) * 0.5,
@@ -407,13 +444,24 @@ func _layout() -> void:
 		qn.border_color = Color(0.95, 0.45, 0.5)
 		qn.set_corner_radius_all(4)
 		_quit_btn.add_theme_stylebox_override("normal", qn)
-	var strip_top := 26 + btn_h * 2.0 + 14.0
+	var opt_top := 26 + btn_h * 2.0 + 10.0
+	var half_w := (bw - 6.0) * 0.5
+	if _touch_size_btn:
+		_touch_size_btn.size = Vector2(half_w, opt_h)
+		_touch_size_btn.position = Vector2((pw - bw) * 0.5, opt_top)
+		_refresh_touch_opt_labels()
+		_SafeArea.style_button(_touch_size_btn, Color(0.14, 0.16, 0.24, 0.95), Color(0.55, 0.75, 0.95, 0.9), 3)
+	if _touch_op_btn:
+		_touch_op_btn.size = Vector2(half_w, opt_h)
+		_touch_op_btn.position = Vector2((pw - bw) * 0.5 + half_w + 6.0, opt_top)
+		_SafeArea.style_button(_touch_op_btn, Color(0.14, 0.16, 0.24, 0.95), Color(0.55, 0.75, 0.95, 0.9), 3)
+	var strip_top := opt_top + opt_h + 8.0
 	if _weapon_strip_title:
 		_weapon_strip_title.position = Vector2(8, strip_top)
 		_weapon_strip_title.size = Vector2(pw - 16.0, 14)
 	if _weapon_strip:
 		_weapon_strip.position = Vector2(10, strip_top + 16.0)
-		_weapon_strip.size = Vector2(pw - 20.0, maxf(ph - (strip_top + 20.0), 40.0))
+		_weapon_strip.size = Vector2(pw - 20.0, maxf(ph - (strip_top + 20.0), 36.0))
 
 	_refresh_hp_bar()
 	_refresh_armor()
@@ -467,7 +515,14 @@ func _refresh_weapon() -> void:
 		return
 	if _weapon_id != "buster" and _weapon_ammo >= 0:
 		_weapon_label.text = "Arma: %s %d/%d" % [weapon_name, _weapon_ammo, maxi(_weapon_max_ammo, 0)]
-		_weapon_label.modulate = Color(1.0, 0.7, 0.35, 0.95)
+		if _weapon_ammo <= 0:
+			# Empty ammo — flash red/white
+			var pulse := 1.0 if _ammo_flash <= 0.0 else (0.55 + 0.45 * absf(sin(_ammo_flash * 22.0)))
+			_weapon_label.modulate = Color(1.0, 0.25 + 0.2 * pulse, 0.25, pulse)
+			if _ammo_flash <= 0.0:
+				_weapon_label.modulate = Color(1.0, 0.35, 0.35, 0.95)
+		else:
+			_weapon_label.modulate = Color(1.0, 0.7, 0.35, 0.95)
 	else:
 		_weapon_label.text = "Arma: %s" % weapon_name
 		_weapon_label.modulate = Color(0.85, 0.95, 1.0, 0.95)
@@ -536,6 +591,9 @@ func _quit_to_boss_select() -> void:
 	if AudioManager:
 		AudioManager.set_paused_duck(false)
 		AudioManager.play_sfx("ui_confirm")
+	var gs2 := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs2 != null and gs2.has_method("clear_all_stage_checkpoints"):
+		gs2.clear_all_stage_checkpoints()
 	get_tree().change_scene_to_file("res://scenes/ui/BossSelect.tscn")
 
 
@@ -693,3 +751,36 @@ func _detect_boss_weakness() -> String:
 		if b.is_in_group(str(g)):
 			return str(map[g])
 	return ""
+
+
+func _refresh_touch_opt_labels() -> void:
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	var sz := "M"
+	var op := 0.5
+	if gs != null:
+		if "touch_btn_size" in gs:
+			sz = str(gs.touch_btn_size)
+		if "touch_opacity" in gs:
+			op = float(gs.touch_opacity)
+	if _touch_size_btn:
+		_touch_size_btn.text = "Táctil %s" % sz
+	if _touch_op_btn:
+		_touch_op_btn.text = "Opac %d%%" % int(round(op * 100.0))
+
+
+func _on_touch_size_pressed() -> void:
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs != null and gs.has_method("cycle_touch_btn_size"):
+		gs.cycle_touch_btn_size()
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
+	_refresh_touch_opt_labels()
+
+
+func _on_touch_opacity_pressed() -> void:
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs != null and gs.has_method("cycle_touch_opacity"):
+		gs.cycle_touch_opacity()
+	if AudioManager:
+		AudioManager.play_sfx("ui_confirm")
+	_refresh_touch_opt_labels()

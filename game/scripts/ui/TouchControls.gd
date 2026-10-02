@@ -57,7 +57,12 @@ func _ready() -> void:
 		show_touch_always = true
 	_setup_joypad_bindings()
 	_build_ui()
+	_apply_touch_settings_from_state()
 	_apply_opacity()
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs != null and gs.has_signal("touch_settings_changed"):
+		if not gs.touch_settings_changed.is_connected(_on_touch_settings_changed):
+			gs.touch_settings_changed.connect(_on_touch_settings_changed)
 	Input.joy_connection_changed.connect(_on_joy_connection_changed)
 	get_viewport().size_changed.connect(_layout)
 	_layout()
@@ -210,6 +215,32 @@ func _make_btn_label(parent: Panel, text: String) -> Label:
 	return lbl
 
 
+
+func _touch_size_scale() -> float:
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs != null and gs.has_method("get_touch_size_scale"):
+		return float(gs.get_touch_size_scale())
+	return 1.0
+
+
+func _apply_touch_settings_from_state() -> void:
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs != null:
+		if "touch_opacity" in gs:
+			opacity = float(gs.touch_opacity)
+	_apply_opacity()
+	_layout()
+
+
+func _on_touch_settings_changed() -> void:
+	_apply_touch_settings_from_state()
+
+
+func set_opacity(value: float) -> void:
+	opacity = clampf(value, 0.2, 1.0)
+	_apply_opacity()
+
+
 func _apply_opacity() -> void:
 	if _root:
 		_root.modulate = Color(1, 1, 1, opacity)
@@ -225,21 +256,24 @@ func _layout() -> void:
 	var bottom: float = area.end.y
 
 	# Stick — bottom-left inside safe area (keeps mid-screen clear for play)
-	_stick_r = STICK_R
+	var size_scale := _touch_size_scale()
+	_stick_r = STICK_R * size_scale
 	var stick_d := _stick_r * 2.0
 	_stick_base.size = Vector2(stick_d, stick_d)
 	_stick_base.position = Vector2(left, bottom - stick_d)
 	_stick_center = _stick_base.position + Vector2(_stick_r, _stick_r)
-	_stick_knob.size = Vector2(KNOB_R * 2.0, KNOB_R * 2.0)
+	var knob_r := KNOB_R * size_scale
+	_stick_knob.size = Vector2(knob_r * 2.0, knob_r * 2.0)
+	_stick_knob.set_meta("knob_r", knob_r)
 	_reset_knob()
 
 	# Face buttons — bottom-right fan, NO overlapping hit rects (≥20px gaps).
 	# Layout (phone landscape):
 	#   [SL Slide]   [B Attack]   [A Jump]
 	# Slide further left; Attack left of Jump; Jump in the corner.
-	var j := BTN_JUMP * 2.0
-	var a := BTN_ATTACK * 2.0
-	var s := BTN_SLIDE * 2.0
+	var j := BTN_JUMP * 2.0 * size_scale
+	var a := BTN_ATTACK * 2.0 * size_scale
+	var s := BTN_SLIDE * 2.0 * size_scale
 	_btn_jump.size = Vector2(j, j)
 	_btn_jump.position = Vector2(right - j, bottom - j)
 
@@ -259,7 +293,7 @@ func _layout() -> void:
 	)
 
 	# Weapon prev/next — upper-right, clear of pause/armor and of face-button cluster
-	var w := BTN_WEAPON * 2.0
+	var w := BTN_WEAPON * 2.0 * size_scale
 	_btn_wnext.size = Vector2(w, w)
 	_btn_wprev.size = Vector2(w, w)
 	var weapon_y := top + WEAPON_TOP_CLEAR
@@ -304,7 +338,8 @@ func _assert_no_overlap(a: Panel, b: Panel, label: String) -> void:
 
 
 func _reset_knob() -> void:
-	_stick_knob.position = Vector2(_stick_r - KNOB_R, _stick_r - KNOB_R)
+	var kr := float(_stick_knob.get_meta("knob_r", KNOB_R)) if _stick_knob else KNOB_R
+	_stick_knob.position = Vector2(_stick_r - kr, _stick_r - kr)
 
 
 func _on_joy_connection_changed(_device: int, _connected: bool) -> void:
@@ -369,7 +404,8 @@ func _update_stick_from_local(local_pos: Vector2) -> void:
 	var max_len := _stick_r - 4.0
 	if delta.length() > max_len:
 		delta = delta.normalized() * max_len
-	_stick_knob.position = Vector2(_stick_r - KNOB_R, _stick_r - KNOB_R) + delta
+	var kr2 := float(_stick_knob.get_meta("knob_r", KNOB_R))
+	_stick_knob.position = Vector2(_stick_r - kr2, _stick_r - kr2) + delta
 	var strength := delta / max_len
 	_set_move_actions(strength)
 

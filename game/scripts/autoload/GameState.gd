@@ -95,6 +95,21 @@ var _achievements: Dictionary = {}
 var _boss_fight_tracking := false
 var _boss_fight_took_damage := false
 
+## Mid-stage checkpoints (session) — keyed by stage_id → {x,y}
+var active_stage_id: String = ""
+var _stage_checkpoints: Dictionary = {}
+
+## Touch overlay prefs (persist user://touch_settings.cfg)
+const TOUCH_SETTINGS_PATH := "user://touch_settings.cfg"
+var touch_opacity: float = 0.50
+var touch_btn_size: String = "M"  # S / M / L
+signal touch_settings_changed
+
+
+func _ready() -> void:
+	load_touch_settings()
+
+
 
 
 func select_miku() -> void:
@@ -390,6 +405,8 @@ func reset_progress() -> void:
 	_achievements.clear()
 	_boss_fight_tracking = false
 	_boss_fight_took_damage = false
+	_stage_checkpoints.clear()
+	active_stage_id = ""
 	armor_changed.emit(ARMOR_SET_FLIGHT)
 	difficulty_changed.emit(false)
 
@@ -818,4 +835,113 @@ func _show_achievement_toast(title: String) -> void:
 	layer.add_child(body)
 	tree.create_timer(3.0).timeout.connect(Callable(layer, "queue_free"))
 
+
+## --- Stage checkpoints (mid-run) ---
+
+func begin_stage(stage_id: String, clear_checkpoint: bool = true) -> void:
+	active_stage_id = stage_id
+	if clear_checkpoint:
+		clear_stage_checkpoint(stage_id)
+	print("GameState: begin_stage %s" % stage_id)
+
+
+func set_stage_checkpoint(pos: Vector2, stage_id: String = "") -> void:
+	var sid := stage_id if not stage_id.is_empty() else active_stage_id
+	if sid.is_empty():
+		return
+	_stage_checkpoints[sid] = {"x": float(pos.x), "y": float(pos.y)}
+
+
+func get_stage_checkpoint(stage_id: String = "") -> Vector2:
+	var sid := stage_id if not stage_id.is_empty() else active_stage_id
+	if sid.is_empty() or not _stage_checkpoints.has(sid):
+		return Vector2.ZERO
+	var d = _stage_checkpoints[sid]
+	if typeof(d) != TYPE_DICTIONARY:
+		return Vector2.ZERO
+	return Vector2(float(d.get("x", 0.0)), float(d.get("y", 0.0)))
+
+
+func has_stage_checkpoint(stage_id: String = "") -> bool:
+	return get_stage_checkpoint(stage_id) != Vector2.ZERO
+
+
+func clear_stage_checkpoint(stage_id: String = "") -> void:
+	var sid := stage_id if not stage_id.is_empty() else active_stage_id
+	if sid.is_empty():
+		return
+	_stage_checkpoints.erase(sid)
+
+
+func clear_all_stage_checkpoints() -> void:
+	_stage_checkpoints.clear()
+	active_stage_id = ""
+
+
+## --- Touch prefs ---
+
+func load_touch_settings() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(TOUCH_SETTINGS_PATH) != OK:
+		return
+	touch_opacity = clampf(float(cfg.get_value("touch", "opacity", touch_opacity)), 0.2, 1.0)
+	var sz := str(cfg.get_value("touch", "btn_size", touch_btn_size)).to_upper()
+	if sz in ["S", "M", "L"]:
+		touch_btn_size = sz
+
+
+func save_touch_settings() -> void:
+	var cfg := ConfigFile.new()
+	cfg.load(TOUCH_SETTINGS_PATH)
+	cfg.set_value("touch", "opacity", touch_opacity)
+	cfg.set_value("touch", "btn_size", touch_btn_size)
+	cfg.save(TOUCH_SETTINGS_PATH)
+
+
+func set_touch_opacity(value: float) -> void:
+	touch_opacity = clampf(value, 0.2, 1.0)
+	save_touch_settings()
+	touch_settings_changed.emit()
+
+
+func cycle_touch_opacity() -> float:
+	## 0.35 → 0.50 → 0.70 → 0.90 → 0.35
+	var steps := [0.35, 0.50, 0.70, 0.90]
+	var idx := 0
+	for i in steps.size():
+		if absf(float(steps[i]) - touch_opacity) < 0.06:
+			idx = i
+			break
+	idx = (idx + 1) % steps.size()
+	set_touch_opacity(float(steps[idx]))
+	return touch_opacity
+
+
+func set_touch_btn_size(size_id: String) -> void:
+	var sz := size_id.to_upper()
+	if sz not in ["S", "M", "L"]:
+		sz = "M"
+	touch_btn_size = sz
+	save_touch_settings()
+	touch_settings_changed.emit()
+
+
+func cycle_touch_btn_size() -> String:
+	var order := ["S", "M", "L"]
+	var idx := order.find(touch_btn_size)
+	if idx < 0:
+		idx = 1
+	idx = (idx + 1) % order.size()
+	set_touch_btn_size(order[idx])
+	return touch_btn_size
+
+
+func get_touch_size_scale() -> float:
+	match touch_btn_size:
+		"S":
+			return 0.85
+		"L":
+			return 1.18
+		_:
+			return 1.0
 

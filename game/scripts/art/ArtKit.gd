@@ -329,6 +329,30 @@ static func spawn_slash_arc(parent: Node, global_pos: Vector2, facing: int) -> v
 	spr.add_child(anim)
 
 
+
+static func spawn_dust_puff(parent: Node, global_pos: Vector2, facing: int = 1, scale_mul: float = 1.0) -> void:
+	## Simple jump/land/slide dust — procedural rects (no art asset needed).
+	if parent == null:
+		return
+	var holder := Node2D.new()
+	holder.name = "DustPuff"
+	holder.z_index = 12
+	parent.add_child(holder)
+	holder.global_position = global_pos
+	for i in 4:
+		var bit := ColorRect.new()
+		bit.size = Vector2(3, 3) * scale_mul
+		bit.position = Vector2((-6.0 + i * 4.0) * scale_mul, -2.0)
+		bit.color = Color(0.85, 0.82, 0.75, 0.85)
+		bit.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		holder.add_child(bit)
+		var dir := Vector2((-1.2 + i * 0.8) * float(facing), -1.2 - (i % 2) * 0.4)
+		var tw := holder.create_tween()
+		tw.set_parallel(true)
+		tw.tween_property(bit, "position", bit.position + dir * 10.0 * scale_mul, 0.22)
+		tw.tween_property(bit, "color:a", 0.0, 0.22)
+	holder.create_tween().tween_callback(holder.queue_free).set_delay(0.24)
+
 static func make_charge_aura_layers(parent: Node2D) -> Dictionary:
 	## Returns {inner: Sprite2D, outer: Sprite2D} layered charge rings.
 	var tex := load_tex("res://assets/sprites/fx/charge_ring.png")
