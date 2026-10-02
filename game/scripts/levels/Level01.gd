@@ -8,6 +8,8 @@ const TouchControlsScene := preload("res://scenes/ui/TouchControls.tscn")
 const HUDScene := preload("res://scenes/ui/HUD.tscn")
 const MetBeatScene := preload("res://scenes/enemies/MetBeat.tscn")
 const BeatfireManScene := preload("res://scenes/bosses/BeatfireMan.tscn")
+const BreakableBlockScene := preload("res://scenes/props/BreakableBlock.tscn")
+const ArmorPickupScene := preload("res://scenes/pickups/ArmorPickup.tscn")
 
 const COL_FLOOR := Color(0.55, 0.25, 0.22, 1.0)
 const COL_WALL := Color(0.35, 0.15, 0.18, 1.0)
@@ -54,12 +56,17 @@ func _build_course() -> void:
 		[176, 160, 48, 16, COL_FLOOR],
 		[240, 144, 48, 16, COL_FLOOR],
 		[336, 160, 80, 64, COL_FLOOR],
-		# Wall-jump corridor
-		[448, 48, 16, 160, COL_WALL],
-		[528, 48, 16, 160, COL_WALL],
+		# Wall-jump corridor (left wall short — gap sealed by breakables → secreto)
+		[448, 80, 16, 128, COL_WALL],
+		[528, 32, 16, 176, COL_WALL],
 		[448, 192, 96, 32, COL_FLOOR],
 		# Exit ledge (high)
 		[544, 80, 64, 16, COL_ACCENT],
+		# Secret alcove Stage Flight (izquierda del corredor)
+		[336, 16, 16, 80, COL_WALL],
+		[352, 16, 112, 16, COL_WALL],
+		[352, 80, 96, 16, COL_ACCENT],
+		[336, 80, 16, 16, COL_WALL],
 		[640, 112, 48, 16, COL_FLOOR],
 		[720, 144, 48, 16, COL_FLOOR],
 		# Slide tunnel (standing ~28px tall; gap ~16px forces slide)
@@ -76,6 +83,8 @@ func _build_course() -> void:
 
 	for i in range(5):
 		_add_spike(288.0 + i * 16.0, 200.0)
+
+	_build_secret_flight()
 
 	# Sign pointing to boss arena (replaces old META)
 	var label := Label.new()
@@ -268,6 +277,43 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 		if is_instance_valid(layer):
 			layer.queue_free()
 	)
+
+
+func _build_secret_flight() -> void:
+	## Alcoba secreta arriba-izq del corredor wall-jump.
+	## Entrada: subir el corredor y romper los bloques soft a la izquierda.
+	# Two breakable tiles sealing the gap in the left wall (y=48 and y=64)
+	_add_breakable(456.0, 56.0)
+	_add_breakable(456.0, 72.0)
+	# Armor pickup inside alcove
+	var pickup: Area2D = ArmorPickupScene.instantiate()
+	pickup.name = "FlightTorsoPickup"
+	pickup.position = Vector2(392.0, 68.0)
+	pickup.armor_set = "flight"
+	pickup.armor_piece = "torso"
+	pickup.display_name_es = "Torso Stage Flight"
+	entities.add_child(pickup)
+	# Subtle hint near corridor
+	var hint := Label.new()
+	hint.name = "SecretHint"
+	hint.text = "¿…?"
+	hint.position = Vector2(460, 36)
+	hint.add_theme_font_size_override("font_size", 6)
+	hint.modulate = Color(1.0, 0.7, 0.35, 0.55)
+	geometry.add_child(hint)
+	var room_lbl := Label.new()
+	room_lbl.text = "SECRETO"
+	room_lbl.position = Vector2(360, 28)
+	room_lbl.add_theme_font_size_override("font_size", 6)
+	room_lbl.modulate = Color(0.45, 0.9, 1.0, 0.7)
+	geometry.add_child(room_lbl)
+	print("Level01: secreto Stage Flight (torso) en alcoba x~392")
+
+
+func _add_breakable(x: float, y: float) -> void:
+	var block: StaticBody2D = BreakableBlockScene.instantiate()
+	block.position = Vector2(x, y)
+	geometry.add_child(block)
 
 
 func _spawn_enemies() -> void:

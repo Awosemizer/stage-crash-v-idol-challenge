@@ -50,6 +50,11 @@ func _ready() -> void:
 	_refresh_hp_bar()
 	_refresh_tanks()
 	_refresh_weapon()
+	_refresh_armor()
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs != null and gs.has_signal("armor_changed"):
+		if not gs.armor_changed.is_connected(_on_armor_changed):
+			gs.armor_changed.connect(_on_armor_changed)
 	# Auto-bind if player already in tree
 	call_deferred("_try_auto_bind")
 
@@ -306,6 +311,7 @@ func _layout() -> void:
 	_resume_btn.position = Vector2((pw - 72) * 0.5, 30)
 
 	_refresh_hp_bar()
+	_refresh_armor()
 
 
 func _refresh_hp_bar() -> void:
@@ -343,6 +349,45 @@ func _refresh_weapon() -> void:
 	else:
 		_weapon_label.text = "Arma: %s" % weapon_name
 		_weapon_label.modulate = Color(0.85, 0.95, 1.0, 0.95)
+
+
+func _on_armor_changed(_set_id: String = "") -> void:
+	_refresh_armor()
+
+
+func _refresh_armor() -> void:
+	## Slots HUD: [0]=head [1]=torso [2]=legs — Stage Flight llena torso (índice 1).
+	if _armor_slots.is_empty():
+		return
+	var mask: Array = [false, false, false]
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs != null and gs.has_method("get_armor_equipped_mask"):
+		mask = gs.get_armor_equipped_mask("flight")
+	var flight_col := Color(0.35, 0.85, 1.0, 0.95)
+	if gs != null and gs.has_method("get_flight_armor_color"):
+		flight_col = gs.get_flight_armor_color()
+	for i in mini(_armor_slots.size(), 3):
+		var filled := bool(mask[i]) if i < mask.size() else false
+		var slot := _armor_slots[i]
+		if filled:
+			slot.color = flight_col.darkened(0.15)
+			if slot.get_child_count() > 0:
+				var inner: ColorRect = slot.get_child(0)
+				inner.color = flight_col
+		else:
+			slot.color = Color(0.18, 0.2, 0.26, 0.75)
+			if slot.get_child_count() > 0:
+				var inner2: ColorRect = slot.get_child(0)
+				inner2.color = Color(0.12, 0.14, 0.18, 0.9)
+
+
+func get_armor_filled_count() -> int:
+	## Para tests: cuántos slots HUD están "llenos".
+	var n := 0
+	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
+	if gs != null and gs.has_method("get_armor_owned_count"):
+		return int(gs.get_armor_owned_count("flight"))
+	return n
 
 
 func _on_pause_btn_gui_input(event: InputEvent) -> void:

@@ -52,6 +52,12 @@ const TETO_RUN_MULT := 0.88
 const TETO_JUMP_MULT := 0.94
 const TETO_ACCEL_MULT := 0.85
 
+# Stage Flight torso — short air hover (45 frames @ 60fps)
+const HOVER_DURATION := 45.0 / 60.0  # 0.75 s fuel
+const HOVER_COOLDOWN := 0.40
+const HOVER_HOLD_Y := 18.0           # max fall while hovering
+const HOVER_LIFT := -12.0            # slight upward assist when falling
+
 const BusterShotScene := preload("res://scenes/combat/BusterShot.tscn")
 const BeatBlazeShotScene := preload("res://scenes/combat/BeatBlazeShot.tscn")
 
@@ -100,6 +106,13 @@ var _accel_ground := ACCEL_GROUND
 var _accel_air := ACCEL_AIR
 var _body_color := Color(0.2, 0.9, 0.95, 1.0)
 
+# Stage Flight hover
+var _hover_fuel := HOVER_DURATION
+var _hover_cd := 0.0
+var _is_hovering := false
+var _has_flight_torso := false
+var _thruster: ColorRect = null
+
 
 func _ready() -> void:
 	add_to_group("player")
@@ -109,8 +122,14 @@ func _ready() -> void:
 	if charge_aura:
 		charge_aura.visible = false
 	_setup_saber_hitbox()
+	_ensure_thruster()
+	_sync_armor_from_state()
 	hp_changed.emit(hp, max_hp)
 	_emit_weapon()
+	var gs := _game_state()
+	if gs != null and gs.has_signal("armor_changed"):
+		if not gs.armor_changed.is_connected(_on_armor_changed):
+			gs.armor_changed.connect(_on_armor_changed)
 
 
 func _physics_process(delta: float) -> void:
@@ -134,15 +153,37 @@ func _physics_process(delta: float) -> void:
 	else:
 		_jump_buffer = maxf(_jump_buffer - delta, 0.0)
 
-	# Gravity / wall slide
-	if not on_floor:
-		if on_wall and velocity.y > 0.0 and not _is_sliding:
+	# Gravity / wall slide / Stage Flight hover
+	_is_hovering = false
+	if on_floor:
+		_hover_fuel = HOVER_DURATION
+	elif not _is_sliding:
+		# Solo en ápice/caída — no cancelar el impulso del salto
+		var want_hover := (
+			_has_flight_torso
+			and Input.is_action_pressed("jump")
+			and _hover_fuel > 0.0
+			and _hover_cd <= 0.0
+			and _coyote <= 0.0
+			and velocity.y >= -20.0
+		)
+		if want_hover:
+			_is_hovering = true
+			_hover_fuel = maxf(_hover_fuel - delta, 0.0)
+			# Soft float: cancel strong fall, tiny lift
+			if velocity.y > HOVER_HOLD_Y:
+				velocity.y = move_toward(velocity.y, HOVER_LIFT, 1200.0 * delta)
+			else:
+				velocity.y = move_toward(velocity.y, HOVER_LIFT, 600.0 * delta)
+			if _hover_fuel <= 0.0:
+				_hover_cd = HOVER_COOLDOWN
+		elif on_wall and velocity.y > 0.0:
 			velocity.y = minf(velocity.y + GRAVITY * delta, WALL_SLIDE_SPEED)
 		else:
 			velocity.y = minf(velocity.y + GRAVITY * delta, MAX_FALL)
 
-	# Jump cut
-	if Input.is_action_just_released("jump") and velocity.y < 0.0:
+	# Jump cut (skip while hovering — hold keeps thrusters)
+	if not _is_hovering and Input.is_action_just_released("jump") and velocity.y < 0.0:
 		velocity.y *= JUMP_CUT_MULT
 
 	# Slide start
@@ -510,6 +551,7 @@ func _tick_timers(delta: float) -> void:
 	_wall_lock = maxf(_wall_lock - delta, 0.0)
 	_slide_cd = maxf(_slide_cd - delta, 0.0)
 	_invuln = maxf(_invuln - delta, 0.0)
+	_hover_cd = maxf(_hover_cd - delta, 0.0)
 	if _is_sliding:
 		_slide_timer -= delta
 		if _slide_timer <= 0.0 or not is_on_floor():
@@ -643,6 +685,10 @@ func _update_visual() -> void:
 			elif get_weapon_id() == WEAPON_BEAT_BLAZE:
 				base_col = Color(0.95, 0.55, 0.25, 1.0)
 
+	if _is_hovering:
+		base_col = base_col.lerp(Color(0.45, 0.9, 1.0, 1.0), 0.35)
+	_update_thruster()
+
 	if _invuln > 0.0:
 		visual.color = base_col
 		visual.color.a = 0.45 if fmod(_invuln, 0.06) < 0.03 else 1.0
@@ -712,3 +758,62 @@ func get_charge_level() -> int:
 	if not _charging or get_weapon_id() != WEAPON_BUSTER:
 		return 0
 	return _charge_level_from_time(_charge_time)
+
+func _on_armor_changed(_set_id: String) -> void:
+	_sync_armor_from_state()
+
+
+func _sync_armor_from_state() -> void:
+	_has_flight_torso = false
+	var gs := _game_state()
+	if gs != null and gs.has_method("has_flight_torso_equipped"):
+		_has_flight_torso = bool(gs.has_flight_torso_equipped())
+	elif gs != null and gs.has_method("is_armor_equipped"):
+		_has_flight_torso = bool(gs.is_armor_equipped("flight", "torso"))
+
+
+func on_armor_pickup(set_id: String, piece_id: String, _display_name: String = "") -> void:
+	## Llamado por ArmorPickup tras grant en GameState.
+	_sync_armor_from_state()
+	if set_id == "flight" and piece_id == "torso":
+		_hover_fuel = HOVER_DURATION
+		_hover_cd = 0.0
+		print("Player: Stage Flight torso equipado — hover listo")
+
+
+func has_flight_hover() -> bool:
+	return _has_flight_torso
+
+
+func is_hovering() -> bool:
+	return _is_hovering
+
+
+func get_hover_fuel_ratio() -> float:
+	return clampf(_hover_fuel / HOVER_DURATION, 0.0, 1.0)
+
+
+func _ensure_thruster() -> void:
+	if _thruster != null and is_instance_valid(_thruster):
+		return
+	_thruster = ColorRect.new()
+	_thruster.name = "ThrusterStub"
+	_thruster.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_thruster.visible = false
+	_thruster.z_index = -1
+	_thruster.size = Vector2(8, 6)
+	_thruster.color = Color(0.4, 0.85, 1.0, 0.7)
+	add_child(_thruster)
+
+
+func _update_thruster() -> void:
+	if _thruster == null:
+		return
+	if _is_hovering:
+		_thruster.visible = true
+		var pulse := 0.45 + 0.4 * absf(sin(Time.get_ticks_msec() * 0.02))
+		_thruster.color = Color(0.35, 0.9, 1.0, pulse)
+		_thruster.size = Vector2(8 + 2.0 * pulse, 5 + 3.0 * pulse)
+		_thruster.position = Vector2(-_thruster.size.x * 0.5, 10.0)
+	else:
+		_thruster.visible = false

@@ -16,6 +16,10 @@ func _initialize() -> void:
 		"res://scripts/combat/Fireball.gd",
 		"res://scripts/enemies/MetBeat.gd",
 		"res://scripts/bosses/BeatfireMan.gd",
+		"res://scripts/props/BreakableBlock.gd",
+		"res://scripts/pickups/ArmorPickup.gd",
+		"res://scenes/props/BreakableBlock.tscn",
+		"res://scenes/pickups/ArmorPickup.tscn",
 		"res://scenes/player/Player.tscn",
 		"res://scenes/levels/Level01.tscn",
 		"res://scenes/hazards/Spike.tscn",
@@ -71,6 +75,28 @@ func _initialize() -> void:
 		else:
 			print("OK Teto portrait color")
 		gs.select_miku()
+		# Armor Stage Flight API
+		if not gs.has_method("grant_armor_piece"):
+			errors.append("GameState missing grant_armor_piece")
+		else:
+			var was_new = gs.grant_armor_piece("flight", "torso", true)
+			if not gs.has_armor_piece("flight", "torso"):
+				errors.append("grant_armor_piece did not own torso")
+			elif not gs.has_flight_torso_equipped():
+				errors.append("flight torso not auto-equipped")
+			elif int(gs.get_armor_owned_count("flight")) != 1:
+				errors.append("armor owned count expected 1")
+			else:
+				print("OK GameState flight torso owned+equipped count=", gs.get_armor_owned_count("flight"))
+			var mask = gs.get_armor_equipped_mask("flight")
+			if mask.size() != 3 or mask[1] != true or mask[0] != false:
+				errors.append("armor mask expected [false,true,false], got %s" % str(mask))
+			else:
+				print("OK armor equipped mask=", mask)
+			# Reset for later level tests that expect pickup present
+			gs._armor_owned.clear()
+			gs._armor_equipped.clear()
+			print("OK armor state cleared for level pickup test")
 
 	# Title screen UI
 	var title_packed: PackedScene = load("res://scenes/ui/TitleScreen.tscn")
@@ -202,6 +228,25 @@ func _initialize() -> void:
 			errors.append("Player missing ChargeAura")
 		else:
 			print("OK Player ChargeAura node")
+		# Stage Flight hover
+		if gs:
+			gs.grant_armor_piece("flight", "torso", true)
+		if player.has_method("on_armor_pickup"):
+			player.on_armor_pickup("flight", "torso", "Torso Stage Flight")
+		await process_frame
+		if not player.has_method("has_flight_hover") or not player.has_flight_hover():
+			errors.append("Player missing flight hover after armor")
+		else:
+			print("OK Player has_flight_hover")
+		if player.get_node_or_null("ThrusterStub") == null:
+			errors.append("Player missing ThrusterStub")
+		else:
+			print("OK Player ThrusterStub")
+		# Clear armor so Level01 still spawns pickup
+		if gs:
+			gs._armor_owned.clear()
+			gs._armor_equipped.clear()
+			player._sync_armor_from_state()
 		if not player.has_method("_fire_buster") and not player.has_method("get_charge_level"):
 			errors.append("Player missing buster API")
 		else:
@@ -329,6 +374,49 @@ func _initialize() -> void:
 	else:
 		errors.append("Player.tscn failed to load")
 
+	# BreakableBlock smoke
+	var brk_packed: PackedScene = load("res://scenes/props/BreakableBlock.tscn")
+	if brk_packed:
+		var brk = brk_packed.instantiate()
+		root.add_child(brk)
+		await process_frame
+		if not brk.is_in_group("breakable"):
+			errors.append("BreakableBlock not in breakable group")
+		else:
+			print("OK BreakableBlock group")
+		if not brk.has_method("take_damage"):
+			errors.append("BreakableBlock missing take_damage")
+		else:
+			brk.take_damage(1)
+			await process_frame
+			if is_instance_valid(brk):
+				errors.append("BreakableBlock should free after HP 0")
+			else:
+				print("OK BreakableBlock destroyed")
+		if is_instance_valid(brk):
+			brk.queue_free()
+			await process_frame
+	else:
+		errors.append("BreakableBlock.tscn failed to load")
+
+	# ArmorPickup smoke
+	var ap_packed: PackedScene = load("res://scenes/pickups/ArmorPickup.tscn")
+	if ap_packed:
+		if gs:
+			gs._armor_owned.clear()
+			gs._armor_equipped.clear()
+		var ap = ap_packed.instantiate()
+		root.add_child(ap)
+		await process_frame
+		if str(ap.display_name_es).find("Stage Flight") < 0:
+			errors.append("ArmorPickup Spanish name missing Stage Flight")
+		else:
+			print("OK ArmorPickup name=", ap.display_name_es)
+		ap.queue_free()
+		await process_frame
+	else:
+		errors.append("ArmorPickup.tscn failed to load")
+
 	# MetBeat open/closed + damage
 	var met_packed: PackedScene = load("res://scenes/enemies/MetBeat.tscn")
 	if met_packed:
@@ -444,6 +532,21 @@ func _initialize() -> void:
 				errors.append("ArenaTrigger missing")
 			else:
 				print("OK ArenaTrigger present")
+			var flight_pick = entities.get_node_or_null("FlightTorsoPickup")
+			if flight_pick == null:
+				errors.append("FlightTorsoPickup missing in Level01 secret")
+			else:
+				print("OK FlightTorsoPickup at ", flight_pick.position)
+			var breakables := 0
+			var geom = level.get_node_or_null("Geometry")
+			if geom:
+				for c in geom.get_children():
+					if c.is_in_group("breakable") or str(c.name).begins_with("Breakable"):
+						breakables += 1
+			if breakables < 2:
+				errors.append("Expected >=2 breakable blocks sealing secret, got %d" % breakables)
+			else:
+				print("OK breakable blocks=", breakables)
 		var tc = level.get_node_or_null("TouchControls")
 		if tc == null:
 			errors.append("TouchControls not found under Level01")
@@ -485,6 +588,40 @@ func _initialize() -> void:
 						errors.append("HUD weapon ammo not shown: " + wpn.text)
 					else:
 						print("OK HUD weapon+ammo: ", wpn.text)
+			# Armor pickup → HUD 1/3
+			if gs:
+				gs._armor_owned.clear()
+				gs._armor_equipped.clear()
+			var flight_pick2 = entities.get_node_or_null("FlightTorsoPickup") if entities else null
+			var p_armor = entities.get_node_or_null("Player") if entities else null
+			if flight_pick2 and p_armor and flight_pick2.has_method("_collect"):
+				flight_pick2._collect(p_armor)
+				await process_frame
+				await process_frame
+				if gs and not gs.has_flight_torso_equipped():
+					errors.append("Pickup did not equip flight torso")
+				else:
+					print("OK secret pickup equipped flight torso")
+				if hud_node.has_method("_refresh_armor"):
+					hud_node._refresh_armor()
+				if hud_node.has_method("get_armor_filled_count"):
+					var filled = int(hud_node.get_armor_filled_count())
+					if filled != 1:
+						errors.append("HUD armor filled expected 1, got %d" % filled)
+					else:
+						print("OK HUD armor 1/3 filled")
+				var slot1 = hud_node.get_node_or_null("Root/ArmorSlot1")
+				if slot1 == null:
+					errors.append("ArmorSlot1 missing")
+				else:
+					# torso slot should be brighter cyan-ish
+					print("OK ArmorSlot1 color=", slot1.color)
+				if p_armor and p_armor.has_method("has_flight_hover") and not p_armor.has_flight_hover():
+					errors.append("Player hover not enabled after pickup")
+				else:
+					print("OK player hover after secret pickup")
+			elif flight_pick2 == null:
+				print("WARN FlightTorsoPickup already gone before armor HUD test")
 		# Simulate boss start + kill for win path
 		if level.has_method("_start_boss_fight"):
 			level._start_boss_fight()

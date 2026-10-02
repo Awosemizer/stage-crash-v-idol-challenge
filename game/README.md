@@ -62,7 +62,7 @@ CanvasLayer **layer 50** (below touch @ 100). Spanish UI.
 | Top-left | Cyan portrait stub (Miku) + HP bar (28 units, `PV x/28`) |
 | Top-left | Weapon label (`Arma: Buster` o `Beat Blaze n/28`) + 4 empty Energy Tank icons |
 | Top-right | Pause (`II` → panel **PAUSA** / **Continuar**, freezes tree) |
-| Top-right | 3 empty armor slots |
+| Top-right | 3 armor slots (Stage Flight torso = 1/3 cyan) |
 
 Spikes call `Player.take_damage(4)` → `hp_changed` → bar updates. Walk onto the spike pit (~x=288) to see HP drop.
 
