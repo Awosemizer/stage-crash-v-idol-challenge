@@ -88,6 +88,16 @@ func _initialize() -> void:
 		"res://scenes/combat/QuakeDropShot.tscn",
 		"res://scenes/hazards/QuakeWave.tscn",
 		"res://scenes/props/CollapsingFloor.tscn",
+		"res://scripts/levels/LevelMetronome.gd",
+		"res://scripts/bosses/Metronome.gd",
+		"res://scripts/combat/TempoSpikeShot.gd",
+		"res://scripts/combat/TempoNeedle.gd",
+		"res://scripts/hazards/MetronomeSpike.gd",
+		"res://scenes/levels/LevelMetronome.tscn",
+		"res://scenes/bosses/Metronome.tscn",
+		"res://scenes/combat/TempoSpikeShot.tscn",
+		"res://scenes/combat/TempoNeedle.tscn",
+		"res://scenes/hazards/MetronomeSpike.tscn",
 	]
 	for p in paths:
 		if not ResourceLoader.exists(p):
@@ -217,6 +227,10 @@ func _initialize() -> void:
 		errors.append("BossSelect should load LevelBassquake for bassquake")
 	else:
 		print("OK BossSelect → LevelBassquake")
+	if "LevelMetronome.tscn" not in bsel_src:
+		errors.append("BossSelect should load LevelMetronome for metronome")
+	else:
+		print("OK BossSelect → LevelMetronome")
 
 	# Boss select UI
 	var boss_sel_packed: PackedScene = load("res://scenes/ui/BossSelect.tscn")
@@ -323,7 +337,7 @@ func _initialize() -> void:
 		if grid:
 			for c in grid.get_children():
 				var bid2 = str(c.get_meta("boss_id", ""))
-				if bid2 in ["metronome", "static_shadow"]:
+				if bid2 in ["static_shadow"]:
 					var st2 = c.get_node_or_null("SelectButton/StatusLabel")
 					if st2 and "Pronto" in st2.text:
 						pronto_ok = true
@@ -2115,6 +2129,277 @@ func _initialize() -> void:
 		await process_frame
 	else:
 		errors.append("LevelBassquake.tscn failed to load")
+
+
+
+
+	# --- Metronome boss / weapon / level ---
+	var mn_boss_packed: PackedScene = load("res://scenes/bosses/Metronome.tscn")
+	if mn_boss_packed:
+		var mnb = mn_boss_packed.instantiate()
+		root.add_child(mnb)
+		await process_frame
+		if not mnb.is_in_group("weak_to_neon_arc"):
+			errors.append("Metronome missing weak_to_neon_arc group")
+		else:
+			print("OK Metronome weak_to_neon_arc")
+		if int(mnb.hp) != 28:
+			errors.append("Metronome HP expected 28, got %d" % int(mnb.hp))
+		else:
+			print("OK Metronome HP=28")
+		if mnb.has_method("activate"):
+			mnb.activate()
+		# Neon Arc ×3: base 2 → 6
+		mnb.hp = 26
+		var nas = load("res://scenes/combat/NeonArcShot.tscn").instantiate()
+		root.add_child(nas)
+		nas.global_position = mnb.global_position
+		if nas.has_method("_try_hit"):
+			nas._try_hit(mnb)
+		await process_frame
+		if int(mnb.hp) != 20:
+			errors.append("Neon Arc weakness vs Metronome expected hp 20 (26-6), got %d" % int(mnb.hp))
+		else:
+			print("OK Neon Arc ×3 vs Metronome hp=", mnb.hp)
+		if is_instance_valid(nas):
+			nas.queue_free()
+		mnb.queue_free()
+		await process_frame
+	else:
+		errors.append("Metronome.tscn failed to load")
+
+	# Tempo Spike weapon smoke
+	var ts_player_packed: PackedScene = load("res://scenes/player/Player.tscn")
+	if ts_player_packed:
+		if gs:
+			gs.select_miku()
+		var tsp = ts_player_packed.instantiate()
+		root.add_child(tsp)
+		await process_frame
+		tsp.grant_weapon("tempo_spike")
+		await process_frame
+		if str(tsp.get_weapon_id()) != "tempo_spike":
+			errors.append("grant_weapon tempo_spike failed")
+		else:
+			print("OK grant_weapon tempo_spike")
+		var tsw: Dictionary = tsp.get_current_weapon()
+		if int(tsw.get("ammo", 0)) != 14:
+			errors.append("Tempo Spike ammo expected 14")
+		else:
+			print("OK Tempo Spike ammo=", tsw.get("ammo"))
+		if int(tsw.get("cost", 0)) != 2:
+			errors.append("Tempo Spike cost expected 2")
+		else:
+			print("OK Tempo Spike cost=2")
+		if tsp.has_method("_fire_tempo_spike"):
+			tsp._fire_tempo_spike()
+			await process_frame
+			var ts_shots = root.get_tree().get_nodes_in_group("player_shots")
+			var found_ts := false
+			for s in ts_shots:
+				if s.get_script() and "TempoSpike" in str(s.get_script().resource_path):
+					found_ts = true
+				elif "damage" in s and int(s.damage) == 3:
+					found_ts = true
+			if not found_ts and ts_shots.is_empty():
+				errors.append("TempoSpikeShot not spawned")
+			else:
+				print("OK TempoSpikeShot spawned count=", ts_shots.size())
+				tsw = tsp.get_current_weapon()
+				if int(tsw.get("ammo", 14)) != 12:
+					errors.append("Tempo Spike ammo not consumed (cost 2)")
+				else:
+					print("OK Tempo Spike ammo consumed=", tsw.get("ammo"))
+				for sh in ts_shots:
+					sh.queue_free()
+		# Encore Guard legs → longer slide i-frames
+		if gs:
+			gs.grant_armor_piece("encore", "legs", true)
+		if tsp.has_method("_sync_armor_from_state"):
+			tsp._sync_armor_from_state()
+		if tsp.has_method("has_encore_legs") and not tsp.has_encore_legs():
+			errors.append("Encore legs not synced on player")
+		else:
+			print("OK Encore legs equipped on player")
+		tsp._invuln = 0.0
+		if tsp.has_method("_start_slide"):
+			# Force floor for slide
+			tsp.velocity = Vector2.ZERO
+			tsp._start_slide()
+			if float(tsp._invuln) < 0.25:
+				errors.append("Encore legs slide i-frames expected >=0.25, got %s" % str(tsp._invuln))
+			else:
+				print("OK Encore legs slide i-frames=", tsp._invuln)
+		tsp.queue_free()
+		await process_frame
+		if gs:
+			gs._armor_owned.clear()
+			gs._armor_equipped.clear()
+	else:
+		errors.append("Player.tscn failed for Tempo Spike test")
+
+	# MetronomeSpike smoke
+	var ms_hz: PackedScene = load("res://scenes/hazards/MetronomeSpike.tscn")
+	if ms_hz:
+		var msh = ms_hz.instantiate()
+		root.add_child(msh)
+		await process_frame
+		if not msh.is_in_group("metronome_spikes"):
+			errors.append("MetronomeSpike missing group")
+		else:
+			print("OK MetronomeSpike group")
+		msh.queue_free()
+		await process_frame
+	else:
+		errors.append("MetronomeSpike.tscn failed to load")
+
+	# GameState metronome unlock
+	if gs:
+		gs.mark_boss_defeated("metronome")
+		if not gs.is_boss_defeated("metronome"):
+			errors.append("mark metronome defeated failed")
+		else:
+			print("OK metronome defeated in GameState")
+		if not gs.has_weapon_unlocked("tempo_spike"):
+			errors.append("tempo_spike should unlock on metronome defeat")
+		else:
+			print("OK tempo_spike unlocked")
+		if gs.has_method("has_pending_armor_secret"):
+			var pending_m = gs.has_pending_armor_secret("metronome")
+			if not pending_m and not gs.has_armor_piece("encore", "legs"):
+				errors.append("metronome should have pending encore legs secret when not owned")
+			elif pending_m:
+				print("OK metronome pending armor secret")
+			gs.grant_armor_piece("encore", "legs", true)
+			if gs.has_pending_armor_secret("metronome"):
+				errors.append("metronome secret should clear after encore legs")
+			else:
+				print("OK metronome secret cleared after grant")
+			gs._armor_owned.clear()
+			gs._armor_equipped.clear()
+
+	# BossSelect metronome playable
+	var bs_mn: PackedScene = load("res://scenes/ui/BossSelect.tscn")
+	if bs_mn:
+		var bsm = bs_mn.instantiate()
+		root.add_child(bsm)
+		await process_frame
+		var cell_mn = bsm.find_child("BossCell_metronome", true, false)
+		if cell_mn:
+			var btn_mn = cell_mn.get_node_or_null("SelectButton")
+			if btn_mn and btn_mn.disabled:
+				errors.append("Metronome BossSelect cell should be playable")
+			else:
+				print("OK BossSelect Metronome playable")
+		else:
+			print("WARN BossCell_metronome not found via find_child")
+		bsm.queue_free()
+		await process_frame
+
+	# Instantiate LevelMetronome
+	var mn_level_packed: PackedScene = load("res://scenes/levels/LevelMetronome.tscn")
+	if mn_level_packed:
+		var mnlvl = mn_level_packed.instantiate()
+		root.add_child(mnlvl)
+		print("OK instantiate LevelMetronome, children=", mnlvl.get_child_count())
+		await process_frame
+		await process_frame
+		var mnent = mnlvl.get_node_or_null("Entities")
+		if mnent == null:
+			errors.append("LevelMetronome Entities missing")
+		else:
+			var mnp = mnent.get_node_or_null("Player")
+			if mnp == null:
+				errors.append("Player not spawned in LevelMetronome")
+			else:
+				print("OK Metronome level player spawned")
+			var mnboss = 0
+			var mnmet = 0
+			for c in mnent.get_children():
+				if c.is_in_group("bosses") or str(c.name).begins_with("Metro"):
+					mnboss += 1
+				elif c.is_in_group("enemies") or str(c.name).begins_with("Met"):
+					mnmet += 1
+			if mnmet < 2:
+				errors.append("Expected >=2 MetBeat in LevelMetronome, got %d" % mnmet)
+			else:
+				print("OK MetBeat in LevelMetronome=", mnmet)
+			if mnboss < 1:
+				errors.append("Expected Metronome boss in level")
+			else:
+				print("OK Metronome boss in level")
+			if mnent.get_node_or_null("ArenaTrigger") == null:
+				errors.append("LevelMetronome ArenaTrigger missing")
+			else:
+				print("OK LevelMetronome ArenaTrigger")
+			var elegs = mnent.get_node_or_null("EncoreLegsPickup")
+			if elegs == null:
+				errors.append("EncoreLegsPickup missing in LevelMetronome")
+			else:
+				print("OK EncoreLegsPickup at ", elegs.position)
+		var mnhaz = mnlvl.get_node_or_null("Hazards")
+		var metro_n := 0
+		if mnhaz:
+			for c in mnhaz.get_children():
+				if c.is_in_group("metronome_spikes") or str(c.name).begins_with("Metronome"):
+					metro_n += 1
+		if metro_n < 5:
+			errors.append("Expected >=5 MetronomeSpike in LevelMetronome, got %d" % metro_n)
+		else:
+			print("OK MetronomeSpike count=", metro_n)
+		if mnlvl.get_node_or_null("HUD") == null:
+			errors.append("HUD missing in LevelMetronome")
+		else:
+			print("OK HUD in LevelMetronome")
+		if mnlvl.get_node_or_null("TouchControls") == null:
+			errors.append("TouchControls missing in LevelMetronome")
+		else:
+			print("OK TouchControls in LevelMetronome")
+		# Armor pickup
+		var el2 = mnent.get_node_or_null("EncoreLegsPickup") if mnent else null
+		var bp2m = mnent.get_node_or_null("Player") if mnent else null
+		if el2 and bp2m and el2.has_method("_collect"):
+			el2._collect(bp2m)
+			await process_frame
+			if gs and not gs.has_encore_legs_equipped():
+				errors.append("Metronome encore legs pickup did not equip")
+			else:
+				print("OK Metronome encore legs equipped")
+		# Boss kill path
+		if mnlvl.has_method("_start_boss_fight"):
+			mnlvl._start_boss_fight()
+			await process_frame
+			var boss_m = mnent.get_node_or_null("Metronome") if mnent else null
+			if boss_m and boss_m.has_method("take_damage"):
+				while is_instance_valid(boss_m) and int(boss_m.hp) > 0:
+					boss_m.take_damage(7)
+					await process_frame
+				await process_frame
+				await process_frame
+				var bp3m = mnent.get_node_or_null("Player") if mnent else null
+				if bp3m and bp3m.has_method("_has_weapon"):
+					if not bp3m._has_weapon("tempo_spike"):
+						errors.append("Metronome defeat did not grant Tempo Spike")
+					else:
+						print("OK Metronome defeat granted Tempo Spike")
+				if gs and not gs.is_boss_defeated("metronome"):
+					errors.append("Metronome defeat did not set GameState")
+				else:
+					print("OK GameState metronome defeated after win")
+				var win_m = mnlvl.get_node_or_null("WinBanner")
+				if win_m == null:
+					print("WARN Metronome WinBanner not found immediately")
+				else:
+					print("OK Metronome WinBanner")
+					var ret_m = win_m.get_node_or_null("Root/Panel/ReturnBossSelect")
+					if ret_m == null:
+						errors.append("Metronome WinBanner missing ReturnBossSelect")
+					else:
+						print("OK Metronome ReturnBossSelect")
+		mnlvl.queue_free()
+		await process_frame
+	else:
+		errors.append("LevelMetronome.tscn failed to load")
 
 
 	# Instantiate main scene briefly
