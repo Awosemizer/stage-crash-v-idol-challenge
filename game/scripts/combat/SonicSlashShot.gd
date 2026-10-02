@@ -77,6 +77,8 @@ func _try_hit(target: Node) -> void:
 	if target.is_in_group("enemies") or target.has_method("take_damage"):
 		if target.has_method("take_damage"):
 			var result = target.take_damage(damage)
+			if GameState and GameState.has_method("notify_enemy_hit"):
+				GameState.notify_enemy_hit(target, result != false)
 			if result == false:
 				queue_free()
 				return

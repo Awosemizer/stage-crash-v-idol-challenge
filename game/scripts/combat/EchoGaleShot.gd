@@ -99,6 +99,8 @@ func _try_hit(target: Node) -> void:
 			if target.is_in_group("weak_to_echo_gale"):
 				dmg = damage * 3
 			var result = target.take_damage(dmg)
+			if GameState and GameState.has_method("notify_enemy_hit"):
+				GameState.notify_enemy_hit(target, result != false)
 			if result == false:
 				queue_free()
 				return

@@ -23,8 +23,8 @@ const BTN_ATTACK := 30.0
 const BTN_SLIDE := 26.0
 const BTN_WEAPON := 22.0
 ## Minimum clear gap between face-button hit rects (no overlap on thumbs).
-const CLUSTER_GAP := 16.0
-const SLIDE_GAP := 16.0
+const CLUSTER_GAP := 20.0
+const SLIDE_GAP := 20.0
 const WEAPON_GAP := 8.0
 ## Keep weapon switch clear of pause (28) + armor row (~15) + margin.
 const WEAPON_TOP_CLEAR := 48.0
@@ -233,7 +233,7 @@ func _layout() -> void:
 	_stick_knob.size = Vector2(KNOB_R * 2.0, KNOB_R * 2.0)
 	_reset_knob()
 
-	# Face buttons — bottom-right fan, NO overlapping hit rects (≥16px gaps).
+	# Face buttons — bottom-right fan, NO overlapping hit rects (≥20px gaps).
 	# Layout (phone landscape):
 	#   [SL Slide]   [B Attack]   [A Jump]
 	# Slide further left; Attack left of Jump; Jump in the corner.
@@ -245,9 +245,10 @@ func _layout() -> void:
 
 	# Attack — clearly left of Jump (same vertical band), CLUSTER_GAP between rects
 	_btn_attack.size = Vector2(a, a)
+	# Raise Attack slightly so ATK/DASH don't share the same thumb band
 	_btn_attack.position = Vector2(
 		_btn_jump.position.x - a - CLUSTER_GAP,
-		_btn_jump.position.y + (j - a) * 0.5
+		_btn_jump.position.y + (j - a) * 0.5 - 10.0
 	)
 
 	# Slide — further left of Attack, bottom-aligned, SLIDE_GAP between rects

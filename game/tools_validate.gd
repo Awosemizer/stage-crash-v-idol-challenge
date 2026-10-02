@@ -3642,8 +3642,8 @@ func _initialize() -> void:
 	var title_src := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
 	if "PanelChrome" not in title_src and "panel_chrome" not in title_src:
 		errors.append("TitleScreen should use panel chrome")
-	if "0.19" not in title_src and "0.20" not in title_src and "0.22" not in title_src and "0.24" not in title_src and "0.25" not in title_src:
-		errors.append("TitleScreen version should mention 0.19+ / 0.25")
+	if "0.19" not in title_src and "0.20" not in title_src and "0.22" not in title_src and "0.24" not in title_src and "0.25" not in title_src and "0.26" not in title_src:
+		errors.append("TitleScreen version should mention 0.19+ / 0.26")
 	# Boss intro on Beatfire
 	var bf_src := FileAccess.get_file_as_string("res://scripts/bosses/BeatfireMan.gd")
 	if "play_boss_intro" not in bf_src:
@@ -3654,8 +3654,8 @@ func _initialize() -> void:
 
 	# --- v0.20 landscape + Beatfire touch playability ---
 	var proj := FileAccess.get_file_as_string("res://project.godot")
-	if 'config/version="0.25.0-proto"' not in proj and 'config/version="0.24.0-proto"' not in proj and 'config/version="0.23.0-proto"' not in proj:
-		errors.append("project.godot version should be 0.25.0-proto")
+	if 'config/version="0.26.0-proto"' not in proj and 'config/version="0.25.0-proto"' not in proj and 'config/version="0.24.0-proto"' not in proj:
+		errors.append("project.godot version should be 0.26.0-proto")
 	else:
 		print("OK project version present")
 	if 'window/stretch/mode="canvas_items"' not in proj:
@@ -3932,8 +3932,8 @@ func _initialize() -> void:
 	else:
 		print("OK RefrainUnit fairer contact")
 	var title_25 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
-	if "tight" not in title_25 and "0.25" not in title_25:
-		errors.append("TitleScreen should handle tight landscape / show 0.25")
+	if "tight" not in title_25 and "0.25" not in title_25 and "0.26" not in title_25:
+		errors.append("TitleScreen should handle tight landscape / show 0.25+")
 	else:
 		print("OK TitleScreen tight/version")
 	var bsel_25 := FileAccess.get_file_as_string("res://scripts/ui/BossSelect.gd")
@@ -3952,6 +3952,70 @@ func _initialize() -> void:
 	else:
 		print("OK Player wall rays extended")
 	print("OK v0.25 feel polish")
+
+	# --- v0.26 combat / UI polish ---
+	var gs_26 := FileAccess.get_file_as_string("res://scripts/autoload/GameState.gd")
+	if "request_hitstop" not in gs_26 or "notify_enemy_hit" not in gs_26:
+		errors.append("GameState missing hitstop helpers (request_hitstop / notify_enemy_hit)")
+	else:
+		print("OK GameState hitstop")
+	var pl_26 := FileAccess.get_file_as_string("res://scripts/player/Player.gd")
+	if "RESPAWN_INVULN" not in pl_26:
+		errors.append("Player missing RESPAWN_INVULN after pit respawn")
+	else:
+		print("OK Player RESPAWN_INVULN")
+	if "CHECKPOINT_FLASH" not in pl_26 or "_checkpoint_flash" not in pl_26:
+		errors.append("Player missing checkpoint cyan flash")
+	else:
+		print("OK Player checkpoint flash")
+	if "Pre-threshold" not in pl_26 and "early charge" not in pl_26:
+		errors.append("Player charge indicator should show early / clearer aura")
+	else:
+		print("OK Player clearer charge")
+	var touch_26 := FileAccess.get_file_as_string("res://scripts/ui/TouchControls.gd")
+	if "CLUSTER_GAP := 20.0" not in touch_26 or "SLIDE_GAP := 20.0" not in touch_26:
+		errors.append("TouchControls ATK/DASH gaps should be 20px in 0.26")
+	else:
+		print("OK TouchControls 20px gaps")
+	if "- 10.0" not in touch_26:
+		errors.append("TouchControls Attack should be raised vs DASH band")
+	else:
+		print("OK TouchControls Attack raised")
+	var met_26 := FileAccess.get_file_as_string("res://scripts/enemies/MetBeat.gd")
+	if "const CONTACT_DAMAGE := 1" not in met_26:
+		errors.append("MetBeat contact damage should be 1 (fairer common enemy)")
+	else:
+		print("OK MetBeat contact 1")
+	var et_26 := FileAccess.get_file_as_string("res://scripts/pickups/EnergyTankPickup.gd")
+	if "E-TANK" not in et_26 or "ToastPanel" not in et_26:
+		errors.append("EnergyTankPickup should have clearer E-TANK toast panel")
+	else:
+		print("OK EnergyTank clarity")
+	var hud_26 := FileAccess.get_file_as_string("res://scripts/ui/HUD.gd")
+	if "flash_energy_tanks" not in hud_26:
+		errors.append("HUD missing flash_energy_tanks for E-Tank pickup")
+	else:
+		print("OK HUD E-Tank flash")
+	var bs_26 := FileAccess.get_file_as_string("res://scripts/ui/BossSelect.gd")
+	if "CheckGlyph" not in bs_26 or "HardBanner" not in bs_26:
+		errors.append("BossSelect should have clearer checkmarks + Hard banner")
+	else:
+		print("OK BossSelect check/HARD")
+	if "HARD ●" not in bs_26:
+		errors.append("BossSelect DiffButton should show HARD ● when hard")
+	else:
+		print("OK BossSelect HARD button label")
+	var bust_26 := FileAccess.get_file_as_string("res://scripts/combat/BusterShot.gd")
+	if "notify_enemy_hit" not in bust_26:
+		errors.append("BusterShot should call GameState.notify_enemy_hit")
+	else:
+		print("OK BusterShot hitstop hook")
+	var title_26 := FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
+	if "0.26" not in title_26:
+		errors.append("TitleScreen version should mention 0.26")
+	else:
+		print("OK TitleScreen 0.26")
+	print("OK v0.26 combat/UI polish")
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

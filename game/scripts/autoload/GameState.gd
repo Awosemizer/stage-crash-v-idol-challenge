@@ -624,6 +624,32 @@ func get_difficulty_display_name() -> String:
 	return "Difícil" if is_hard() else "Normal"
 
 
+## --- Combat feel (hitstop) ---
+var _hitstop_busy := false
+
+func request_hitstop(duration: float = 0.04, scale: float = 0.08) -> void:
+	## Brief time-scale dip on enemy/boss hit. Uses ignore_time_scale timer.
+	if _hitstop_busy or duration <= 0.0:
+		return
+	if Engine.time_scale < 0.95:
+		return
+	_hitstop_busy = true
+	Engine.time_scale = clampf(scale, 0.02, 0.25)
+	await get_tree().create_timer(duration, true, false, true).timeout
+	Engine.time_scale = 1.0
+	_hitstop_busy = false
+
+
+func notify_enemy_hit(target: Node, applied: bool = true) -> void:
+	## Call after a player attack lands. Bosses get a slightly longer freeze.
+	if not applied or target == null:
+		return
+	if target.is_in_group("bosses"):
+		request_hitstop(0.055, 0.05)
+	else:
+		request_hitstop(0.032, 0.08)
+
+
 func get_hurt_invuln_time() -> float:
 	return HURT_INVULN_HARD if is_hard() else HURT_INVULN_NORMAL
 

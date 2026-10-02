@@ -1,6 +1,7 @@
 # Stage Crash: V-Idol Challenge
 
 
+**v0.26:** combat/UI polish — hitstop, charge, respawn i-frames, touch ATK/DASH, Met dmg 1, E-Tank, BossSelect HARD/✓.
 **v0.25:** feel polish — coyote/buffer/wall-coyote/slide-buffer, hurt flash, fairer boss contacts, midboss retune, Title/BossSelect no-clip.
 **v0.24:** touch Attack/Slide no longer overlap; camera bias above controls; clearer boss telegraphs; fairer collapse warns.
 **v0.19:** art+audio pro pass — 8-frame run, boss poses, parallax, hit FX, longer BGM, layered SFX.
@@ -13,7 +14,7 @@ Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.25.0-proto`
+- Versión demo: `0.26.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)
@@ -52,7 +53,7 @@ En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
 
 Archivo listo (debug, un solo archivo, ~27 MB):
 
-**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.24 — touch layout + feel)
+**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.26 — combat/UI polish)
 
 1. Descarga el APK desde este repo (botón Raw / Download).
 2. En el teléfono: permite **orígenes desconocidos** / instalar apps desconocidas para el navegador o gestor de archivos.

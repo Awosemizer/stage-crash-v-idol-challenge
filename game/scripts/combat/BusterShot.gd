@@ -88,6 +88,8 @@ func _try_hit(target: Node) -> void:
 		if target.has_method("take_damage"):
 			# Met cerrado puede devolver false / no consumir
 			var result = target.take_damage(damage)
+			if GameState and GameState.has_method("notify_enemy_hit"):
+				GameState.notify_enemy_hit(target, result != false)
 			ArtKit.spawn_hit_spark(get_parent(), global_position, 0.9 + 0.15 * float(level))
 			if result == false:
 				# Rebotó en caparazón: destruir proyectil igual

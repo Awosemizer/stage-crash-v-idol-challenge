@@ -3,8 +3,8 @@ extends Area2D
 ## vulnerable solo cuando abre el caparazón. HP 2, daño de contacto 2.
 
 const HP_MAX := 2
-const CONTACT_DAMAGE := 2
-const CLOSED_TIME := 1.05
+const CONTACT_DAMAGE := 1
+const CLOSED_TIME := 1.15
 const OPEN_TIME := 0.75
 const HIT_FLASH := 0.12
 

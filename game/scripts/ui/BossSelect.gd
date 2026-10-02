@@ -61,6 +61,22 @@ func _build_ui() -> void:
 	top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(top_bar)
 
+	var hard_banner := ColorRect.new()
+	hard_banner.name = "HardBanner"
+	hard_banner.color = Color(0.55, 0.12, 0.18, 0.95)
+	hard_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hard_banner.visible = GameState.is_hard()
+	add_child(hard_banner)
+	var hard_lbl := Label.new()
+	hard_lbl.name = "HardBannerLabel"
+	hard_lbl.text = "◆ MODO DIFÍCIL"
+	hard_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hard_lbl.add_theme_font_size_override("font_size", 8)
+	hard_lbl.modulate = Color(1.0, 0.75, 0.8, 1.0)
+	hard_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hard_lbl.visible = GameState.is_hard()
+	add_child(hard_lbl)
+
 	var accent := ColorRect.new()
 	accent.name = "AccentCyan"
 	accent.color = Color(0.25, 0.85, 0.95, 0.9)
@@ -141,8 +157,10 @@ func _build_ui() -> void:
 
 	var char_lbl := Label.new()
 	char_lbl.name = "CharLabel"
-	var diff_tag := " [D]" if GameState.is_hard() else ""
+	var diff_tag := " · HARD" if GameState.is_hard() else ""
 	char_lbl.text = GameState.get_character_display_name() + diff_tag
+	if GameState.is_hard():
+		char_lbl.modulate = Color(1.0, 0.55, 0.55, 1.0)
 	char_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	char_lbl.add_theme_font_size_override("font_size", 7)
 	char_lbl.modulate = GameState.get_portrait_color()
@@ -158,6 +176,17 @@ func _layout() -> void:
 	if top_bar:
 		top_bar.position = Vector2(0, 0)
 		top_bar.size = Vector2(vp.x, area.position.y + HEADER_H - 2.0)
+	var hard_banner := get_node_or_null("HardBanner") as ColorRect
+	var hard_lbl := get_node_or_null("HardBannerLabel") as Label
+	var hard_on := GameState.is_hard()
+	if hard_banner:
+		hard_banner.visible = hard_on
+		hard_banner.position = Vector2(0, maxf(area.position.y - 2.0, 0.0))
+		hard_banner.size = Vector2(vp.x, 12.0)
+	if hard_lbl:
+		hard_lbl.visible = hard_on
+		hard_lbl.position = Vector2(area.position.x, maxf(area.position.y - 2.0, 0.0))
+		hard_lbl.size = Vector2(area.size.x, 12.0)
 
 	var accent := get_node_or_null("AccentCyan") as ColorRect
 	if accent:
@@ -283,9 +312,10 @@ func _relayout_cell(root: Control, cw: float, ch: float) -> void:
 		status.position = Vector2(4, ch - 14.0)
 		status.size = Vector2(cw - 8.0, 12)
 		status.add_theme_font_size_override("font_size", 6)
-	var check := btn.get_node_or_null("Checkmark") as Label
+	var check := btn.get_node_or_null("Checkmark") as Control
 	if check:
-		check.position = Vector2(cw - 16.0, 2)
+		check.position = Vector2(cw - 18.0, 2)
+		check.size = Vector2(16, 16)
 	var secret := btn.get_node_or_null("SecretStub") as Label
 	if secret:
 		secret.position = Vector2(cw - 16.0, ch - 16.0)
@@ -414,8 +444,8 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 		status.text = "BLOQUEADO" if locked_core else "FORTALEZA"
 		status.modulate = Color(0.85, 0.55, 1.0, 0.9) if locked_core else Color(0.6, 1.0, 0.7, 1.0)
 	elif defeated:
-		status.text = "✓ VENCIDO"
-		status.modulate = Color(0.45, 1.0, 0.55, 1.0)
+		status.text = "VENCIDO ✓"
+		status.modulate = Color(0.55, 1.0, 0.65, 1.0)
 	elif playable:
 		status.text = "ENTRAR"
 		status.modulate = accent
@@ -425,15 +455,28 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 	btn.add_child(status)
 
 	if defeated and not is_core:
+		var check_bg := Panel.new()
+		check_bg.name = "Checkmark"
+		var csb := StyleBoxFlat.new()
+		csb.bg_color = Color(0.12, 0.55, 0.22, 0.95)
+		csb.set_border_width_all(1)
+		csb.border_color = Color(0.55, 1.0, 0.65, 1.0)
+		csb.set_corner_radius_all(3)
+		check_bg.add_theme_stylebox_override("panel", csb)
+		check_bg.position = Vector2(maxf(_cell_w - 20.0, 52.0), 2)
+		check_bg.size = Vector2(16, 16)
+		check_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn.add_child(check_bg)
 		var check := Label.new()
-		check.name = "Checkmark"
+		check.name = "CheckGlyph"
 		check.text = "✓"
-		check.add_theme_font_size_override("font_size", 10)
-		check.modulate = Color(0.4, 1.0, 0.5, 1.0)
-		check.position = Vector2(56, 2)
-		check.size = Vector2(14, 14)
+		check.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		check.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		check.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		check.add_theme_font_size_override("font_size", 11)
+		check.modulate = Color(0.85, 1.0, 0.9, 1.0)
 		check.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		btn.add_child(check)
+		check_bg.add_child(check)
 
 	if playable and GameState.has_pending_armor_secret(id):
 		var secret := Label.new()
@@ -499,11 +542,23 @@ func _refresh_diff_label(btn: Button = null) -> void:
 		b = get_node_or_null("DiffButton") as Button
 	if b == null:
 		return
-	b.text = "Difícil" if GameState.is_hard() else "Normal"
+	if GameState.is_hard():
+		b.text = "HARD ●"
+		_SafeArea.style_button(b, Color(0.42, 0.1, 0.16, 0.95), Color(1.0, 0.45, 0.5, 0.95))
+	else:
+		b.text = "Normal"
+		_SafeArea.style_button(b, Color(0.16, 0.12, 0.22, 0.95), Color(0.85, 0.55, 1.0, 0.9))
 	var char_lbl = get_node_or_null("CharLabel") as Label
 	if char_lbl:
-		var diff_tag := " [D]" if GameState.is_hard() else ""
+		var diff_tag := " · HARD" if GameState.is_hard() else ""
 		char_lbl.text = GameState.get_character_display_name() + diff_tag
+		char_lbl.modulate = Color(1.0, 0.55, 0.55, 1.0) if GameState.is_hard() else GameState.get_portrait_color()
+	var hard_banner := get_node_or_null("HardBanner") as CanvasItem
+	var hard_lbl := get_node_or_null("HardBannerLabel") as CanvasItem
+	if hard_banner:
+		hard_banner.visible = GameState.is_hard()
+	if hard_lbl:
+		hard_lbl.visible = GameState.is_hard()
 
 
 func _on_diff_toggle() -> void:

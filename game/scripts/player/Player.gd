@@ -32,6 +32,8 @@ const SLIDE_AIR_GRACE := 0.06    # don't cancel slide on 1–2-frame air blip
 const INVULN_SLIDE := 0.14       # stub i-frames at slide start
 const HURT_FLASH := 0.22         # clear red/white flash on hit
 const RESPAWN_Y := 400.0         # fall death threshold (level-relative)
+const RESPAWN_INVULN := 1.10     # brief i-frames after pit/death respawn
+const CHECKPOINT_FLASH := 0.28   # spawn ping when checkpoint updates
 
 # Buster charge (Mega Man–style)
 const CHARGE_LV2 := 0.45
@@ -117,6 +119,7 @@ var _slide_buffer := 0.0
 var _slide_air_timer := 0.0
 var _invuln := 0.0
 var _hurt_flash := 0.0
+var _checkpoint_flash := 0.0
 var _is_sliding := false
 var _spawn_pos := Vector2.ZERO
 var max_hp := 28
@@ -798,7 +801,9 @@ func _saber_try_hit(target: Node) -> void:
 	if target.is_in_group("enemies") or target.has_method("take_damage"):
 		_saber_hit_ids[id] = true
 		if target.has_method("take_damage"):
-			target.take_damage(SABER_DAMAGE)
+			var applied = target.take_damage(SABER_DAMAGE)
+			if GameState and GameState.has_method("notify_enemy_hit"):
+				GameState.notify_enemy_hit(target, applied != false)
 
 
 func _handle_beat_blaze() -> void:
@@ -1143,6 +1148,7 @@ func _tick_timers(delta: float) -> void:
 			_pending_saber_after_parry = false
 			_swing_saber()
 	_hurt_flash = maxf(_hurt_flash - delta, 0.0)
+	_checkpoint_flash = maxf(_checkpoint_flash - delta, 0.0)
 	if _is_sliding:
 		_slide_timer -= delta
 		if is_on_floor():
@@ -1298,27 +1304,36 @@ func _update_visual() -> void:
 	elif get_weapon_id() == WEAPON_SABER and _charging and _has_flight_arms:
 		lv = 3 if _charge_time >= SONIC_CHARGE else (2 if _charge_time >= 0.2 else 0)
 	if charge_aura:
-		if lv >= 2:
+		# Clearer charge read on phone: show early (pre-lv2) aura + bigger pulses at lv2+
+		if lv >= 1 or (_charging and _charge_time > 0.10 and (get_weapon_id() == WEAPON_BUSTER or get_weapon_id() == WEAPON_SABER)):
 			charge_aura.visible = true
-			var aura_sz := Vector2(22, 38) if lv == 2 else Vector2(26, 42)
-			charge_aura.size = aura_sz
-			charge_aura.position = Vector2(-aura_sz.x * 0.5, -22)
+			var aura_sz := Vector2(18, 32)
 			if lv >= 4:
-				var pulse4 := 0.6 + 0.4 * absf(sin(_charge_time * 16.0))
-				charge_aura.color = Color(0.85, 0.45, 1.0, pulse4)
-				base_mod = Color(1.05, 0.95, 1.2, 1.0)
+				aura_sz = Vector2(30, 46)
 			elif lv >= 3:
-				var pulse := 0.55 + 0.45 * absf(sin(_charge_time * 12.0))
-				charge_aura.color = Color(1.0, 0.92, 0.35, pulse)
-				base_mod = Color(1.1, 1.1, 0.85, 1.0)
+				aura_sz = Vector2(28, 44)
+			elif lv >= 2:
+				aura_sz = Vector2(24, 40)
+			charge_aura.size = aura_sz
+			charge_aura.position = Vector2(-aura_sz.x * 0.5, -24)
+			if lv >= 4:
+				var pulse4 := 0.7 + 0.3 * absf(sin(_charge_time * 18.0))
+				charge_aura.color = Color(0.9, 0.4, 1.0, pulse4)
+				base_mod = Color(1.1, 0.95, 1.25, 1.0)
+			elif lv >= 3:
+				var pulse := 0.65 + 0.35 * absf(sin(_charge_time * 14.0))
+				charge_aura.color = Color(1.0, 0.92, 0.25, pulse)
+				base_mod = Color(1.15, 1.12, 0.8, 1.0)
+			elif lv >= 2:
+				charge_aura.color = Color(0.3, 0.85, 1.0, 0.55 + 0.35 * absf(sin(_charge_time * 10.0)))
+				base_mod = Color(0.85, 1.1, 1.2, 1.0)
 			else:
-				charge_aura.color = Color(0.35, 0.75, 1.0, 0.45 + 0.25 * absf(sin(_charge_time * 8.0)))
-				base_mod = Color(0.9, 1.05, 1.15, 1.0)
+				# Pre-threshold / early charge hint (reads on dark stages)
+				charge_aura.color = Color(0.45, 0.9, 1.0, 0.28 + 0.22 * absf(sin(_charge_time * 9.0)))
+				base_mod = Color(0.88, 1.08, 1.18, 1.0)
 		else:
 			charge_aura.visible = false
-			if get_weapon_id() == WEAPON_BUSTER and _charging and _charge_time > 0.12:
-				base_mod = Color(0.85, 1.1, 1.2, 1.0)
-			elif get_weapon_id() == WEAPON_BEAT_BLAZE:
+			if get_weapon_id() == WEAPON_BEAT_BLAZE:
 				base_mod = Color(1.15, 0.9, 0.75, 1.0)
 			elif get_weapon_id() == WEAPON_NEON_ARC:
 				base_mod = Color(1.1, 1.1, 0.75, 1.0)
@@ -1340,6 +1355,10 @@ func _update_visual() -> void:
 			base_mod = Color(1.55, 0.28, 0.32, 1.0)
 		else:
 			base_mod = Color(1.35, 1.35, 1.35, 1.0)
+	elif _checkpoint_flash > 0.0:
+		# Soft cyan ping — checkpoint updated (not a hit)
+		var cp := fmod(_checkpoint_flash * 14.0, 1.0)
+		base_mod = Color(0.55, 1.15, 1.3, 1.0) if cp < 0.5 else Color(0.9, 1.05, 1.15, 1.0)
 	elif _invuln > 0.0:
 		# Remaining i-frames: alpha blink
 		base_mod.a = 0.4 if fmod(_invuln, 0.08) < 0.04 else 1.0
@@ -1430,7 +1449,8 @@ func _take_hit(amount: int) -> void:
 
 func _respawn() -> void:
 	hp = max_hp
-	_invuln = 0.5
+	_invuln = RESPAWN_INVULN
+	_hurt_flash = maxf(_hurt_flash, 0.18)
 	_is_sliding = false
 	_charging = false
 	_charge_time = 0.0
@@ -1441,7 +1461,13 @@ func _respawn() -> void:
 
 
 func set_spawn_pos(pos: Vector2) -> void:
+	var prev := _spawn_pos
 	_spawn_pos = pos
+	# Checkpoint feel: only ping after the level has started and spawn moved meaningfully
+	if prev != Vector2.ZERO and prev.distance_to(pos) > 40.0 and _alive:
+		_checkpoint_flash = CHECKPOINT_FLASH
+		if AudioManager:
+			AudioManager.play_sfx("pickup")
 
 
 func is_invulnerable() -> bool:
@@ -1765,13 +1791,17 @@ func _update_charge_rings(lv: int) -> void:
 	var outer: Sprite2D = _charge_rings.get("outer") as Sprite2D
 	if inner == null and outer == null:
 		return
-	var show_rings := lv >= 2
+	var show_rings := lv >= 1
 	if inner:
 		inner.visible = show_rings
 		if show_rings:
 			inner.rotation = _anim_time * 4.0
-			inner.modulate = Color(0.5, 0.85, 1.0, 0.55 + 0.25 * absf(sin(_anim_time * 8.0)))
-			inner.scale = Vector2(0.85, 0.95) if lv == 2 else Vector2(1.0, 1.1)
+			if lv >= 2:
+				inner.modulate = Color(0.5, 0.85, 1.0, 0.65 + 0.3 * absf(sin(_anim_time * 8.0)))
+				inner.scale = Vector2(0.9, 1.0) if lv == 2 else Vector2(1.05, 1.15)
+			else:
+				inner.modulate = Color(0.55, 0.9, 1.0, 0.35 + 0.2 * absf(sin(_anim_time * 7.0)))
+				inner.scale = Vector2(0.7, 0.8)
 	if outer:
 		outer.visible = lv >= 3
 		if outer.visible:

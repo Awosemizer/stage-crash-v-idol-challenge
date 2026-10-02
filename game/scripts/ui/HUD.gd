@@ -52,6 +52,7 @@ var _weapon_strip_btns: Array = []
 func _ready() -> void:
 	layer = 50
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_to_group("hud")
 	_apply_portrait_from_state()
 	_build_ui()
 	get_viewport().size_changed.connect(_layout)
@@ -435,13 +436,30 @@ func _refresh_hp_bar() -> void:
 		_hp_label.text = "PV %d/%d" % [_hp, _max_hp]
 
 
+
+func flash_energy_tanks() -> void:
+	## Brief highlight when an E-Tank is collected (clarity on phone HUD).
+	sync_energy_tanks_from_state()
+	for tank in _tank_icons:
+		if tank == null:
+			continue
+		tank.modulate = Color(1.8, 1.8, 1.2, 1.0)
+	var tree := get_tree()
+	if tree:
+		tree.create_timer(0.45).timeout.connect(func () -> void:
+			for tank2 in _tank_icons:
+				if tank2:
+					tank2.modulate = Color(1, 1, 1, 1)
+		)
+
+
 func _refresh_tanks() -> void:
 	for i in _tank_icons.size():
 		# Empty outline style for now (0 filled); owned would be brighter later
 		if i < energy_tanks:
-			_tank_icons[i].color = Color(0.3, 0.85, 0.95, 0.95)
+			_tank_icons[i].color = Color(0.25, 0.95, 1.0, 1.0)
 		else:
-			_tank_icons[i].color = Color(0.2, 0.22, 0.28, 0.7)
+			_tank_icons[i].color = Color(0.18, 0.2, 0.26, 0.55)
 
 
 func _refresh_weapon() -> void:
