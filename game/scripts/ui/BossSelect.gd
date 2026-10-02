@@ -1,11 +1,12 @@
 extends Control
 ## Selector 3×3 de jefes — cartelera SynthoCorp / concierto.
-## Centro = CORE-9 (bloqueado). Beatfire + Echo Wind + Neon Volt + Glitch Ice jugables.
+## Centro = CORE-9 (bloqueado). Beatfire + Echo + Neon + Glitch Ice + Chorus Bloom jugables.
 
 const LEVEL_BEATFIRE := "res://scenes/levels/Level01.tscn"
 const LEVEL_ECHO_WIND := "res://scenes/levels/LevelEchoWind.tscn"
 const LEVEL_NEON_VOLT := "res://scenes/levels/LevelNeonVolt.tscn"
 const LEVEL_GLITCH_ICE := "res://scenes/levels/LevelGlitchIce.tscn"
+const LEVEL_CHORUS_BLOOM := "res://scenes/levels/LevelChorusBloom.tscn"
 const CHAR_SELECT := "res://scenes/ui/CharacterSelect.tscn"
 const TITLE_SCENE := "res://scenes/ui/TitleScreen.tscn"
 
@@ -22,7 +23,7 @@ const BOSS_SLOTS: Array = [
 	{"id": "core9", "name": "CORE-9", "playable": false, "is_core": true, "accent": Color(0.85, 0.3, 0.95)},
 	{"id": "neon_volt", "name": "Neon Volt", "playable": true, "accent": Color(0.95, 0.95, 0.35)},
 	{"id": "metronome", "name": "Metronome", "playable": false, "accent": Color(0.7, 0.75, 0.85)},
-	{"id": "chorus_bloom", "name": "Chorus Bloom", "playable": false, "accent": Color(0.85, 0.45, 0.75)},
+	{"id": "chorus_bloom", "name": "Chorus Bloom", "playable": true, "accent": Color(0.85, 0.45, 0.75)},
 	{"id": "static_shadow", "name": "Static Shadow", "playable": false, "accent": Color(0.4, 0.35, 0.55)},
 ]
 
@@ -99,7 +100,7 @@ func _build_ui() -> void:
 
 	var footer := Label.new()
 	footer.name = "Footer"
-	footer.text = "Beatfire · Echo · Neon · Glitch Ice · resto: Pronto"
+	footer.text = "Beatfire · Echo · Neon · Glitch · Chorus · resto: Pronto"
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	footer.add_theme_font_size_override("font_size", 6)
 	footer.modulate = Color(0.6, 0.65, 0.75, 0.75)
@@ -174,6 +175,8 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 			bg_col = Color(0.16, 0.14, 0.06, 0.95)
 		elif id == "glitch_ice":
 			bg_col = Color(0.08, 0.14, 0.2, 0.95)
+		elif id == "chorus_bloom":
+			bg_col = Color(0.16, 0.1, 0.14, 0.95)
 		else:
 			bg_col = Color(0.18, 0.1, 0.08, 0.95)
 		border_col = accent
@@ -311,6 +314,9 @@ func _on_boss_pressed(boss_id: String) -> void:
 	elif boss_id == "glitch_ice":
 		print("BossSelect: entrando etapa Glitch Ice")
 		get_tree().change_scene_to_file(LEVEL_GLITCH_ICE)
+	elif boss_id == "chorus_bloom":
+		print("BossSelect: entrando etapa Chorus Bloom")
+		get_tree().change_scene_to_file(LEVEL_CHORUS_BLOOM)
 	elif boss_id == "core9":
 		print("BossSelect: CORE-9 aún bloqueado")
 	else:

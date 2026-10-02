@@ -1525,6 +1525,282 @@ func _initialize() -> void:
 	else:
 		errors.append("LevelGlitchIce.tscn failed to load")
 
+
+	# --- Chorus Bloom boss / weapon / level ---
+	var cb_boss_packed: PackedScene = load("res://scenes/bosses/ChorusBloom.tscn")
+	if cb_boss_packed:
+		var cbb = cb_boss_packed.instantiate()
+		root.add_child(cbb)
+		await process_frame
+		if not cbb.is_in_group("weak_to_freeze_sample"):
+			errors.append("ChorusBloom missing weak_to_freeze_sample group")
+		else:
+			print("OK ChorusBloom weak_to_freeze_sample")
+		if int(cbb.hp) != 28:
+			errors.append("ChorusBloom HP expected 28, got %d" % int(cbb.hp))
+		else:
+			print("OK ChorusBloom HP=28")
+		if cbb.has_method("activate"):
+			cbb.activate()
+		# Freeze Sample ×3: base 2 → 6
+		cbb.hp = 26
+		var fsc = load("res://scenes/combat/FreezeSampleShot.tscn").instantiate()
+		root.add_child(fsc)
+		fsc.global_position = cbb.global_position
+		if fsc.has_method("_try_hit"):
+			fsc._try_hit(cbb)
+		await process_frame
+		if int(cbb.hp) != 20:
+			errors.append("Freeze Sample weakness vs ChorusBloom expected hp 20 (26-6), got %d" % int(cbb.hp))
+		else:
+			print("OK Freeze Sample ×3 vs ChorusBloom hp=", cbb.hp)
+		if is_instance_valid(fsc):
+			fsc.queue_free()
+		cbb.queue_free()
+		await process_frame
+	else:
+		errors.append("ChorusBloom.tscn failed to load")
+
+	# Petal Chorus weapon smoke
+	var pc_player_packed: PackedScene = load("res://scenes/player/Player.tscn")
+	if pc_player_packed:
+		if gs:
+			gs.select_miku()
+		var pcp = pc_player_packed.instantiate()
+		root.add_child(pcp)
+		await process_frame
+		pcp.grant_weapon("petal_chorus")
+		await process_frame
+		if str(pcp.get_weapon_id()) != "petal_chorus":
+			errors.append("grant_weapon petal_chorus failed")
+		else:
+			print("OK grant_weapon petal_chorus")
+		var pcw: Dictionary = pcp.get_current_weapon()
+		if int(pcw.get("ammo", 0)) != 28:
+			errors.append("Petal Chorus ammo expected 28")
+		else:
+			print("OK Petal Chorus ammo=", pcw.get("ammo"))
+		if pcp.has_method("_fire_petal_chorus"):
+			pcp._fire_petal_chorus()
+			await process_frame
+			var pc_shots = root.get_tree().get_nodes_in_group("player_shots")
+			var found_pc := false
+			for s in pc_shots:
+				if s.get_script() and "PetalChorus" in str(s.get_script().resource_path):
+					found_pc = true
+				elif "damage" in s and int(s.damage) == 1:
+					found_pc = true
+			if not found_pc and pc_shots.is_empty():
+				errors.append("PetalChorusShot not spawned")
+			else:
+				print("OK PetalChorusShot spawned count=", pc_shots.size())
+				pcw = pcp.get_current_weapon()
+				if int(pcw.get("ammo", 28)) != 27:
+					errors.append("Petal Chorus ammo not consumed")
+				else:
+					print("OK Petal Chorus ammo consumed=", pcw.get("ammo"))
+				for sh in pc_shots:
+					sh.queue_free()
+		# Heal stub
+		if pcp.has_method("heal"):
+			pcp.hp = 20
+			pcp.heal(1)
+			if int(pcp.hp) != 21:
+				errors.append("Player.heal expected 21, got %d" % int(pcp.hp))
+			else:
+				print("OK Player.heal")
+		pcp.queue_free()
+		await process_frame
+	else:
+		errors.append("Player.tscn failed for Petal Chorus test")
+
+	# VinePlatform smoke
+	var vine_plat: PackedScene = load("res://scenes/props/VinePlatform.tscn")
+	if vine_plat:
+		var vplat = vine_plat.instantiate()
+		root.add_child(vplat)
+		await process_frame
+		if not vplat.is_in_group("vine_platforms"):
+			errors.append("VinePlatform missing group")
+		else:
+			print("OK VinePlatform group")
+		vplat.queue_free()
+		await process_frame
+	else:
+		errors.append("VinePlatform.tscn failed to load")
+
+	# PetalHazard smoke
+	var petal_hz: PackedScene = load("res://scenes/hazards/PetalHazard.tscn")
+	if petal_hz:
+		var phz = petal_hz.instantiate()
+		root.add_child(phz)
+		await process_frame
+		if not phz.is_in_group("petal_hazards"):
+			errors.append("PetalHazard missing group")
+		else:
+			print("OK PetalHazard group")
+		phz.queue_free()
+		await process_frame
+	else:
+		errors.append("PetalHazard.tscn failed to load")
+
+	# GameState chorus_bloom unlock
+	if gs:
+		gs.mark_boss_defeated("chorus_bloom")
+		if not gs.is_boss_defeated("chorus_bloom"):
+			errors.append("mark chorus_bloom defeated failed")
+		else:
+			print("OK chorus_bloom defeated in GameState")
+		if not gs.has_weapon_unlocked("petal_chorus"):
+			errors.append("petal_chorus should unlock on chorus_bloom defeat")
+		else:
+			print("OK petal_chorus unlocked")
+
+	# BossSelect chorus playable
+	var bs_chk: PackedScene = load("res://scenes/ui/BossSelect.tscn")
+	if bs_chk:
+		var bsc = bs_chk.instantiate()
+		root.add_child(bsc)
+		await process_frame
+		var found_cb_slot := false
+		for slot in bsc.BOSS_SLOTS if "BOSS_SLOTS" in bsc else []:
+			if str(slot.get("id", "")) == "chorus_bloom" and bool(slot.get("playable", false)):
+				found_cb_slot = true
+		# BOSS_SLOTS is const on script — access via script constant
+		var slots = bsc.get_script().get_script_constant_map().get("BOSS_SLOTS", []) if bsc.get_script() else []
+		# Fallback: check button exists and not disabled
+		var cell = bsc.find_child("BossCell_chorus_bloom", true, false)
+		if cell:
+			var btn = cell.get_node_or_null("SelectButton")
+			if btn and btn.disabled:
+				errors.append("Chorus Bloom BossSelect cell should be playable")
+			else:
+				print("OK BossSelect Chorus Bloom playable")
+				found_cb_slot = true
+		elif not found_cb_slot:
+			# Try reading const from class
+			print("WARN BossCell_chorus_bloom not found via find_child; checking script const")
+		bsc.queue_free()
+		await process_frame
+
+	# Instantiate LevelChorusBloom
+	var bloom_level_packed: PackedScene = load("res://scenes/levels/LevelChorusBloom.tscn")
+	if bloom_level_packed:
+		if gs:
+			gs.energy_tanks = 0
+		var blvl = bloom_level_packed.instantiate()
+		root.add_child(blvl)
+		print("OK instantiate LevelChorusBloom, children=", blvl.get_child_count())
+		await process_frame
+		await process_frame
+		var bent = blvl.get_node_or_null("Entities")
+		if bent == null:
+			errors.append("LevelChorusBloom Entities missing")
+		else:
+			var bp = bent.get_node_or_null("Player")
+			if bp == null:
+				errors.append("Player not spawned in LevelChorusBloom")
+			else:
+				print("OK ChorusBloom level player spawned")
+			var bboss = 0
+			var bmet = 0
+			for c in bent.get_children():
+				if c.is_in_group("bosses") or str(c.name).begins_with("Chorus"):
+					bboss += 1
+				elif c.is_in_group("enemies") or str(c.name).begins_with("Met"):
+					bmet += 1
+			if bmet < 2:
+				errors.append("Expected >=2 MetBeat in LevelChorusBloom, got %d" % bmet)
+			else:
+				print("OK MetBeat in LevelChorusBloom=", bmet)
+			if bboss < 1:
+				errors.append("Expected ChorusBloom boss in level")
+			else:
+				print("OK ChorusBloom boss in level")
+			if bent.get_node_or_null("ArenaTrigger") == null:
+				errors.append("LevelChorusBloom ArenaTrigger missing")
+			else:
+				print("OK LevelChorusBloom ArenaTrigger")
+			var betank = bent.get_node_or_null("EnergyTankPickup")
+			if betank == null:
+				errors.append("EnergyTankPickup missing in LevelChorusBloom")
+			else:
+				print("OK EnergyTankPickup at ", betank.position)
+		var bgeom = blvl.get_node_or_null("Geometry")
+		var vine_n := 0
+		if bgeom:
+			for c in bgeom.get_children():
+				if c.is_in_group("vine_platforms") or str(c.name).begins_with("Vine"):
+					vine_n += 1
+		if vine_n < 3:
+			errors.append("Expected >=3 VinePlatform in LevelChorusBloom, got %d" % vine_n)
+		else:
+			print("OK VinePlatform count=", vine_n)
+		var bhaz = blvl.get_node_or_null("Hazards")
+		var petal_n := 0
+		if bhaz:
+			for c in bhaz.get_children():
+				if c.is_in_group("petal_hazards") or str(c.name).begins_with("Petal"):
+					petal_n += 1
+		if petal_n < 3:
+			errors.append("Expected >=3 PetalHazard in LevelChorusBloom, got %d" % petal_n)
+		else:
+			print("OK PetalHazard count=", petal_n)
+		if blvl.get_node_or_null("HUD") == null:
+			errors.append("HUD missing in LevelChorusBloom")
+		else:
+			print("OK HUD in LevelChorusBloom")
+		if blvl.get_node_or_null("TouchControls") == null:
+			errors.append("TouchControls missing in LevelChorusBloom")
+		else:
+			print("OK TouchControls in LevelChorusBloom")
+		# Energy tank pickup
+		var bet2 = bent.get_node_or_null("EnergyTankPickup") if bent else null
+		var bp2 = bent.get_node_or_null("Player") if bent else null
+		if bet2 and bp2 and bet2.has_method("_collect"):
+			bet2._collect(bp2)
+			await process_frame
+			if gs and int(gs.get_energy_tanks()) < 1:
+				errors.append("Chorus Bloom energy tank pickup did not increase tanks")
+			else:
+				print("OK Chorus Bloom energy tanks after pickup=", gs.get_energy_tanks() if gs else -1)
+		# Boss kill path
+		if blvl.has_method("_start_boss_fight"):
+			blvl._start_boss_fight()
+			await process_frame
+			var boss_b = bent.get_node_or_null("ChorusBloom") if bent else null
+			if boss_b and boss_b.has_method("take_damage"):
+				while is_instance_valid(boss_b) and int(boss_b.hp) > 0:
+					boss_b.take_damage(7)
+					await process_frame
+				await process_frame
+				await process_frame
+				var bp3 = bent.get_node_or_null("Player") if bent else null
+				if bp3 and bp3.has_method("_has_weapon"):
+					if not bp3._has_weapon("petal_chorus"):
+						errors.append("Chorus Bloom defeat did not grant Petal Chorus")
+					else:
+						print("OK Chorus Bloom defeat granted Petal Chorus")
+				if gs and not gs.is_boss_defeated("chorus_bloom"):
+					errors.append("Chorus Bloom defeat did not set GameState")
+				else:
+					print("OK GameState chorus_bloom defeated after win")
+				var win_b = blvl.get_node_or_null("WinBanner")
+				if win_b == null:
+					print("WARN Chorus Bloom WinBanner not found immediately")
+				else:
+					print("OK Chorus Bloom WinBanner")
+					var ret_b = win_b.get_node_or_null("Root/Panel/ReturnBossSelect")
+					if ret_b == null:
+						errors.append("Chorus Bloom WinBanner missing ReturnBossSelect")
+					else:
+						print("OK Chorus Bloom ReturnBossSelect")
+		blvl.queue_free()
+		await process_frame
+	else:
+		errors.append("LevelChorusBloom.tscn failed to load")
+
+
 	# Instantiate main scene briefly
 	var packed: PackedScene = load("res://scenes/levels/Level01.tscn")
 	if packed:

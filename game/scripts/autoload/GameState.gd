@@ -40,7 +40,7 @@ var _armor_owned: Dictionary = {}
 ## equipped[set_id][piece_id] = true (proto: auto-equip on pickup)
 var _armor_equipped: Dictionary = {}
 
-## Progreso de jefes — proto: Beatfire + Echo Wind + Neon Volt + Glitch Ice jugables.
+## Progreso de jefes — proto: Beatfire + Echo + Neon + Glitch Ice + Chorus Bloom jugables.
 var beatfire_defeated: bool = false
 var _bosses_defeated: Dictionary = {}
 
@@ -180,6 +180,8 @@ func mark_boss_defeated(boss_id: String) -> void:
 			unlock_weapon("neon_arc")
 		elif boss_id == BOSS_GLITCH_ICE:
 			unlock_weapon("freeze_sample")
+		elif boss_id == BOSS_CHORUS_BLOOM:
+			unlock_weapon("petal_chorus")
 	boss_defeated.emit(boss_id)
 	print("GameState: jefe derrotado → %s" % boss_id)
 
