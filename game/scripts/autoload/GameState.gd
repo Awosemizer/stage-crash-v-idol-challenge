@@ -291,3 +291,234 @@ func defeated_boss_count() -> int:
 func is_core9_unlocked() -> bool:
 	## Bloqueado hasta los 8 Robot Masters.
 	return defeated_boss_count() >= 8
+
+
+## --- Saves (3 slots → user://save_N.json) ---
+const SAVE_SLOT_COUNT := 3
+const SAVE_VERSION := 1
+
+signal save_written(slot: int)
+signal save_loaded(slot: int)
+
+## Slot activo 0..2; -1 = sin partida (no autosave).
+var active_slot: int = -1
+## Modo UI SaveSelect: "new" | "continue"
+var save_ui_mode: String = "new"
+
+
+func get_save_path(slot: int) -> String:
+	return "user://save_%d.json" % clampi(slot, 0, SAVE_SLOT_COUNT - 1)
+
+
+func slot_exists(slot: int) -> bool:
+	if slot < 0 or slot >= SAVE_SLOT_COUNT:
+		return false
+	return FileAccess.file_exists(get_save_path(slot))
+
+
+func any_slot_exists() -> bool:
+	for i in SAVE_SLOT_COUNT:
+		if slot_exists(i):
+			return true
+	return false
+
+
+func reset_progress() -> void:
+	## Limpia progreso de partida (no toca active_slot).
+	selected_character = Character.MIKU
+	_armor_owned.clear()
+	_armor_equipped.clear()
+	beatfire_defeated = false
+	_bosses_defeated.clear()
+	_weapons_unlocked.clear()
+	energy_tanks = 0
+	energy_tanks_changed.emit(energy_tanks)
+	armor_changed.emit(ARMOR_SET_FLIGHT)
+
+
+func _dup_armor_dict(src: Dictionary) -> Dictionary:
+	var out: Dictionary = {}
+	for set_id in src.keys():
+		var pieces: Dictionary = {}
+		var inner = src[set_id]
+		if typeof(inner) == TYPE_DICTIONARY:
+			for piece_id in inner.keys():
+				pieces[str(piece_id)] = bool(inner[piece_id])
+		out[str(set_id)] = pieces
+	return out
+
+
+func to_save_dict() -> Dictionary:
+	var bosses: Dictionary = {}
+	if beatfire_defeated:
+		bosses[BOSS_BEATFIRE] = true
+	for k in _bosses_defeated.keys():
+		if bool(_bosses_defeated[k]):
+			bosses[str(k)] = true
+	var weapons: Dictionary = {}
+	for k in _weapons_unlocked.keys():
+		if bool(_weapons_unlocked[k]):
+			weapons[str(k)] = true
+	return {
+		"version": SAVE_VERSION,
+		"character": get_character_id(),
+		"bosses_defeated": bosses,
+		"weapons_unlocked": weapons,
+		"armor_owned": _dup_armor_dict(_armor_owned),
+		"armor_equipped": _dup_armor_dict(_armor_equipped),
+		"energy_tanks": energy_tanks,
+	}
+
+
+func apply_save_dict(data: Dictionary) -> void:
+	reset_progress()
+	var char_id := str(data.get("character", "miku"))
+	if char_id == "teto":
+		selected_character = Character.TETO
+	else:
+		selected_character = Character.MIKU
+	character_changed.emit(get_character_id())
+
+	var bosses = data.get("bosses_defeated", {})
+	if typeof(bosses) == TYPE_DICTIONARY:
+		for k in bosses.keys():
+			if not bool(bosses[k]):
+				continue
+			var bid := str(k)
+			if bid == BOSS_BEATFIRE:
+				beatfire_defeated = true
+			else:
+				_bosses_defeated[bid] = true
+
+	var weapons = data.get("weapons_unlocked", {})
+	if typeof(weapons) == TYPE_DICTIONARY:
+		for k in weapons.keys():
+			if bool(weapons[k]):
+				_weapons_unlocked[str(k)] = true
+
+	var owned = data.get("armor_owned", {})
+	if typeof(owned) == TYPE_DICTIONARY:
+		_armor_owned = _dup_armor_dict(owned)
+	var equipped = data.get("armor_equipped", {})
+	if typeof(equipped) == TYPE_DICTIONARY:
+		_armor_equipped = _dup_armor_dict(equipped)
+
+	energy_tanks = clampi(int(data.get("energy_tanks", 0)), 0, MAX_ENERGY_TANKS)
+	energy_tanks_changed.emit(energy_tanks)
+	armor_changed.emit(ARMOR_SET_FLIGHT)
+
+
+func save_to_slot(slot: int) -> bool:
+	if slot < 0 or slot >= SAVE_SLOT_COUNT:
+		push_warning("GameState.save_to_slot: slot inválido %d" % slot)
+		return false
+	var path := get_save_path(slot)
+	var payload := to_save_dict()
+	payload["slot"] = slot
+	var json := JSON.stringify(payload)
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		push_warning("GameState: no se pudo escribir %s" % path)
+		return false
+	f.store_string(json)
+	f.close()
+	active_slot = slot
+	save_written.emit(slot)
+	print("GameState: guardado slot %d → %s" % [slot, path])
+	return true
+
+
+func load_from_slot(slot: int) -> bool:
+	if slot < 0 or slot >= SAVE_SLOT_COUNT:
+		return false
+	var path := get_save_path(slot)
+	if not FileAccess.file_exists(path):
+		return false
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return false
+	var text := f.get_as_text()
+	f.close()
+	var parsed = JSON.parse_string(text)
+	if typeof(parsed) != TYPE_DICTIONARY:
+		push_warning("GameState: save corrupto en %s" % path)
+		return false
+	apply_save_dict(parsed)
+	active_slot = slot
+	save_loaded.emit(slot)
+	print("GameState: cargado slot %d (%s, jefes=%d)" % [
+		slot, get_character_id(), defeated_boss_count()
+	])
+	return true
+
+
+func delete_slot(slot: int) -> bool:
+	if not slot_exists(slot):
+		return false
+	var path := get_save_path(slot)
+	var err := DirAccess.remove_absolute(path)
+	if err != OK:
+		# user:// paths: try relative via DirAccess.open("user://")
+		var d := DirAccess.open("user://")
+		if d:
+			err = d.remove("save_%d.json" % slot)
+	if active_slot == slot:
+		active_slot = -1
+	print("GameState: borrado slot %d (err=%s)" % [slot, str(err)])
+	return err == OK or not FileAccess.file_exists(path)
+
+
+func autosave() -> bool:
+	## Autoguardado al volver al selector (requiere slot activo).
+	if active_slot < 0 or active_slot >= SAVE_SLOT_COUNT:
+		return false
+	return save_to_slot(active_slot)
+
+
+func begin_new_game(slot: int) -> void:
+	active_slot = clampi(slot, 0, SAVE_SLOT_COUNT - 1)
+	reset_progress()
+	print("GameState: nueva partida slot %d" % active_slot)
+
+
+func begin_continue(slot: int) -> bool:
+	return load_from_slot(slot)
+
+
+func get_slot_summary(slot: int) -> Dictionary:
+	## Resumen para UI: exists, character, character_name, bosses_beaten, energy_tanks, empty.
+	var empty := {
+		"exists": false,
+		"empty": true,
+		"character": "",
+		"character_name": "Vacío",
+		"bosses_beaten": 0,
+		"energy_tanks": 0,
+	}
+	if not slot_exists(slot):
+		return empty
+	var path := get_save_path(slot)
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return empty
+	var text := f.get_as_text()
+	f.close()
+	var parsed = JSON.parse_string(text)
+	if typeof(parsed) != TYPE_DICTIONARY:
+		return empty
+	var char_id := str(parsed.get("character", "miku"))
+	var bosses = parsed.get("bosses_defeated", {})
+	var n := 0
+	if typeof(bosses) == TYPE_DICTIONARY:
+		for k in bosses.keys():
+			if bool(bosses[k]):
+				n += 1
+	var char_name := "Kasane Teto" if char_id == "teto" else "Hatsune Miku"
+	return {
+		"exists": true,
+		"empty": false,
+		"character": char_id,
+		"character_name": char_name,
+		"bosses_beaten": n,
+		"energy_tanks": int(parsed.get("energy_tanks", 0)),
+	}

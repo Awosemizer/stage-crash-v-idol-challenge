@@ -12,6 +12,7 @@ func _initialize() -> void:
 		"res://scripts/ui/TitleScreen.gd",
 		"res://scripts/ui/CharacterSelect.gd",
 		"res://scripts/ui/BossSelect.gd",
+		"res://scripts/ui/SaveSelect.gd",
 		"res://scripts/combat/BusterShot.gd",
 		"res://scripts/combat/BeatBlazeShot.gd",
 		"res://scripts/combat/Fireball.gd",
@@ -29,6 +30,7 @@ func _initialize() -> void:
 		"res://scenes/ui/TitleScreen.tscn",
 		"res://scenes/ui/CharacterSelect.tscn",
 		"res://scenes/ui/BossSelect.tscn",
+		"res://scenes/ui/SaveSelect.tscn",
 		"res://scenes/combat/BusterShot.tscn",
 		"res://scenes/combat/BeatBlazeShot.tscn",
 		"res://scenes/combat/Fireball.tscn",
@@ -204,14 +206,53 @@ func _initialize() -> void:
 			errors.append("TitleScreen missing PlayButton")
 		else:
 			print("OK TitleScreen PlayButton")
+		if title.get_node_or_null("ContinueButton") == null:
+			errors.append("TitleScreen missing ContinueButton")
+		else:
+			print("OK TitleScreen ContinueButton")
+		if title.get_node_or_null("NewGameButton") == null:
+			errors.append("TitleScreen missing NewGameButton")
+		else:
+			print("OK TitleScreen NewGameButton")
 		if title.get_node_or_null("Title") == null:
 			errors.append("TitleScreen missing Title label")
 		else:
 			print("OK TitleScreen Title")
+		var title_src = FileAccess.get_file_as_string("res://scripts/ui/TitleScreen.gd")
+		if "SaveSelect" not in title_src:
+			errors.append("TitleScreen should route to SaveSelect")
+		else:
+			print("OK TitleScreen → SaveSelect")
 		title.queue_free()
 		await process_frame
 	else:
 		errors.append("TitleScreen.tscn failed to load")
+
+	# SaveSelect UI
+	var save_sel_packed: PackedScene = load("res://scenes/ui/SaveSelect.tscn")
+	if save_sel_packed:
+		var ssel = save_sel_packed.instantiate()
+		root.add_child(ssel)
+		await process_frame
+		if ssel.get_node_or_null("SlotList") == null:
+			errors.append("SaveSelect missing SlotList")
+		else:
+			var sl = ssel.get_node("SlotList")
+			if sl.get_child_count() != 3:
+				errors.append("SaveSelect expected 3 slots, got %d" % sl.get_child_count())
+			else:
+				print("OK SaveSelect 3 slots")
+		ssel.queue_free()
+		await process_frame
+	else:
+		errors.append("SaveSelect.tscn failed to load")
+
+	# BossSelect autosave call present
+	var bsel_autosave_src = FileAccess.get_file_as_string("res://scripts/ui/BossSelect.gd")
+	if "autosave" not in bsel_autosave_src:
+		errors.append("BossSelect should call GameState.autosave")
+	else:
+		print("OK BossSelect autosave hook")
 
 	# Character select UI
 	var sel_packed: PackedScene = load("res://scenes/ui/CharacterSelect.tscn")
@@ -3004,6 +3045,86 @@ func _initialize() -> void:
 		level.queue_free()
 	else:
 		errors.append("Level01.tscn failed to load")
+
+	# --- Save system roundtrip (3 slots, user://save_N.json) ---
+	var gs_save = root.get_node_or_null("/root/GameState")
+	if gs_save == null:
+		errors.append("GameState autoload missing for save tests")
+	else:
+		# Clean test slots 0..2
+		for si in range(3):
+			if gs_save.slot_exists(si):
+				gs_save.delete_slot(si)
+		gs_save.begin_new_game(0)
+		gs_save.select_teto()
+		gs_save.mark_boss_defeated("beatfire")
+		gs_save.mark_boss_defeated("echo_wind")
+		gs_save.grant_armor_piece("flight", "torso")
+		gs_save.grant_energy_tank()
+		if not gs_save.save_to_slot(0):
+			errors.append("save_to_slot(0) failed")
+		else:
+			print("OK save_to_slot(0)")
+		if not FileAccess.file_exists("user://save_0.json"):
+			errors.append("user://save_0.json missing after save")
+		else:
+			print("OK user://save_0.json exists")
+		var summary0 = gs_save.get_slot_summary(0)
+		if not bool(summary0.get("exists", false)):
+			errors.append("slot 0 summary exists=false")
+		elif str(summary0.get("character", "")) != "teto":
+			errors.append("slot 0 summary character expected teto, got %s" % str(summary0.get("character", "")))
+		elif int(summary0.get("bosses_beaten", 0)) != 2:
+			errors.append("slot 0 summary bosses_beaten expected 2, got %d" % int(summary0.get("bosses_beaten", 0)))
+		else:
+			print("OK slot summary: teto, 2 bosses")
+		# Reset and load
+		gs_save.reset_progress()
+		if gs_save.is_teto() or gs_save.defeated_boss_count() != 0:
+			errors.append("reset_progress did not clear state")
+		else:
+			print("OK reset_progress")
+		if not gs_save.load_from_slot(0):
+			errors.append("load_from_slot(0) failed")
+		else:
+			if not gs_save.is_teto():
+				errors.append("load did not restore Teto")
+			elif gs_save.defeated_boss_count() != 2:
+				errors.append("load bosses expected 2, got %d" % gs_save.defeated_boss_count())
+			elif not gs_save.has_weapon_unlocked("beat_blaze"):
+				errors.append("load missing beat_blaze")
+			elif not gs_save.has_weapon_unlocked("echo_gale"):
+				errors.append("load missing echo_gale")
+			elif not gs_save.has_armor_piece("flight", "torso"):
+				errors.append("load missing flight torso")
+			elif gs_save.get_energy_tanks() != 1:
+				errors.append("load energy_tanks expected 1")
+			else:
+				print("OK load_from_slot restores character/bosses/weapons/armor/ET")
+		# Autosave via active_slot
+		gs_save.mark_boss_defeated("neon_volt")
+		if not gs_save.autosave():
+			errors.append("autosave failed with active_slot set")
+		else:
+			print("OK autosave")
+		gs_save.reset_progress()
+		gs_save.load_from_slot(0)
+		if gs_save.defeated_boss_count() != 3:
+			errors.append("autosave did not persist neon_volt (bosses=%d)" % gs_save.defeated_boss_count())
+		else:
+			print("OK autosave persisted neon_volt")
+		# Empty slots 1 and 2 summaries
+		var s1 = gs_save.get_slot_summary(1)
+		if bool(s1.get("exists", true)):
+			errors.append("slot 1 should be empty")
+		else:
+			print("OK empty slot summary")
+		# Cleanup
+		for si2 in range(3):
+			if gs_save.slot_exists(si2):
+				gs_save.delete_slot(si2)
+		gs_save.active_slot = -1
+		gs_save.reset_progress()
 
 	if errors.is_empty():
 		print("VALIDATE_PASS")

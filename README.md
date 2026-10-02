@@ -6,7 +6,7 @@ Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.8.0-proto`
+- Versión demo: `0.14.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)
@@ -34,10 +34,10 @@ En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
 
 ### Flujo de menú
 
-1. **Title** — *Stage Crash: V-Idol Challenge* → **Jugar**
+1. **Title** — *Continuar* / *Nueva partida* → **3 slots** (`user://save_N.json`)
 2. **Selección** — **Miku** (Buster + carga, cian) o **Teto** (Sable melee, rojo)
-3. **Boss Select** — grilla 3×3 SynthoCorp (8 Robot Masters + CORE-9 centro bloqueado)
-4. **Boss stages** — Beatfire · Echo Wind · Neon Volt · Glitch Ice (resto "Pronto")
+3. **Boss Select** — grilla 3×3 SynthoCorp (8 Robot Masters + CORE-9); **autoguarda** al entrar
+4. **Etapas** — 8 Robot Masters + fortaleza CORE-9
 
 ---
 
@@ -45,7 +45,7 @@ En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
 
 Archivo listo (debug, un solo archivo, ~27 MB):
 
-**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.12 — Static Shadow)
+**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.14 — 3 saves)
 
 1. Descarga el APK desde este repo (botón Raw / Download).
 2. En el teléfono: permite **orígenes desconocidos** / instalar apps desconocidas para el navegador o gestor de archivos.

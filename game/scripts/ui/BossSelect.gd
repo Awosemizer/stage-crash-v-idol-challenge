@@ -38,6 +38,9 @@ const CELL_GAP := 4.0
 
 
 func _ready() -> void:
+	# Autoguardado al volver al selector (GDD: 3 slots).
+	if GameState.active_slot >= 0:
+		GameState.autosave()
 	_build_ui()
 
 

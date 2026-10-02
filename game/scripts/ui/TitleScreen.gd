@@ -1,7 +1,8 @@
 extends Control
 ## Pantalla de título — Stage Crash: V-Idol Challenge.
-## Botón Jugar → selección de personaje.
+## Continuar / Nueva partida → selector de slots.
 
+const SAVE_SELECT := "res://scenes/ui/SaveSelect.tscn"
 const SELECT_SCENE := "res://scenes/ui/CharacterSelect.tscn"
 
 
@@ -66,19 +67,44 @@ func _build_ui() -> void:
 	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(tag)
 
+	var has_saves := GameState.any_slot_exists()
+
+	var continue_btn := Button.new()
+	continue_btn.name = "ContinueButton"
+	continue_btn.text = "Continuar"
+	continue_btn.add_theme_font_size_override("font_size", 11)
+	continue_btn.position = Vector2(68, 108)
+	continue_btn.size = Vector2(120, 28)
+	_style_button(continue_btn, Color(0.12, 0.4, 0.28, 0.95), Color(0.4, 0.95, 0.6, 1.0))
+	continue_btn.disabled = not has_saves
+	if not has_saves:
+		continue_btn.modulate = Color(0.55, 0.55, 0.6, 1.0)
+	continue_btn.pressed.connect(_on_continue_pressed)
+	add_child(continue_btn)
+
+	var new_btn := Button.new()
+	new_btn.name = "NewGameButton"
+	new_btn.text = "Nueva partida"
+	new_btn.add_theme_font_size_override("font_size", 11)
+	new_btn.position = Vector2(68, 142)
+	new_btn.size = Vector2(120, 28)
+	_style_button(new_btn, Color(0.15, 0.55, 0.7, 0.95), Color(0.35, 0.9, 1.0, 1.0))
+	new_btn.pressed.connect(_on_new_game_pressed)
+	add_child(new_btn)
+
+	# Alias legacy para validadores / atajos: PlayButton = Nueva partida
 	var play_btn := Button.new()
 	play_btn.name = "PlayButton"
 	play_btn.text = "Jugar"
-	play_btn.add_theme_font_size_override("font_size", 12)
-	play_btn.position = Vector2(68, 130)
-	play_btn.size = Vector2(120, 36)
-	_style_button(play_btn, Color(0.15, 0.55, 0.7, 0.95), Color(0.35, 0.9, 1.0, 1.0))
-	play_btn.pressed.connect(_on_play_pressed)
+	play_btn.visible = false
+	play_btn.position = Vector2(0, 0)
+	play_btn.size = Vector2(1, 1)
+	play_btn.pressed.connect(_on_new_game_pressed)
 	add_child(play_btn)
 
 	var ver := Label.new()
 	ver.name = "Version"
-	ver.text = "v0.5.0-proto · Android"
+	ver.text = "v0.14.0-proto · Android · 3 saves"
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ver.add_theme_font_size_override("font_size", 6)
 	ver.modulate = Color(0.55, 0.6, 0.7, 0.7)
@@ -102,11 +128,26 @@ func _style_button(btn: Button, bg: Color, border: Color) -> void:
 	hover.bg_color = bg.lightened(0.15)
 	var pressed := normal.duplicate()
 	pressed.bg_color = bg.darkened(0.2)
+	var disabled := normal.duplicate()
+	disabled.bg_color = Color(0.12, 0.12, 0.16, 0.9)
+	disabled.border_color = Color(0.35, 0.35, 0.4, 0.7)
 	btn.add_theme_stylebox_override("normal", normal)
 	btn.add_theme_stylebox_override("hover", hover)
 	btn.add_theme_stylebox_override("pressed", pressed)
 	btn.add_theme_stylebox_override("focus", hover)
+	btn.add_theme_stylebox_override("disabled", disabled)
+
+
+func _on_continue_pressed() -> void:
+	GameState.save_ui_mode = "continue"
+	get_tree().change_scene_to_file(SAVE_SELECT)
+
+
+func _on_new_game_pressed() -> void:
+	GameState.save_ui_mode = "new"
+	get_tree().change_scene_to_file(SAVE_SELECT)
 
 
 func _on_play_pressed() -> void:
-	get_tree().change_scene_to_file(SELECT_SCENE)
+	## Compat: Jugar = Nueva partida
+	_on_new_game_pressed()

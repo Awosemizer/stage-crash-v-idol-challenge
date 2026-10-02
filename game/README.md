@@ -21,6 +21,8 @@ Godot binary (if not on PATH): `/workspace/tools/godot` (symlink to 4.5.stable).
 
 Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → Level01 / LevelEchoWind / LevelNeonVolt / LevelGlitchIce / LevelChorusBloom / LevelBassquake / LevelMetronome / LevelStaticShadow.
 
+**v0.14:** 3 slots de guardado (Continuar/Nueva partida), `user://save_N.json`, autosave al Boss Select.
+
 **v0.11:** etapa **Metronome** (púas a tempo, jefe, Tempo Spike, piernas Encore Guard).
 
 **v0.12:** etapa **Static Shadow** (oscuridad, Static Veil, casco Encore, CORE-9 stub).
