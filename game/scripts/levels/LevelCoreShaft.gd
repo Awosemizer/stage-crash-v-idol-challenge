@@ -16,7 +16,7 @@ const NEXT_SCENE := "res://scenes/levels/LevelHeartCore9.tscn"
 const COL_FLOOR := Color(0.18, 0.12, 0.28, 1.0)
 const COL_WALL := Color(0.1, 0.08, 0.16, 1.0)
 const COL_LEDGE := Color(0.65, 0.4, 0.95, 1.0)
-const COL_BG := Color(0.04, 0.03, 0.08, 1.0)
+const COL_BG := Color(0.07, 0.02, 0.12, 1.0)
 const COL_ARENA := Color(0.25, 0.16, 0.38, 1.0)
 
 # Tall vertical level — camera follows Y

@@ -12,7 +12,7 @@ const ENDING_SCENE := "res://scenes/ui/EndingScreen.tscn"
 const COL_FLOOR := Color(0.22, 0.1, 0.32, 1.0)
 const COL_WALL := Color(0.1, 0.05, 0.16, 1.0)
 const COL_ACCENT := Color(0.9, 0.4, 1.0, 1.0)
-const COL_BG := Color(0.06, 0.02, 0.1, 1.0)
+const COL_BG := Color(0.07, 0.02, 0.12, 1.0)
 
 const LEVEL_RIGHT := 384.0
 const FLOOR_Y := 176.0

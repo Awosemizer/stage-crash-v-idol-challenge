@@ -16,7 +16,7 @@ const ArmorPickupScene := preload("res://scenes/pickups/ArmorPickup.tscn")
 const COL_FLOOR := Color(0.55, 0.25, 0.22, 1.0)
 const COL_WALL := Color(0.35, 0.15, 0.18, 1.0)
 const COL_ACCENT := Color(0.9, 0.45, 0.15, 1.0)
-const COL_BG := Color(0.12, 0.06, 0.1, 1.0)
+const COL_BG := Color(0.18, 0.05, 0.07, 1.0)
 const COL_ARENA := Color(0.45, 0.18, 0.14, 1.0)
 const COL_GATE := Color(0.7, 0.2, 0.15, 1.0)
 

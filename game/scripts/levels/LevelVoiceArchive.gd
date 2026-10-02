@@ -17,7 +17,7 @@ const NEXT_SCENE := "res://scenes/levels/LevelCoreShaft.tscn"
 const COL_FLOOR := Color(0.14, 0.18, 0.28, 1.0)
 const COL_WALL := Color(0.1, 0.12, 0.2, 1.0)
 const COL_ACCENT := Color(0.45, 0.75, 1.0, 1.0)
-const COL_BG := Color(0.04, 0.06, 0.12, 1.0)
+const COL_BG := Color(0.07, 0.02, 0.12, 1.0)
 
 const LEVEL_RIGHT := 880.0
 const EXIT_X := 820.0

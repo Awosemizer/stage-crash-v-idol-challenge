@@ -17,7 +17,7 @@ const BOSS_SELECT := "res://scenes/ui/BossSelect.tscn"
 const COL_FLOOR := Color(0.2, 0.12, 0.28, 1.0)
 const COL_WALL := Color(0.12, 0.08, 0.18, 1.0)
 const COL_NEON := Color(0.95, 0.35, 0.9, 1.0)
-const COL_BG := Color(0.05, 0.03, 0.1, 1.0)
+const COL_BG := Color(0.07, 0.02, 0.12, 1.0)
 const COL_ARENA := Color(0.28, 0.14, 0.35, 1.0)
 const COL_GATE := Color(0.9, 0.45, 1.0, 1.0)
 
