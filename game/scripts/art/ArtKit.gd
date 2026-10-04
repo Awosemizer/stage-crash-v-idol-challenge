@@ -108,16 +108,9 @@ static func add_tiled_platform_visuals(body: Node2D, w: float, h: float, color: 
 			var th := h / float(rows)
 			spr.position = origin + Vector2(col * tw + tw * 0.5, row * th + th * 0.5)
 			spr.scale = Vector2(tw / float(TILE_SIZE), th / float(TILE_SIZE))
+			# Mild stage tint. The tile's own cyan edge stays visible (no TopEdge strip).
+			spr.modulate = Color.WHITE.lerp(color, 0.25)
 			holder.add_child(spr)
-
-	# Top edge highlight strip (thin ColorRect ok for polish)
-	var edge := ColorRect.new()
-	edge.name = "TopEdge"
-	edge.size = Vector2(w, 2)
-	edge.position = Vector2(-w * 0.5, -h * 0.5)
-	edge.color = color.lightened(0.35)
-	edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	holder.add_child(edge)
 
 
 static func skin_boss_visual(visual: CanvasItem, boss_id: String, hide_legacy_parts: bool = true) -> Sprite2D:

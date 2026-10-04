@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://bspike01scvic"]
+[gd_scene load_steps=4 format=3 uid="uid://bspike01scvic"]
 
 [ext_resource type="Script" path="res://scripts/hazards/Hazard.gd" id="1_hazard"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiles/spike.png" id="2_spike"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_spike"]
 size = Vector2(14, 10)
@@ -11,8 +12,14 @@ collision_mask = 2
 script = ExtResource("1_hazard")
 
 [node name="Polygon2D" type="Polygon2D" parent="."]
+visible = false
 color = Color(0.85, 0.2, 0.25, 1)
 polygon = PackedVector2Array(-8, 8, 0, -8, 8, 8)
+
+[node name="SpikeSprite" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("2_spike")
+centered = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, 2)

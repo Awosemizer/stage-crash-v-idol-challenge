@@ -79,7 +79,6 @@ func _refresh_look() -> void:
 	var closed_tex: Texture2D = load("res://assets/sprites/enemies/met_closed.png") as Texture2D
 	visual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	visual.centered = true
-	visual.position = Vector2(0, -12)  # 24px sprite, feet at y=0
 	if _open and not _warning:
 		if open_tex:
 			visual.texture = open_tex
@@ -104,6 +103,11 @@ func _refresh_look() -> void:
 		visual.scale = Vector2(1.0 + 0.12 * pulse, 1.0 + 0.12 * pulse)
 	elif _flash > 0.0:
 		visual.modulate = Color(2.0, 2.0, 2.0, 1.0)
+	# Sprite de 40px: pies en y=0 (centrado → -alto/2).
+	var sprite_h := 40.0
+	if visual.texture:
+		sprite_h = float(visual.texture.get_height())
+	visual.position = Vector2(0, -sprite_h * visual.scale.y * 0.5)
 	if _stealth and not _warning:
 		var a := 0.55 if _open else 0.12
 		modulate = Color(1, 1, 1, a)

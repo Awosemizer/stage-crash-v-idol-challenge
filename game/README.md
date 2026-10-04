@@ -23,6 +23,7 @@ Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → 
 
 **v0.40:** Player pixel pass — 32px Miku (cyan twin-tails, buster pose) and Teto (red drills, saber pose): idle, 8-frame run, jump, wall, slide. Flight wings and Encore shoulders overlay when a piece is owned. Hitboxes unchanged.
 **v0.41:** Robot Master pixel pass — 48×64 idle + attack for the 8 stages (fire, ice, quake, wind, neon, metronome, bloom, static), CORE-9 hologram, 16×16 stage floors. Combat numbers and hitboxes unchanged.
+**v0.51:** Met-Beat y las baldosas usan el pixel art nuevo; el icono es Miku y Teto.
 **v0.50:** wall-jump más corto (hay que aguantar hacia la otra pared), secretos ocultos, controles táctiles en las esquinas y menús de concierto.
 **v0.49:** Painted 16-bit backdrops for every stage (eight Robot Masters plus SynthoCorp fortress). Scaled to the stage height, repeated horizontally, nearest-neighbor, behind tiles and HUD. Combat, collision, and camera follow unchanged.
 **v0.48:** the 9 bosses use the drawn sheets (idle + attack). On-screen height stays about 64px, feet on the ground, 64×64 portraits. Hitboxes unchanged; weapons can stick out of the collision box.
