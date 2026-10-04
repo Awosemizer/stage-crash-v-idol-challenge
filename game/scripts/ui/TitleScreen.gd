@@ -20,7 +20,7 @@ func _ready() -> void:
 func _build_ui() -> void:
 	var bg := ColorRect.new()
 	bg.name = "BG"
-	bg.color = Color(0.06, 0.05, 0.12, 1.0)
+	bg.color = Color(0.02, 0.02, 0.03, 1.0)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -111,7 +111,7 @@ func _build_ui() -> void:
 	continue_btn.name = "ContinueButton"
 	continue_btn.text = "Continuar"
 	continue_btn.add_theme_font_size_override("font_size", 12)
-	_SafeArea.style_button(continue_btn, Color(0.12, 0.4, 0.28, 0.95), Color(0.4, 0.95, 0.6, 1.0))
+	_SafeArea.style_button(continue_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	continue_btn.disabled = not has_saves
 	if not has_saves:
 		continue_btn.modulate = Color(0.55, 0.55, 0.6, 1.0)
@@ -123,7 +123,7 @@ func _build_ui() -> void:
 	new_btn.name = "NewGameButton"
 	new_btn.text = "Nueva partida"
 	new_btn.add_theme_font_size_override("font_size", 12)
-	_SafeArea.style_button(new_btn, Color(0.15, 0.55, 0.7, 0.95), Color(0.35, 0.9, 1.0, 1.0))
+	_SafeArea.style_button(new_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
 	new_btn.pressed.connect(_on_new_game_pressed)
 	add_child(new_btn)
 
@@ -141,21 +141,21 @@ func _build_ui() -> void:
 	ach_btn.name = "AchievementsButton"
 	ach_btn.text = "Logros"
 	ach_btn.add_theme_font_size_override("font_size", 11)
-	_SafeArea.style_button(ach_btn, Color(0.22, 0.18, 0.08, 0.95), Color(1.0, 0.85, 0.3, 1.0))
+	_SafeArea.style_button(ach_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	ach_btn.pressed.connect(_on_achievements_pressed)
 	add_child(ach_btn)
 
 	var mute_btn := Button.new()
 	mute_btn.name = "MuteButton"
 	mute_btn.add_theme_font_size_override("font_size", 9)
-	_SafeArea.style_button(mute_btn, Color(0.16, 0.16, 0.22, 0.95), Color(0.65, 0.7, 0.8, 0.9))
+	_SafeArea.style_button(mute_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
 	mute_btn.pressed.connect(_on_mute_pressed)
 	add_child(mute_btn)
 	_refresh_mute_label(mute_btn)
 
 	var ver := Label.new()
 	ver.name = "Version"
-	ver.text = "v0.49.0-proto · stages"
+	ver.text = "v0.50.0-proto · feel"
 	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ver.add_theme_font_size_override("font_size", 8)
 	ver.modulate = Color(0.55, 0.6, 0.7, 0.75)

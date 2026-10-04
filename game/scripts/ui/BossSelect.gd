@@ -50,7 +50,7 @@ func _ready() -> void:
 func _build_ui() -> void:
 	var bg := ColorRect.new()
 	bg.name = "BG"
-	bg.color = Color(0.05, 0.04, 0.1, 1.0)
+	bg.color = Color(0.02, 0.02, 0.03, 1.0)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -144,7 +144,7 @@ func _build_ui() -> void:
 	back.name = "BackButton"
 	back.text = "Volver"
 	back.add_theme_font_size_override("font_size", 11)
-	_SafeArea.style_button(back, Color(0.18, 0.18, 0.26, 0.95), Color(0.55, 0.6, 0.7, 0.85))
+	_SafeArea.style_button(back, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	back.pressed.connect(_on_back)
 	add_child(back)
 
@@ -152,14 +152,14 @@ func _build_ui() -> void:
 	ach_btn.name = "AchievementsButton"
 	ach_btn.text = "Logros"
 	ach_btn.add_theme_font_size_override("font_size", 11)
-	_SafeArea.style_button(ach_btn, Color(0.22, 0.18, 0.08, 0.95), Color(1.0, 0.85, 0.3, 0.95))
+	_SafeArea.style_button(ach_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
 	ach_btn.pressed.connect(_on_achievements)
 	add_child(ach_btn)
 
 	var diff_btn := Button.new()
 	diff_btn.name = "DiffButton"
 	diff_btn.add_theme_font_size_override("font_size", 11)
-	_SafeArea.style_button(diff_btn, Color(0.16, 0.12, 0.22, 0.95), Color(0.85, 0.55, 1.0, 0.9))
+	_SafeArea.style_button(diff_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	diff_btn.pressed.connect(_on_diff_toggle)
 	add_child(diff_btn)
 	_refresh_diff_label(diff_btn)
@@ -181,7 +181,7 @@ func _build_ui() -> void:
 	datos.name = "DatosButton"
 	datos.text = "Datos"
 	datos.add_theme_font_size_override("font_size", 11)
-	_SafeArea.style_button(datos, Color(0.1, 0.18, 0.28, 0.95), Color(0.45, 0.9, 1.0, 0.95))
+	_SafeArea.style_button(datos, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	datos.pressed.connect(_toggle_datos)
 	add_child(datos)
 
@@ -190,9 +190,9 @@ func _build_ui() -> void:
 	panel.visible = false
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.06, 0.07, 0.12, 0.96)
-	sb.set_border_width_all(2)
-	sb.border_color = Color(0.45, 0.9, 1.0, 0.9)
+	sb.bg_color = Color(0.03, 0.03, 0.05, 0.97)
+	sb.set_border_width_all(1)
+	sb.border_color = Color(0.35, 0.9, 1.0, 0.95)
 	sb.set_corner_radius_all(4)
 	panel.add_theme_stylebox_override("panel", sb)
 	add_child(panel)
@@ -207,7 +207,7 @@ func _build_ui() -> void:
 	datos_close.name = "DatosClose"
 	datos_close.text = "Cerrar"
 	datos_close.add_theme_font_size_override("font_size", 12)
-	_SafeArea.style_button(datos_close, Color(0.16, 0.18, 0.26, 0.95), Color(0.7, 0.75, 0.85, 0.9))
+	_SafeArea.style_button(datos_close, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
 	datos_close.pressed.connect(_toggle_datos)
 	panel.add_child(datos_close)
 
@@ -410,31 +410,12 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 
 	var bg_col: Color
 	var border_col: Color
-	if is_core:
-		bg_col = Color(0.12, 0.06, 0.18, 0.95)
-		border_col = accent.darkened(0.2) if locked_core else accent
-	elif greyed:
-		bg_col = Color(0.12, 0.12, 0.16, 0.92)
-		border_col = Color(0.35, 0.35, 0.42, 0.7)
-	else:
-		match id:
-			"echo_wind":
-				bg_col = Color(0.08, 0.16, 0.16, 0.95)
-			"neon_volt":
-				bg_col = Color(0.16, 0.14, 0.06, 0.95)
-			"glitch_ice":
-				bg_col = Color(0.08, 0.14, 0.2, 0.95)
-			"chorus_bloom":
-				bg_col = Color(0.16, 0.1, 0.14, 0.95)
-			"bassquake":
-				bg_col = Color(0.16, 0.12, 0.06, 0.95)
-			"metronome":
-				bg_col = Color(0.12, 0.12, 0.18, 0.95)
-			"static_shadow":
-				bg_col = Color(0.1, 0.08, 0.16, 0.95)
-			_:
-				bg_col = Color(0.18, 0.1, 0.08, 0.95)
-		border_col = accent
+	bg_col = Color(0.03, 0.03, 0.05, 0.96)
+	border_col = Color(0.95, 0.35, 0.72, 1.0) if (index % 2 == 1 or is_core) else Color(0.35, 0.9, 1.0, 1.0)
+	if greyed and not is_core:
+		border_col = Color(0.35, 0.35, 0.42, 0.55)
+	elif locked_core:
+		border_col = Color(0.55, 0.25, 0.45, 0.7)
 
 	if defeated:
 		border_col = Color(0.35, 0.95, 0.45, 1.0)
@@ -659,10 +640,10 @@ func _refresh_diff_label(btn: Button = null) -> void:
 		return
 	if GameState.is_hard():
 		b.text = "HARD ●"
-		_SafeArea.style_button(b, Color(0.42, 0.1, 0.16, 0.95), Color(1.0, 0.45, 0.5, 0.95))
+		_SafeArea.style_button(b, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
 	else:
 		b.text = "Normal"
-		_SafeArea.style_button(b, Color(0.16, 0.12, 0.22, 0.95), Color(0.85, 0.55, 1.0, 0.9))
+		_SafeArea.style_button(b, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	var char_lbl = get_node_or_null("CharLabel") as Label
 	if char_lbl:
 		var diff_tag := " · HARD" if GameState.is_hard() else ""

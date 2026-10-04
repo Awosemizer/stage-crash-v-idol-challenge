@@ -106,7 +106,7 @@ var fortress_segment: int = 0
 
 ## Touch overlay prefs (persist user://touch_settings.cfg)
 const TOUCH_SETTINGS_PATH := "user://touch_settings.cfg"
-var touch_opacity: float = 0.50
+var touch_opacity: float = 0.32
 var touch_btn_size: String = "M"  # S / M / L
 signal touch_settings_changed
 
@@ -1075,8 +1075,8 @@ func set_touch_opacity(value: float) -> void:
 
 
 func cycle_touch_opacity() -> float:
-	## 0.35 → 0.50 → 0.70 → 0.90 → 0.35
-	var steps := [0.35, 0.50, 0.70, 0.90]
+	## 0.32 → 0.50 → 0.70 → 0.90 → 0.32
+	var steps := [0.32, 0.50, 0.70, 0.90]
 	var idx := 0
 	for i in steps.size():
 		if absf(float(steps[i]) - touch_opacity) < 0.06:

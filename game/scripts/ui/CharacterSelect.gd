@@ -15,7 +15,7 @@ func _ready() -> void:
 func _build_ui() -> void:
 	var bg := ColorRect.new()
 	bg.name = "BG"
-	bg.color = Color(0.07, 0.06, 0.11, 1.0)
+	bg.color = Color(0.02, 0.02, 0.03, 1.0)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
@@ -47,7 +47,7 @@ func _build_ui() -> void:
 	miku_btn.name = "MikuButton"
 	miku_btn.text = ""
 	miku_btn.add_theme_font_size_override("font_size", 11)
-	_SafeArea.style_button(miku_btn, Color(0.08, 0.35, 0.45, 0.95), Color(0.25, 0.9, 0.98, 1.0), 6)
+	_SafeArea.style_button(miku_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	miku_btn.pressed.connect(_on_miku)
 	add_child(miku_btn)
 
@@ -87,7 +87,7 @@ func _build_ui() -> void:
 	teto_btn.name = "TetoButton"
 	teto_btn.text = ""
 	teto_btn.add_theme_font_size_override("font_size", 11)
-	_SafeArea.style_button(teto_btn, Color(0.4, 0.1, 0.15, 0.95), Color(0.95, 0.35, 0.4, 1.0), 6)
+	_SafeArea.style_button(teto_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
 	teto_btn.pressed.connect(_on_teto)
 	add_child(teto_btn)
 
@@ -126,7 +126,7 @@ func _build_ui() -> void:
 	var diff_btn := Button.new()
 	diff_btn.name = "DiffButton"
 	diff_btn.add_theme_font_size_override("font_size", 11)
-	_SafeArea.style_button(diff_btn, Color(0.16, 0.14, 0.22, 0.95), Color(0.85, 0.55, 1.0, 0.95))
+	_SafeArea.style_button(diff_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
 	diff_btn.pressed.connect(_on_diff_toggle)
 	add_child(diff_btn)
 	_refresh_diff_label(diff_btn)
@@ -135,7 +135,7 @@ func _build_ui() -> void:
 	back.name = "BackButton"
 	back.text = "Volver"
 	back.add_theme_font_size_override("font_size", 10)
-	_SafeArea.style_button(back, Color(0.2, 0.2, 0.28, 0.9), Color(0.6, 0.65, 0.75, 0.8))
+	_SafeArea.style_button(back, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	back.pressed.connect(_on_back)
 	add_child(back)
 

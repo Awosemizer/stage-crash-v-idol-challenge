@@ -76,7 +76,7 @@ static func btn_h(available_column: float, count: int = 1, gap: float = 6.0, pre
 static func style_button(btn: Button, bg: Color, border: Color, radius: int = 4) -> void:
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = bg
-	normal.set_border_width_all(2)
+	normal.set_border_width_all(1)
 	normal.border_color = border
 	normal.set_corner_radius_all(radius)
 	normal.content_margin_left = 8

@@ -12,16 +12,21 @@ const _SafeArea := preload("res://scripts/ui/SafeArea.gd")
 
 ## When true, overlay stays up even if a joypad is connected.
 @export var show_touch_always: bool = false
-@export_range(0.2, 1.0, 0.05) var opacity: float = 0.50
+@export_range(0.2, 1.0, 0.05) var opacity: float = 0.32
 @export_range(0.12, 0.6, 0.05) var stick_deadzone: float = 0.18
 
-# Larger hit targets for thumbs on phone landscape
-const STICK_R := 44.0
-const KNOB_R := 16.0
-const BTN_JUMP := 34.0
+# Hit targets stay thumb-sized. Drawn rings are smaller so the playfield stays clear.
+const STICK_R := 28.0          # hit radius (diameter 56, still ≥40 on size S)
+const KNOB_R := 6.0
+const BTN_JUMP := 34.0         # hit radius
 const BTN_ATTACK := 30.0
 const BTN_SLIDE := 26.0
 const BTN_WEAPON := 24.0
+const DRAW_STICK := 30.0
+const DRAW_JUMP := 26.0
+const DRAW_ATTACK := 22.0
+const DRAW_SLIDE := 20.0
+const DRAW_WEAPON := 18.0
 ## Minimum clear gap between face-button hit rects (no overlap on thumbs).
 const CLUSTER_GAP := 20.0
 const SLIDE_GAP := 20.0
@@ -139,42 +144,42 @@ func _build_ui() -> void:
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_root)
 
-	_stick_base = _make_round_panel(Color(0.12, 0.16, 0.22, 1.0))
+	_stick_base = _make_round_panel(Color(0.35, 0.9, 1.0, 1.0))
 	_stick_base.name = "StickBase"
 	_stick_base.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(_stick_base)
 
-	_stick_knob = _make_round_panel(Color(0.35, 0.85, 0.95, 1.0))
+	_stick_knob = _make_round_panel(Color(0.35, 0.9, 1.0, 1.0))
 	_stick_knob.name = "StickKnob"
 	_stick_knob.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_stick_base.add_child(_stick_knob)
 
-	_btn_jump = _make_round_panel(Color(0.2, 0.75, 0.45, 1.0))
+	_btn_jump = _make_round_panel(Color(0.35, 0.9, 1.0, 1.0))
 	_btn_jump.name = "JumpBtn"
 	_btn_jump.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(_btn_jump)
-	_lbl_a = _make_btn_label(_btn_jump, "JMP")
+	_lbl_a = _make_btn_label(_btn_jump, "A")
 
-	_btn_attack = _make_round_panel(Color(0.9, 0.35, 0.4, 1.0))
+	_btn_attack = _make_round_panel(Color(0.95, 0.35, 0.72, 1.0))
 	_btn_attack.name = "AttackBtn"
 	_btn_attack.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(_btn_attack)
-	_lbl_b = _make_btn_label(_btn_attack, "ATK")
+	_lbl_b = _make_btn_label(_btn_attack, "B")
 
-	_btn_slide = _make_round_panel(Color(0.55, 0.45, 0.85, 1.0))
+	_btn_slide = _make_round_panel(Color(0.85, 0.9, 1.0, 1.0))
 	_btn_slide.name = "SlideBtn"
 	_btn_slide.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(_btn_slide)
-	_lbl_s = _make_btn_label(_btn_slide, "DASH")
+	_lbl_s = _make_btn_label(_btn_slide, "S")  # slide; legacy name DASH
 
 	# Weapon prev/next — small, upper-right (away from jump/attack cluster)
-	_btn_wprev = _make_round_panel(Color(0.25, 0.55, 0.75, 1.0))
+	_btn_wprev = _make_round_panel(Color(0.35, 0.9, 1.0, 1.0))
 	_btn_wprev.name = "WeaponPrevBtn"
 	_btn_wprev.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(_btn_wprev)
 	_lbl_wp = _make_btn_label(_btn_wprev, "<")
 
-	_btn_wnext = _make_round_panel(Color(0.25, 0.55, 0.75, 1.0))
+	_btn_wnext = _make_round_panel(Color(0.95, 0.35, 0.72, 1.0))
 	_btn_wnext.name = "WeaponNextBtn"
 	_btn_wnext.mouse_filter = Control.MOUSE_FILTER_STOP
 	_root.add_child(_btn_wnext)
@@ -189,17 +194,32 @@ func _build_ui() -> void:
 
 
 func _make_round_panel(col: Color) -> Panel:
+	## Hit rect is invisible. A thin ring is the only thing drawn.
 	var p := Panel.new()
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = col
-	sb.corner_radius_top_left = 64
-	sb.corner_radius_top_right = 64
-	sb.corner_radius_bottom_left = 64
-	sb.corner_radius_bottom_right = 64
-	sb.set_border_width_all(1)
-	sb.border_color = Color(1, 1, 1, 0.28)
+	sb.bg_color = Color(0, 0, 0, 0)
+	sb.set_border_width_all(0)
+	sb.set_corner_radius_all(64)
 	p.add_theme_stylebox_override("panel", sb)
+	var ring := Panel.new()
+	ring.name = "Ring"
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var rs := StyleBoxFlat.new()
+	rs.bg_color = Color(col.r, col.g, col.b, 0.12)
+	rs.set_border_width_all(1)
+	rs.border_color = Color(col.r, col.g, col.b, 0.95)
+	rs.set_corner_radius_all(64)
+	ring.add_theme_stylebox_override("panel", rs)
+	p.add_child(ring)
 	return p
+
+
+func _place_ring(panel: Panel, draw_d: float) -> void:
+	var ring := panel.get_node_or_null("Ring") as Panel
+	if ring == null:
+		return
+	ring.size = Vector2(draw_d, draw_d)
+	ring.position = (panel.size - ring.size) * 0.5
 
 
 func _make_btn_label(parent: Panel, text: String) -> Label:
@@ -300,14 +320,15 @@ func _layout() -> void:
 	if ar.intersects(sr):
 		_btn_attack.position.y = minf(_btn_attack.position.y, _btn_slide.position.y - a - 8.0)
 
-	# Weapon prev/next — upper-right, clear of pause/armor and of face-button cluster
+	# Weapon prev/next — bottom-right, just above the face cluster, clear of pause.
 	var w := BTN_WEAPON * 2.0 * size_scale
 	_btn_wnext.size = Vector2(w, w)
 	_btn_wprev.size = Vector2(w, w)
-	var weapon_y := top + WEAPON_TOP_CLEAR
 	var cluster_top := minf(_btn_jump.position.y, minf(_btn_attack.position.y, _btn_slide.position.y))
-	weapon_y = minf(weapon_y, cluster_top - w - 16.0)
-	weapon_y = maxf(weapon_y, top)
+	var weapon_y := cluster_top - w - 8.0
+	weapon_y = maxf(weapon_y, top + WEAPON_TOP_CLEAR)
+	if weapon_y + w > cluster_top - 4.0:
+		weapon_y = maxf(top, cluster_top - w - 8.0)
 	_btn_wnext.position = Vector2(right - w, weapon_y)
 	_btn_wprev.position = Vector2(right - w * 2.0 - WEAPON_GAP, weapon_y)
 
@@ -330,7 +351,14 @@ func _layout() -> void:
 	if _lbl_wp:
 		_lbl_wp.add_theme_font_size_override("font_size", 12)
 	if _lbl_wn:
-		_lbl_wn.add_theme_font_size_override("font_size", 12)
+		_lbl_wn.add_theme_font_size_override("font_size", 10)
+	_place_ring(_stick_base, DRAW_STICK * size_scale)
+	_place_ring(_stick_knob, KNOB_R * 2.0 * size_scale)
+	_place_ring(_btn_jump, DRAW_JUMP * size_scale)
+	_place_ring(_btn_attack, DRAW_ATTACK * size_scale)
+	_place_ring(_btn_slide, DRAW_SLIDE * size_scale)
+	_place_ring(_btn_wprev, DRAW_WEAPON * size_scale)
+	_place_ring(_btn_wnext, DRAW_WEAPON * size_scale)
 
 
 

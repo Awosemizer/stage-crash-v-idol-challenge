@@ -67,11 +67,11 @@ func _build_course() -> void:
 		[144, 160, 72, 16, COL_ACCENT],
 		[224, 128, 56, 16, COL_NEON],
 		[288, 96, 48, 16, COL_FLOOR],
-		# Wall-jump shaft — 48px + mid foothold
+		# Wall-jump shaft — 36px gap + mid foothold
 		[352, 80, 16, 128, COL_WALL],
-		[416, 32, 16, 176, COL_WALL],
+		[404, 32, 28, 176, COL_WALL],  # inner gap 36px
 		[352, 192, 80, 32, COL_FLOOR],
-		[368, 128, 32, 12, COL_ACCENT],  # mid foothold for touch wall-jumps
+		[368, 128, 16, 12, COL_ACCENT],  # mid foothold for touch wall-jumps
 		# Mid ledges (wider landings)
 		[448, 144, 64, 16, COL_FLOOR],
 		[528, 112, 56, 16, COL_NEON],
@@ -368,8 +368,8 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 func _build_secret_arms() -> void:
 	## Alcoba secreta: brazos Stage Flight (weapon+ / charge Nv4 stub).
-	_add_breakable(360.0, 48.0)
-	_add_breakable(360.0, 64.0)
+	_seal_secret_rect(280.0, 16.0, 360.0, 48.0)
+	_seal_secret_rect(360.0, 16.0, 376.0, 80.0)
 	var pickup: Area2D = ArmorPickupScene.instantiate()
 	pickup.name = "FlightArmsPickup"
 	pickup.position = Vector2(308.0, 40.0)
@@ -379,25 +379,24 @@ func _build_secret_arms() -> void:
 	if "toast_hint_es" in pickup:
 		pickup.toast_hint_es = "Miku: carga Nv4 · Teto: Sonic Slash"
 	entities.add_child(pickup)
-	var hint := Label.new()
-	hint.name = "SecretHint"
-	hint.text = "¿…?"
-	hint.position = Vector2(356, 20)
-	hint.add_theme_font_size_override("font_size", 6)
-	hint.modulate = Color(0.95, 0.9, 0.4, 0.55)
-	geometry.add_child(hint)
-	var room_lbl := Label.new()
-	room_lbl.text = "SECRETO"
-	room_lbl.position = Vector2(272, 12)
-	room_lbl.add_theme_font_size_override("font_size", 6)
-	room_lbl.modulate = Color(0.95, 0.85, 0.35, 0.7)
-	geometry.add_child(room_lbl)
 	print("LevelNeonVolt: secreto Stage Flight (brazos) en alcoba x~300")
+
+
+func _seal_secret_rect(x0: float, y0: float, x1: float, y1: float) -> void:
+	## Rellena el hueco con bloques que se ven como la pared. El pickup no se mueve.
+	var x := x0 + 8.0
+	while x < x1 - 0.1:
+		var y := y0 + 8.0
+		while y < y1 - 0.1:
+			_add_breakable(x, y)
+			y += 16.0
+		x += 16.0
 
 
 func _add_breakable(x: float, y: float) -> void:
 	var block: StaticBody2D = BreakableBlockScene.instantiate()
 	block.position = Vector2(x, y)
+	block.set("block_color", COL_WALL)
 	geometry.add_child(block)
 
 

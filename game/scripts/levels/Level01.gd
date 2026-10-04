@@ -67,11 +67,11 @@ func _build_course() -> void:
 		[240, 144, 64, 16, COL_FLOOR],
 		[288, 160, 40, 16, COL_FLOOR],  # safe ledge before spike pit
 		[368, 160, 80, 64, COL_FLOOR],  # landing after spikes
-		# Wall-jump corridor — 48px gap; left wall gap y=48..80 sealed by breakables (secret)
+		# Wall-jump corridor — 36px gap; secreto sellado a la izquierda
 		[448, 80, 16, 128, COL_WALL],
-		[512, 32, 16, 176, COL_WALL],
+		[500, 32, 28, 176, COL_WALL],  # inner gap 36px
 		[448, 192, 80, 32, COL_FLOOR],
-		[464, 128, 32, 12, COL_ACCENT],  # mid foothold for touch wall-jumps
+		[464, 128, 16, 12, COL_ACCENT],  # mid foothold for touch wall-jumps
 		# Exit ledge (wide for landing)
 		[528, 80, 80, 16, COL_ACCENT],
 		# Secret alcove Stage Flight (left of corridor)
@@ -344,8 +344,7 @@ func _build_secret_flight() -> void:
 	## Alcoba secreta arriba-izq del corredor wall-jump.
 	## Entrada: subir el corredor y romper los bloques soft a la izquierda.
 	# Breakables aligned with left wall gap (reachable from mid foothold / wall-slide)
-	_add_breakable(456.0, 48.0)
-	_add_breakable(456.0, 64.0)
+	_seal_secret_rect(352.0, 32.0, 464.0, 80.0)
 	var pickup: Area2D = ArmorPickupScene.instantiate()
 	pickup.name = "FlightTorsoPickup"
 	pickup.position = Vector2(392.0, 68.0)
@@ -353,25 +352,24 @@ func _build_secret_flight() -> void:
 	pickup.armor_piece = "torso"
 	pickup.display_name_es = "Torso Stage Flight"
 	entities.add_child(pickup)
-	var hint := Label.new()
-	hint.name = "SecretHint"
-	hint.text = "¿…?"
-	hint.position = Vector2(460, 28)
-	hint.add_theme_font_size_override("font_size", 6)
-	hint.modulate = Color(1.0, 0.7, 0.35, 0.55)
-	geometry.add_child(hint)
-	var room_lbl := Label.new()
-	room_lbl.text = "SECRETO"
-	room_lbl.position = Vector2(360, 28)
-	room_lbl.add_theme_font_size_override("font_size", 6)
-	room_lbl.modulate = Color(0.45, 0.9, 1.0, 0.7)
-	geometry.add_child(room_lbl)
 	print("Level01: secreto Stage Flight (torso) en alcoba x~392")
+
+
+func _seal_secret_rect(x0: float, y0: float, x1: float, y1: float) -> void:
+	## Rellena el hueco con bloques que se ven como la pared. El pickup no se mueve.
+	var x := x0 + 8.0
+	while x < x1 - 0.1:
+		var y := y0 + 8.0
+		while y < y1 - 0.1:
+			_add_breakable(x, y)
+			y += 16.0
+		x += 16.0
 
 
 func _add_breakable(x: float, y: float) -> void:
 	var block: StaticBody2D = BreakableBlockScene.instantiate()
 	block.position = Vector2(x, y)
+	block.set("block_color", COL_WALL)
 	geometry.add_child(block)
 
 

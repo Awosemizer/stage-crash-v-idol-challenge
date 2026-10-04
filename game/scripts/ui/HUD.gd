@@ -303,7 +303,7 @@ func _build_ui() -> void:
 		_tank_icons.append(tank)
 
 	# --- Top-right: pause + armor ---
-	_pause_btn = _make_panel(Color(0.2, 0.22, 0.3, 0.9))
+	_pause_btn = _make_panel(Color(0.04, 0.04, 0.06, 0.55))
 	_pause_btn.name = "PauseBtn"
 	_pause_btn.mouse_filter = Control.MOUSE_FILTER_STOP
 	_pause_btn.gui_input.connect(_on_pause_btn_gui_input)
@@ -332,7 +332,7 @@ func _build_ui() -> void:
 		_armor_slots.append(slot)
 
 	# --- Pause panel (hidden) ---
-	_pause_panel = _make_panel(Color(0.06, 0.05, 0.1, 0.92))
+	_pause_panel = _make_panel(Color(0.03, 0.03, 0.05, 0.94))
 	_pause_panel.name = "PausePanel"
 	_pause_panel.visible = false
 	_pause_panel.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -442,7 +442,7 @@ func _make_panel(col: Color) -> Panel:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = col
 	sb.set_border_width_all(1)
-	sb.border_color = Color(1, 1, 1, 0.35)
+	sb.border_color = Color(0.35, 0.9, 1.0, 0.9)
 	sb.set_corner_radius_all(2)
 	p.add_theme_stylebox_override("panel", sb)
 	return p
@@ -538,36 +538,25 @@ func _layout() -> void:
 	if _quit_btn:
 		_quit_btn.size = Vector2(half, btn_h)
 		_quit_btn.position = Vector2(pair_x + half + gap, row_y)
-		# Style quit/resume for visibility
-		var rn := StyleBoxFlat.new()
-		rn.bg_color = Color(0.12, 0.35, 0.28, 0.95)
-		rn.set_border_width_all(2)
-		rn.border_color = Color(0.4, 0.95, 0.65)
-		rn.set_corner_radius_all(4)
-		_resume_btn.add_theme_stylebox_override("normal", rn)
-		var qn := StyleBoxFlat.new()
-		qn.bg_color = Color(0.22, 0.12, 0.16, 0.95)
-		qn.set_border_width_all(2)
-		qn.border_color = Color(0.95, 0.45, 0.5)
-		qn.set_corner_radius_all(4)
-		_quit_btn.add_theme_stylebox_override("normal", qn)
+		_SafeArea.style_button(_resume_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
+		_SafeArea.style_button(_quit_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
 	var etank_y := row_y + btn_h + 6.0
 	if _etank_btn:
 		_etank_btn.size = Vector2(bw, 28.0)
 		_etank_btn.position = Vector2(pair_x, etank_y)
 		_refresh_etank_btn()
-		_SafeArea.style_button(_etank_btn, Color(0.1, 0.28, 0.32, 0.95), Color(0.4, 0.95, 1.0, 0.95), 3)
+		_SafeArea.style_button(_etank_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	var opt_top := etank_y + 36.0
 	var half_w := (bw - 6.0) * 0.5
 	if _touch_size_btn:
 		_touch_size_btn.size = Vector2(half_w, opt_h)
 		_touch_size_btn.position = Vector2((pw - bw) * 0.5, opt_top)
 		_refresh_touch_opt_labels()
-		_SafeArea.style_button(_touch_size_btn, Color(0.14, 0.16, 0.24, 0.95), Color(0.55, 0.75, 0.95, 0.9), 3)
+		_SafeArea.style_button(_touch_size_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	if _touch_op_btn:
 		_touch_op_btn.size = Vector2(half_w, opt_h)
 		_touch_op_btn.position = Vector2((pw - bw) * 0.5 + half_w + 6.0, opt_top)
-		_SafeArea.style_button(_touch_op_btn, Color(0.14, 0.16, 0.24, 0.95), Color(0.55, 0.75, 0.95, 0.9), 3)
+		_SafeArea.style_button(_touch_op_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
 	var strip_top := opt_top + opt_h + 8.0
 	if _weapon_strip_title:
 		_weapon_strip_title.position = Vector2(8, strip_top)
@@ -894,8 +883,8 @@ func _rebuild_weapon_strip() -> void:
 		btn.process_mode = Node.PROCESS_MODE_ALWAYS
 		btn.focus_mode = Control.FOCUS_NONE
 		var selected := wid == cur_id
-		var bg := Color(0.15, 0.45, 0.55, 0.95) if selected else Color(0.14, 0.16, 0.22, 0.95)
-		var bd := Color(0.45, 0.95, 1.0) if selected else Color(0.55, 0.6, 0.7)
+		var bg := Color(0.04, 0.04, 0.06, 0.96)
+		var bd := Color(0.35, 0.9, 1.0, 1.0) if selected else Color(0.95, 0.35, 0.72, 0.9)
 		_SafeArea.style_button(btn, bg, bd, 3)
 		btn.pressed.connect(_on_weapon_strip_pressed.bind(wid))
 		_weapon_strip.add_child(btn)

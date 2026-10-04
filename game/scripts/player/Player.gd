@@ -3,7 +3,8 @@ extends CharacterBody2D
 ## Input: reads InputMap actions only (move_left/right, jump, slide, attack).
 ## Touch overlay + joypad press those same actions — do not hardcode keys here.
 ## GDD refs (px/frame @ 60fps, tile 16px): run 1.5, jump 4.5, grav 0.25,
-## wall-jump H 2.5, slide 12 frames. Wall-jump always available.
+## wall-jump es un kick corto (hay que aguantar hacia la otra pared), slide 12 frames.
+## Wall-jump always available.
 ## Miku: Buster (tap/carga; Nv4 con Flight arms). Teto: Sable (+ Sonic Slash con Flight arms).
 ## Encore Guard: Barrier Pulse (Miku) / Counter Guard (Teto). Flight set completo: hover+.
 ## Ambos: Beat Blaze tras vencer a Beatfire Man. Personaje desde GameState.
@@ -11,16 +12,18 @@ extends CharacterBody2D
 # --- Tunables (converted to px/s / px/s²) ---
 const RUN_SPEED := 90.0          # 1.5 px/frame
 const ACCEL_GROUND := 900.0      # snappy but not instant
-const ACCEL_AIR := 540.0
+const ACCEL_AIR := 780.0
 const FRICTION_GROUND := 1200.0
 const JUMP_VELOCITY := -270.0    # 4.5 px/frame upward
-const JUMP_CUT_MULT := 0.45      # release jump mid-air → cut velocity
+const JUMP_CUT_MULT := 0.32      # tap = short hop; hold keeps full ~40px
 const GRAVITY := 900.0           # 0.25 px/frame² → * 60²
 const MAX_FALL := 360.0          # terminal fall (~6 px/frame)
 const WALL_SLIDE_SPEED := 60.0   # slower descent on wall
-const WALL_JUMP_H := 150.0       # 2.5 px/frame away from wall
-const WALL_JUMP_V := -255.0      # slightly less than grounded jump
-const WALL_JUMP_LOCK := 0.12     # brief lock; same-direction steer still works (v0.31)
+const WALL_JUMP_H := 92.0        # short kick — hold toward the next wall
+const WALL_JUMP_V := -220.0      # do not launch over the shaft
+const WALL_JUMP_LOCK := 0.06     # then full air steering
+const WALL_JUMP_DECAY := 420.0   # px/s² toward 0 unless holding the push
+const WALL_JUMP_DECAY_TIME := 0.22
 const SLIDE_SPEED := 180.0       # short dash along ground
 const SLIDE_DURATION := 0.22     # ~13 frames @ 60fps — slightly more reliable
 const SLIDE_COOLDOWN := 0.10     # snappier re-slide on touch
@@ -123,6 +126,7 @@ var _wall_coyote := 0.0
 var _last_wall_dir := 0  # remembered while wall-coyote active
 var _wall_lock := 0.0
 var _wall_lock_dir := 0
+var _wall_decay := 0.0
 var _slide_timer := 0.0
 var _slide_cd := 0.0
 var _slide_buffer := 0.0
@@ -313,6 +317,12 @@ func _physics_process(delta: float) -> void:
 
 	# Horizontal move (locked briefly after wall-jump)
 	var input_x := Input.get_axis("move_left", "move_right")
+	# Extra decay after a wall kick unless the stick stays in the push direction.
+	if _wall_decay > 0.0:
+		_wall_decay = maxf(_wall_decay - delta, 0.0)
+		var holding_push := input_x * float(_wall_lock_dir) > 0.2
+		if not holding_push:
+			velocity.x = move_toward(velocity.x, 0.0, WALL_JUMP_DECAY * delta)
 	if _wall_lock > 0.0:
 		# Keep the push; allow steering away from the wall, ignore input back into it.
 		if input_x * float(_wall_lock_dir) > 0.15:
@@ -1330,6 +1340,7 @@ func _do_wall_jump(wall_dir: int) -> void:
 	facing = push
 	_wall_lock = WALL_JUMP_LOCK
 	_wall_lock_dir = push
+	_wall_decay = WALL_JUMP_DECAY_TIME
 	_coyote = 0.0
 	_wall_coyote = 0.0
 	_jump_buffer = 0.0
@@ -1637,6 +1648,7 @@ func _respawn() -> void:
 	_charge_time = 0.0
 	_saber_timer = 0.0
 	_wall_lock = 0.0
+	_wall_decay = 0.0
 	_apply_stand_shape()
 	velocity = Vector2.ZERO
 	global_position = _spawn_pos

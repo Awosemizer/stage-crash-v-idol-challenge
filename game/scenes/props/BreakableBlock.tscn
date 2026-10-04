@@ -37,6 +37,5 @@ offset_top = -18.0
 offset_right = 22.0
 offset_bottom = -8.0
 theme_override_font_sizes/font_size = 5
-text = "¿?"
-modulate = Color(1, 0.75, 0.4, 0.7)
+text = ""
 horizontal_alignment = 1
