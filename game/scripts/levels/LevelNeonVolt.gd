@@ -60,51 +60,51 @@ func _ready() -> void:
 
 
 func _build_course() -> void:
+	# v0.54 — low path waits out the electric floor; upper path stays dark and climbs.
+	# Shaft gap 32px with a mid foothold. Slide crawl is optional.
 	var solids: Array = [
-		# Touch-first club layout
-		[0, 176, 160, 48, COL_FLOOR],
-		# Club platforms (wider, fairer gaps)
-		[144, 160, 72, 16, COL_ACCENT],
-		[224, 128, 56, 16, COL_NEON],
-		[288, 96, 48, 16, COL_FLOOR],
-		# Wall-jump shaft — 36px gap + mid foothold
-		[352, 80, 16, 128, COL_WALL],
-		[404, 32, 28, 176, COL_WALL],  # inner gap 36px
-		[352, 192, 80, 32, COL_FLOOR],
-		[368, 128, 16, 12, COL_ACCENT],  # mid foothold for touch wall-jumps
-		# Mid ledges (wider landings)
-		[448, 144, 64, 16, COL_FLOOR],
-		[528, 112, 56, 16, COL_NEON],
-		[600, 80, 56, 16, COL_ACCENT],
-		# Secret arms alcove
-		[264, 0, 16, 64, COL_WALL],
-		[280, 0, 96, 16, COL_WALL],
-		[280, 48, 80, 16, COL_ACCENT],
-		[264, 48, 16, 16, COL_WALL],
-		# Dance floor stretch
-		[672, 176, 128, 48, COL_FLOOR],
-		[672, 112, 56, 16, COL_NEON],
-		[744, 144, 56, 16, COL_FLOOR],
-		# Slide under neon bar — 20px clearance
-		[816, 176, 144, 48, COL_FLOOR],
-		[816, 108, 144, 48, COL_WALL],
-		# Final stretch continuous
-		[960, 160, 176, 64, COL_FLOOR],
 		[-32, 0, 32, 224, COL_WALL],
+		# low path
+		[0, 176, 240, 48, COL_FLOOR],
+		[276, 176, 360, 48, COL_FLOOR],
+		[652, 176, 32, 48, COL_FLOOR],
+		[700, 176, 436, 48, COL_FLOOR],
+		# upper path
+		[80, 144, 64, 16, COL_NEON],
+		[160, 112, 64, 16, COL_FLOOR],
+		[240, 80, 80, 16, COL_ACCENT],
+		[336, 80, 64, 16, COL_NEON],
+		[416, 96, 64, 16, COL_FLOOR],
+		[496, 112, 64, 16, COL_ACCENT],
+		[576, 128, 56, 16, COL_NEON],
+		# wall-jump shaft — 32px open air, mid foothold
+		[636, 24, 16, 152, COL_WALL],
+		[684, 96, 16, 80, COL_WALL],
+		[652, 140, 16, 12, COL_ACCENT],
+		[700, 96, 72, 16, COL_NEON],
+		[788, 128, 64, 16, COL_FLOOR],
+		[868, 160, 64, 16, COL_ACCENT],
+		# sealed arms room
+		[788, 64, 64, 16, COL_ACCENT],
+		[852, 64, 112, 16, COL_WALL],
+		[852, 0, 128, 16, COL_WALL],
+		[964, 0, 16, 80, COL_WALL],
+		# optional crawl
+		[900, 144, 48, 16, COL_NEON],
+		[948, 112, 48, 16, COL_FLOOR],
+		[996, 108, 80, 48, COL_WALL],
 	]
 
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 
-	# Spike pit fair for touch
 	for i in range(3):
-		_add_spike(168.0 + i * 12.0, 200.0)
+		_add_spike(244.0 + i * 12.0, 200.0)
+	_add_rect_platform(240, 208, 36, 16, COL_WALL)
 
-	# Electric floors on tempo (phased)
-	_add_electric(160.0, 168.0, Vector2(48, 10), 0.0, 1.1)
-	_add_electric(464.0, 152.0, Vector2(48, 10), 0.35, 1.0)
-	_add_electric(700.0, 184.0, Vector2(64, 10), 0.7, 1.15)
-	_add_electric(860.0, 184.0, Vector2(56, 10), 0.15, 0.95)
+	_add_electric(360.0, 170.0, Vector2(56, 10), 0.0, 1.15)
+	_add_electric(500.0, 170.0, Vector2(56, 10), 0.45, 1.05)
+	_add_electric(800.0, 170.0, Vector2(64, 10), 0.2, 1.2)
 
 	_build_secret_arms()
 
@@ -121,7 +121,6 @@ func _build_course() -> void:
 	theme_lbl.add_theme_font_size_override("font_size", 7)
 	theme_lbl.modulate = Color(0.95, 0.85, 0.35, 0.75)
 	geometry.add_child(theme_lbl)
-
 
 func _add_electric(x: float, y: float, size: Vector2, phase: float, period: float) -> void:
 	var floor_hz: Area2D = ElectricFloorScene.instantiate()
@@ -368,11 +367,10 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 func _build_secret_arms() -> void:
 	## Alcoba secreta: brazos Stage Flight (weapon+ / charge Nv4 stub).
-	_seal_secret_rect(280.0, 16.0, 360.0, 48.0)
-	_seal_secret_rect(360.0, 16.0, 376.0, 80.0)
+	_seal_secret_rect(852.0, 16.0, 884.0, 64.0)
 	var pickup: Area2D = ArmorPickupScene.instantiate()
 	pickup.name = "FlightArmsPickup"
-	pickup.position = Vector2(308.0, 40.0)
+	pickup.position = Vector2(910.0, 46.0)
 	pickup.armor_set = "flight"
 	pickup.armor_piece = "arms"
 	pickup.display_name_es = "Brazos Stage Flight"
@@ -380,7 +378,6 @@ func _build_secret_arms() -> void:
 		pickup.toast_hint_es = "Miku: carga Nv4 · Teto: Sonic Slash"
 	entities.add_child(pickup)
 	print("LevelNeonVolt: secreto Stage Flight (brazos) en alcoba x~300")
-
 
 func _seal_secret_rect(x0: float, y0: float, x1: float, y1: float) -> void:
 	## Rellena el hueco con bloques que se ven como la pared. El pickup no se mueve.
@@ -401,10 +398,9 @@ func _add_breakable(x: float, y: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	_add_met(96.0, 176.0)
-	_add_met(540.0, 112.0)
-	_add_met(900.0, 176.0)
-
+	_add_met(80.0, 176.0)
+	_add_met(400.0, 176.0)
+	_add_met(1000.0, 176.0)
 
 func _add_met(x: float, floor_y: float) -> void:
 	var met: Area2D = MetBeatScene.instantiate()
@@ -439,8 +435,8 @@ func _add_spike(x: float, y: float) -> void:
 func _add_mid_checkpoints() -> void:
 	## Clear mid-stage markers for neon_volt (touch-visible cyan pillars).
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(480.0, 144.0), "neon_volt", "CK1")
-	CheckpointScript.place(parent_n, Vector2(1008.0, 160.0), "neon_volt", "CK2")
+	CheckpointScript.place(parent_n, Vector2(420.0, 176.0), "neon_volt", "CK1")
+	CheckpointScript.place(parent_n, Vector2(1040.0, 176.0), "neon_volt", "CK2")
 
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()

@@ -61,52 +61,51 @@ func _ready() -> void:
 
 
 func _build_course() -> void:
+	# v0.54 — low path is solid ice; upper path blinks across frame-skip pads.
+	# Shaft gap 40px with a mid foothold. Slide crawl is optional.
 	var solids: Array = [
-		# Touch-first — sealed pits, fair gaps, 20px slide clearance
-		[0, 176, 160, 48, COL_FLOOR],
-		# Approach ledges (wider)
-		[144, 144, 56, 16, COL_ICE],
-		[208, 112, 48, 16, COL_FLOOR],
-		[248, 160, 40, 16, COL_FLOOR],  # safe ledge before spike / shaft
-		# Wall-jump shaft — 36px gap + mid foothold
-		[304, 80, 16, 128, COL_WALL],
-		[356, 32, 28, 176, COL_WALL],  # inner gap 36px
-		[304, 192, 80, 32, COL_FLOOR],
-		[320, 128, 16, 12, COL_ACCENT],  # mid foothold for touch wall-jumps
-		# Secret alcove (high, left of shaft)
-		[208, 0, 16, 64, COL_WALL],
-		[224, 0, 96, 16, COL_WALL],
-		[224, 48, 80, 16, COL_ACCENT],
-		[208, 48, 16, 16, COL_WALL],
-		# Mid stretch (wider pads)
-		[400, 144, 64, 16, COL_FLOOR],
-		[480, 112, 56, 16, COL_ICE],
-		[552, 80, 56, 16, COL_ACCENT],
-		# Stage floor
-		[624, 176, 144, 48, COL_FLOOR],
-		[624, 120, 48, 16, COL_ICE],
-		[688, 144, 56, 16, COL_FLOOR],
-		# Slide tunnel — 20px clearance
-		[784, 176, 144, 48, COL_FLOOR],
-		[784, 108, 144, 48, COL_WALL],
-		# Final stretch continuous (no softlock hole)
-		[928, 160, 192, 64, COL_FLOOR],
 		[-32, 0, 32, 224, COL_WALL],
+		# low path
+		[0, 176, 220, 48, COL_FLOOR],
+		[220, 208, 36, 16, COL_WALL],
+		[256, 176, 400, 48, COL_FLOOR],
+		[672, 176, 40, 48, COL_FLOOR],
+		[728, 176, 232, 48, COL_FLOOR],
+		[960, 176, 176, 48, COL_FLOOR],
+		# upper path steps onto the glitch shelf
+		[48, 144, 64, 16, COL_ICE],
+		[128, 112, 64, 16, COL_FLOOR],
+		[208, 80, 96, 16, COL_ACCENT],
+		# wall-jump shaft — 40px open air, mid foothold (not the Beatfire chimney)
+		[656, 24, 16, 152, COL_WALL],
+		[712, 88, 16, 88, COL_WALL],
+		[608, 112, 48, 16, COL_ICE],
+		[672, 136, 20, 12, COL_ICE],
+		[728, 96, 80, 16, COL_ACCENT],
+		[824, 128, 64, 16, COL_FLOOR],
+		[904, 160, 64, 16, COL_ICE],
+		# sealed tank room off the high shelf
+		[824, 64, 64, 16, COL_ACCENT],
+		[888, 64, 112, 16, COL_WALL],
+		[888, 0, 128, 16, COL_WALL],
+		[1000, 0, 16, 80, COL_WALL],
+		# optional crawl
+		[860, 144, 64, 16, COL_ICE],
+		[924, 112, 48, 16, COL_FLOOR],
+		[972, 108, 80, 48, COL_WALL],
 	]
 
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 
-	# Spike pit fair for touch
 	for i in range(3):
-		_add_spike(256.0 + i * 12.0, 200.0)
+		_add_spike(226.0 + i * 12.0, 200.0)
 
-	# Frame-skip platforms (teleport A↔B)
-	_add_frame_skip(Vector2(160, 136), Vector2(220, 104), Vector2(48, 12), 1.2, 0.0)
-	_add_frame_skip(Vector2(420, 120), Vector2(500, 88), Vector2(48, 12), 1.0, 0.35)
-	_add_frame_skip(Vector2(640, 148), Vector2(720, 116), Vector2(48, 12), 1.4, 0.7)
-	_add_frame_skip(Vector2(820, 148), Vector2(880, 120), Vector2(44, 12), 0.95, 0.2)
-	_add_frame_skip(Vector2(1000, 128), Vector2(1060, 100), Vector2(48, 12), 1.15, 0.5)
+	# Blink pads on the upper shelf. Missing one drops you to the low path.
+	_add_frame_skip(Vector2(360, 74), Vector2(360, 112), Vector2(56, 12), 1.25, 0.0)
+	_add_frame_skip(Vector2(440, 74), Vector2(500, 74), Vector2(56, 12), 1.1, 0.4)
+	_add_frame_skip(Vector2(520, 100), Vector2(520, 140), Vector2(56, 12), 1.35, 0.2)
+	_add_frame_skip(Vector2(600, 100), Vector2(640, 140), Vector2(48, 12), 1.0, 0.55)
 
 	_build_secret_energy_tank()
 
@@ -123,7 +122,6 @@ func _build_course() -> void:
 	theme_lbl.add_theme_font_size_override("font_size", 7)
 	theme_lbl.modulate = Color(0.65, 0.9, 1.0, 0.75)
 	geometry.add_child(theme_lbl)
-
 
 func _add_frame_skip(a: Vector2, b: Vector2, sz: Vector2, period: float, phase: float) -> void:
 	var plat: StaticBody2D = FrameSkipScene.instantiate()
@@ -362,14 +360,12 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 func _build_secret_energy_tank() -> void:
 	## Alcoba secreta: Energy Tank (no armadura).
-	_seal_secret_rect(224.0, 16.0, 320.0, 48.0)
-	_seal_secret_rect(304.0, 48.0, 320.0, 80.0)
+	_seal_secret_rect(888.0, 16.0, 920.0, 64.0)
 	var pickup: Area2D = EnergyTankScene.instantiate()
 	pickup.name = "EnergyTankPickup"
-	pickup.position = Vector2(252.0, 40.0)
+	pickup.position = Vector2(950.0, 46.0)
 	entities.add_child(pickup)
 	print("LevelGlitchIce: secreto Energy Tank en alcoba x~220")
-
 
 func _seal_secret_rect(x0: float, y0: float, x1: float, y1: float) -> void:
 	## Rellena el hueco con bloques que se ven como la pared. El pickup no se mueve.
@@ -390,10 +386,9 @@ func _add_breakable(x: float, y: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	_add_met(96.0, 176.0)
-	_add_met(500.0, 112.0)
-	_add_met(860.0, 176.0)
-
+	_add_met(80.0, 176.0)
+	_add_met(400.0, 176.0)
+	_add_met(1040.0, 176.0)
 
 func _add_met(x: float, floor_y: float) -> void:
 	var met: Area2D = MetBeatScene.instantiate()
@@ -428,8 +423,8 @@ func _add_spike(x: float, y: float) -> void:
 func _add_mid_checkpoints() -> void:
 	## Clear mid-stage markers for glitch_ice (touch-visible cyan pillars).
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(432.0, 144.0), "glitch_ice", "CK1")
-	CheckpointScript.place(parent_n, Vector2(976.0, 160.0), "glitch_ice", "CK2")
+	CheckpointScript.place(parent_n, Vector2(400.0, 176.0), "glitch_ice", "CK1")
+	CheckpointScript.place(parent_n, Vector2(1040.0, 176.0), "glitch_ice", "CK2")
 
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()

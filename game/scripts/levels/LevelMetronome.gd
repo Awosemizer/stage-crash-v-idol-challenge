@@ -61,56 +61,53 @@ func _ready() -> void:
 
 
 func _build_course() -> void:
+	# v0.54 — low path waits on the beat; upper path stays above the ticking spikes.
+	# Shaft gap 40px with a mid foothold. Slide crawl is optional.
 	var solids: Array = [
-		# Touch-first — sealed pits, fair gaps, 20px slide clearance
-		[0, 176, 160, 48, COL_FLOOR],
-		# Approach ledges (wider)
-		[144, 144, 56, 16, COL_METAL],
-		[208, 112, 48, 16, COL_FLOOR],
-		[248, 160, 40, 16, COL_FLOOR],  # safe ledge before spike / shaft
-		# Wall-jump shaft — 36px gap + mid foothold
-		[304, 80, 16, 128, COL_WALL],
-		[356, 32, 28, 176, COL_WALL],  # inner gap 36px
-		[304, 192, 80, 32, COL_FLOOR],
-		[320, 128, 16, 12, COL_ACCENT],  # mid foothold for touch wall-jumps
-		# Secret alcove (high, left of shaft)
-		[208, 0, 16, 64, COL_WALL],
-		[224, 0, 96, 16, COL_WALL],
-		[224, 48, 80, 16, COL_ACCENT],
-		[208, 48, 16, 16, COL_WALL],
-		# Mid stretch (wider pads)
-		[400, 144, 64, 16, COL_FLOOR],
-		[480, 112, 56, 16, COL_METAL],
-		[552, 80, 56, 16, COL_ACCENT],
-		# Stage floor
-		[624, 176, 144, 48, COL_FLOOR],
-		[624, 120, 48, 16, COL_METAL],
-		[688, 144, 56, 16, COL_FLOOR],
-		# Slide tunnel — 20px clearance
-		[800, 176, 144, 48, COL_FLOOR],
-		[800, 108, 144, 48, COL_WALL],
-		# Final stretch continuous (no softlock hole)
-		[944, 160, 192, 64, COL_FLOOR],
 		[-32, 0, 32, 224, COL_WALL],
+		# low path
+		[0, 176, 180, 48, COL_FLOOR],
+		[216, 176, 340, 48, COL_FLOOR],
+		[572, 176, 40, 48, COL_FLOOR],
+		[628, 176, 508, 48, COL_FLOOR],
+		# upper path
+		[48, 144, 64, 16, COL_METAL],
+		[128, 112, 64, 16, COL_FLOOR],
+		[208, 80, 80, 16, COL_ACCENT],
+		[304, 80, 64, 16, COL_METAL],
+		[384, 96, 64, 16, COL_FLOOR],
+		[464, 112, 64, 16, COL_ACCENT],
+		# wall-jump shaft — 40px open air, mid foothold
+		[556, 20, 16, 156, COL_WALL],
+		[612, 88, 16, 88, COL_WALL],
+		[572, 132, 16, 12, COL_ACCENT],
+		[628, 88, 80, 16, COL_METAL],
+		[724, 120, 64, 16, COL_FLOOR],
+		[804, 152, 64, 16, COL_ACCENT],
+		# sealed legs room
+		[724, 64, 64, 16, COL_ACCENT],
+		[788, 64, 120, 16, COL_WALL],
+		[788, 0, 136, 16, COL_WALL],
+		[908, 0, 16, 80, COL_WALL],
+		# optional crawl
+		[900, 144, 64, 16, COL_METAL],
+		[964, 112, 48, 16, COL_FLOOR],
+		[1012, 108, 80, 48, COL_WALL],
 	]
 
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 
-	# Static spikes in pit
-	# Spike pit fair for touch
 	for i in range(3):
-		_add_spike(256.0 + i * 12.0, 200.0)
+		_add_spike(184.0 + i * 12.0, 200.0)
+	_add_rect_platform(180, 208, 36, 16, COL_WALL)
 
-	# Metronome beat spikes — staggered phases
-	_add_metro_spike(Vector2(420, 156), 1.0, 0.35, 0.0)
-	_add_metro_spike(Vector2(448, 156), 1.0, 0.35, 0.5)
-	_add_metro_spike(Vector2(660, 192), 0.95, 0.38, 0.0)
-	_add_metro_spike(Vector2(688, 192), 0.95, 0.38, 0.45)
-	_add_metro_spike(Vector2(760, 156), 1.0, 0.35, 0.25)
-	_add_metro_spike(Vector2(900, 148), 1.0, 0.38, 0.0)
-	_add_metro_spike(Vector2(928, 148), 1.0, 0.38, 0.5)
-	_add_metro_spike(Vector2(1000, 148), 0.9, 0.35, 0.2)
+	_add_metro_spike(Vector2(280, 168), 1.0, 0.35, 0.0)
+	_add_metro_spike(Vector2(308, 168), 1.0, 0.35, 0.5)
+	_add_metro_spike(Vector2(420, 168), 0.95, 0.38, 0.15)
+	_add_metro_spike(Vector2(448, 168), 0.95, 0.38, 0.55)
+	_add_metro_spike(Vector2(760, 168), 1.0, 0.35, 0.25)
+	_add_metro_spike(Vector2(980, 168), 0.9, 0.35, 0.1)
 
 	_build_secret_encore_legs()
 
@@ -127,7 +124,6 @@ func _build_course() -> void:
 	theme_lbl.add_theme_font_size_override("font_size", 7)
 	theme_lbl.modulate = Color(0.75, 0.8, 0.9, 0.75)
 	geometry.add_child(theme_lbl)
-
 
 func _add_metro_spike(pos: Vector2, period: float, on_ratio: float, phase: float) -> void:
 	var spike: Area2D = MetronomeSpikeScene.instantiate()
@@ -366,11 +362,10 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 func _build_secret_encore_legs() -> void:
 	## Alcoba secreta: piernas Encore Guard (más i-frames en slide).
-	_seal_secret_rect(224.0, 16.0, 320.0, 48.0)
-	_seal_secret_rect(304.0, 48.0, 320.0, 80.0)
+	_seal_secret_rect(788.0, 16.0, 820.0, 64.0)
 	var pickup: Area2D = ArmorPickupScene.instantiate()
 	pickup.name = "EncoreLegsPickup"
-	pickup.position = Vector2(252.0, 40.0)
+	pickup.position = Vector2(850.0, 46.0)
 	pickup.armor_set = "encore"
 	pickup.armor_piece = "legs"
 	pickup.display_name_es = "Piernas Encore Guard"
@@ -381,7 +376,6 @@ func _build_secret_encore_legs() -> void:
 		pickup.get_node("Visual").color = Color(0.8, 0.5, 0.2, 1.0)
 	entities.add_child(pickup)
 	print("LevelMetronome: secreto Encore Guard legs en alcoba x~220")
-
 
 func _seal_secret_rect(x0: float, y0: float, x1: float, y1: float) -> void:
 	## Rellena el hueco con bloques que se ven como la pared. El pickup no se mueve.
@@ -402,10 +396,9 @@ func _add_breakable(x: float, y: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	_add_met(96.0, 176.0)
-	_add_met(500.0, 112.0)
-	_add_met(880.0, 176.0)
-
+	_add_met(80.0, 176.0)
+	_add_met(400.0, 176.0)
+	_add_met(1000.0, 176.0)
 
 func _add_met(x: float, floor_y: float) -> void:
 	var met: Area2D = MetBeatScene.instantiate()
@@ -440,8 +433,8 @@ func _add_spike(x: float, y: float) -> void:
 func _add_mid_checkpoints() -> void:
 	## Clear mid-stage markers for metronome (touch-visible cyan pillars).
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(432.0, 144.0), "metronome", "CK1")
-	CheckpointScript.place(parent_n, Vector2(992.0, 160.0), "metronome", "CK2")
+	CheckpointScript.place(parent_n, Vector2(400.0, 176.0), "metronome", "CK1")
+	CheckpointScript.place(parent_n, Vector2(1040.0, 176.0), "metronome", "CK2")
 
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()

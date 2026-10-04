@@ -23,6 +23,7 @@ Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → 
 
 **v0.40:** Player pixel pass — 32px Miku (cyan twin-tails, buster pose) and Teto (red drills, saber pose): idle, 8-frame run, jump, wall, slide. Flight wings and Encore shoulders overlay when a piece is owned. Hitboxes unchanged.
 **v0.41:** Robot Master pixel pass — 48×64 idle + attack for the 8 stages (fire, ice, quake, wind, neon, metronome, bloom, static), CORE-9 hologram, 16×16 stage floors. Combat numbers and hitboxes unchanged.
+**v0.54:** stages have a low path, an upper path, and a hidden armor wall.
 **v0.53:** la carrera usa cuatro frames y se ven las alas de Flight y los hombros de Encore.
 **v0.52:** los disparos y los peligros de etapa usan el pixel art nuevo.
 **v0.51:** Met-Beat y las baldosas usan el pixel art nuevo; el icono es Miku y Teto.

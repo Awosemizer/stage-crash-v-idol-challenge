@@ -62,58 +62,55 @@ func _ready() -> void:
 
 
 func _build_course() -> void:
+	# v0.54 — low path is the garden floor; upper path rides under the petals.
+	# Shaft gap 36px with a mid foothold. Slide crawl is optional.
 	var solids: Array = [
-		# Touch-first — sealed pits, fair gaps, 20px slide clearance
-		[0, 176, 160, 48, COL_FLOOR],
-		# Approach ledges (wider)
-		[144, 144, 56, 16, COL_VINE],
-		[208, 112, 48, 16, COL_FLOOR],
-		[248, 160, 40, 16, COL_FLOOR],  # safe ledge before spike / shaft
-		# Wall-jump shaft — 36px gap + mid foothold
-		[304, 80, 16, 128, COL_WALL],
-		[356, 32, 28, 176, COL_WALL],  # inner gap 36px
-		[304, 192, 80, 32, COL_FLOOR],
-		[320, 128, 16, 12, COL_ACCENT],  # mid foothold for touch wall-jumps
-		# Secret alcove (high, left of shaft)
-		[208, 0, 16, 64, COL_WALL],
-		[224, 0, 96, 16, COL_WALL],
-		[224, 48, 80, 16, COL_ACCENT],
-		[208, 48, 16, 16, COL_WALL],
-		# Mid stretch (wider pads)
-		[400, 144, 64, 16, COL_FLOOR],
-		[480, 112, 56, 16, COL_VINE],
-		[552, 80, 56, 16, COL_ACCENT],
-		# Stage floor
-		[624, 176, 144, 48, COL_FLOOR],
-		[624, 120, 48, 16, COL_VINE],
-		[688, 144, 56, 16, COL_FLOOR],
-		# Slide tunnel — 20px clearance
-		[784, 176, 144, 48, COL_FLOOR],
-		[784, 108, 144, 48, COL_WALL],
-		# Final stretch continuous (no softlock hole)
-		[928, 160, 192, 64, COL_FLOOR],
 		[-32, 0, 32, 224, COL_WALL],
+		# low path
+		[0, 176, 200, 48, COL_FLOOR],
+		[236, 176, 300, 48, COL_FLOOR],
+		[552, 176, 36, 48, COL_FLOOR],
+		[604, 176, 532, 48, COL_FLOOR],
+		# upper path
+		[64, 144, 64, 16, COL_VINE],
+		[144, 112, 64, 16, COL_FLOOR],
+		[224, 80, 80, 16, COL_ACCENT],
+		[320, 80, 64, 16, COL_VINE],
+		[400, 96, 64, 16, COL_FLOOR],
+		[480, 112, 56, 16, COL_ACCENT],
+		# wall-jump shaft — 36px open air, mid foothold
+		[536, 28, 16, 148, COL_WALL],
+		[588, 96, 16, 80, COL_WALL],
+		[552, 136, 16, 12, COL_ACCENT],
+		[604, 96, 72, 16, COL_VINE],
+		[692, 128, 64, 16, COL_FLOOR],
+		[772, 160, 64, 16, COL_ACCENT],
+		# sealed tank room
+		[692, 64, 64, 16, COL_ACCENT],
+		[756, 64, 112, 16, COL_WALL],
+		[756, 0, 128, 16, COL_WALL],
+		[868, 0, 16, 80, COL_WALL],
+		# optional crawl
+		[860, 144, 64, 16, COL_VINE],
+		[924, 112, 48, 16, COL_FLOOR],
+		[972, 108, 80, 48, COL_WALL],
 	]
 
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 
-	# Spike pit fair for touch
 	for i in range(3):
-		_add_spike(256.0 + i * 12.0, 200.0)
+		_add_spike(204.0 + i * 12.0, 200.0)
+	_add_rect_platform(200, 208, 36, 16, COL_WALL)
 
-	# Moving / growing vine platforms
-	_add_vine(Vector2(160, 128), Vector2(220, 96), Vector2(48, 12), 2.2, 0.0)
-	_add_vine(Vector2(420, 120), Vector2(500, 88), Vector2(48, 12), 2.0, 0.4)
-	_add_vine(Vector2(640, 148), Vector2(720, 112), Vector2(48, 12), 2.6, 0.8)
-	_add_vine(Vector2(820, 148), Vector2(890, 116), Vector2(44, 12), 1.9, 0.25)
-	_add_vine(Vector2(1000, 128), Vector2(1060, 100), Vector2(48, 12), 2.3, 0.55)
+	_add_vine(Vector2(360, 86), Vector2(360, 120), Vector2(52, 12), 2.2, 0.0)
+	_add_vine(Vector2(430, 102), Vector2(490, 102), Vector2(52, 12), 2.4, 0.5)
+	_add_vine(Vector2(760, 140), Vector2(820, 140), Vector2(48, 12), 2.1, 0.3)
 
-	# Petal hazards (above touch UI zone; fair spacing)
-	_add_petal(200.0, 100.0)
-	_add_petal(460.0, 90.0)
-	_add_petal(700.0, 100.0)
-	_add_petal(920.0, 90.0)
+	_add_petal(250.0, 48.0)
+	_add_petal(380.0, 40.0)
+	_add_petal(470.0, 52.0)
+	_add_petal(730.0, 48.0)
 
 	_build_secret_energy_tank()
 
@@ -130,7 +127,6 @@ func _build_course() -> void:
 	theme_lbl.add_theme_font_size_override("font_size", 7)
 	theme_lbl.modulate = Color(0.7, 0.95, 0.55, 0.75)
 	geometry.add_child(theme_lbl)
-
 
 func _add_vine(a: Vector2, b: Vector2, sz: Vector2, period: float, phase: float) -> void:
 	var plat: AnimatableBody2D = VinePlatformScene.instantiate()
@@ -376,14 +372,12 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 func _build_secret_energy_tank() -> void:
 	## Alcoba secreta: Energy Tank (no armadura).
-	_seal_secret_rect(224.0, 16.0, 320.0, 48.0)
-	_seal_secret_rect(304.0, 48.0, 320.0, 80.0)
+	_seal_secret_rect(756.0, 16.0, 788.0, 64.0)
 	var pickup: Area2D = EnergyTankScene.instantiate()
 	pickup.name = "EnergyTankPickup"
-	pickup.position = Vector2(252.0, 40.0)
+	pickup.position = Vector2(820.0, 46.0)
 	entities.add_child(pickup)
 	print("LevelChorusBloom: secreto Energy Tank en alcoba x~220")
-
 
 func _seal_secret_rect(x0: float, y0: float, x1: float, y1: float) -> void:
 	## Rellena el hueco con bloques que se ven como la pared. El pickup no se mueve.
@@ -404,10 +398,9 @@ func _add_breakable(x: float, y: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	_add_met(96.0, 176.0)
-	_add_met(500.0, 112.0)
-	_add_met(860.0, 176.0)
-
+	_add_met(80.0, 176.0)
+	_add_met(400.0, 176.0)
+	_add_met(1000.0, 176.0)
 
 func _add_met(x: float, floor_y: float) -> void:
 	var met: Area2D = MetBeatScene.instantiate()
@@ -442,8 +435,8 @@ func _add_spike(x: float, y: float) -> void:
 func _add_mid_checkpoints() -> void:
 	## Clear mid-stage markers for chorus_bloom (touch-visible cyan pillars).
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(432.0, 144.0), "chorus_bloom", "CK1")
-	CheckpointScript.place(parent_n, Vector2(976.0, 160.0), "chorus_bloom", "CK2")
+	CheckpointScript.place(parent_n, Vector2(400.0, 176.0), "chorus_bloom", "CK1")
+	CheckpointScript.place(parent_n, Vector2(1040.0, 176.0), "chorus_bloom", "CK2")
 
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()

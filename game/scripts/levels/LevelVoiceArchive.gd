@@ -51,37 +51,28 @@ func _ready() -> void:
 
 
 func _build_course() -> void:
+	# v0.54 — floor still hits the seals; a stair climbs over them so the exit stays open.
 	var solids: Array = [
-		# Touch-first archive — continuous floors, fair ledges
-		[0, 176, 192, 48, COL_FLOOR],
-		[176, 144, 56, 16, COL_ACCENT],
-		[240, 176, 112, 48, COL_FLOOR],
-		# Seal chamber floor (continuous)
-		[352, 176, 240, 48, COL_FLOOR],
-		[560, 128, 56, 12, COL_ACCENT],  # high pad above touch zone
-		[608, 176, 256, 48, COL_FLOOR],
+		[0, 176, LEVEL_RIGHT, 48, COL_FLOOR],
 		[-32, 0, 32, 224, COL_WALL],
 		[LEVEL_RIGHT - 8, 0, 24, 224, COL_WALL],
-		# Ceiling
 		[0, 0, LEVEL_RIGHT, 16, COL_WALL],
+		# Seal bypass — vertical stair over the vocal seals
+		[160, 144, 64, 16, COL_ACCENT],
+		[240, 112, 64, 16, COL_ACCENT],
+		[304, 80, 96, 16, COL_ACCENT],
+		[416, 112, 64, 16, COL_ACCENT],
+		[496, 144, 64, 16, COL_ACCENT],
 	]
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 
-	# Vertical seals blocking the path (need charge/weapon ≥2 dmg)
 	_add_seal(320.0, 176.0)
 	_add_seal(336.0, 176.0)
-	# Softlock bypass: high path over seals (hover or wall-jump)
-	# Seal bypass ledge chain
-	_add_rect_platform(280.0, 96.0, 48.0, 12.0, COL_ACCENT)
-	_add_rect_platform(340.0, 80.0, 64.0, 12.0, COL_ACCENT)
-	_add_rect_platform(420.0, 96.0, 48.0, 12.0, COL_ACCENT)
 
-	# Optional tank alcove above (hover helps)
-	_add_rect_platform(400.0, 112.0, 56.0, 12.0, COL_ACCENT)  # mid pad above touch UI
 	var tank: Area2D = EnergyTankScene.instantiate()
 	tank.name = "ArchiveTank"
-	tank.position = Vector2(424.0, 64.0)
+	tank.position = Vector2(352.0, 64.0)
 	entities.add_child(tank)
 
 	var theme := Label.new()
@@ -98,7 +89,6 @@ func _build_course() -> void:
 	hint.modulate = Color(0.7, 0.8, 0.95, 0.7)
 	geometry.add_child(hint)
 
-	# Exit trigger (always present; message if seals remain)
 	_exit_trigger = Area2D.new()
 	_exit_trigger.name = "ExitTrigger"
 	_exit_trigger.collision_layer = 0
@@ -119,7 +109,6 @@ func _build_course() -> void:
 	exit_lbl.add_theme_font_size_override("font_size", 7)
 	exit_lbl.modulate = COL_ACCENT
 	geometry.add_child(exit_lbl)
-
 
 func _add_seal(x: float, floor_y: float) -> void:
 	var seal: StaticBody2D = VocalSealScene.instantiate()

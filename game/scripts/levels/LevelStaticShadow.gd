@@ -65,50 +65,51 @@ func _ready() -> void:
 
 
 func _build_course() -> void:
+	# v0.54 — low path stays in the clear; upper path cuts through static.
+	# Shaft gap 32px with a mid foothold. Slide crawl is optional.
 	var solids: Array = [
-		# Touch-first — sealed pits, fair gaps, 20px slide clearance
-		[0, 176, 160, 48, COL_FLOOR],
-		# Approach ledges (wider)
-		[144, 144, 56, 16, COL_METAL],
-		[208, 112, 48, 16, COL_FLOOR],
-		[248, 160, 40, 16, COL_FLOOR],  # safe ledge before spike / shaft
-		# Wall-jump shaft — 36px gap + mid foothold
-		[304, 80, 16, 128, COL_WALL],
-		[356, 32, 28, 176, COL_WALL],  # inner gap 36px
-		[304, 192, 80, 32, COL_FLOOR],
-		[320, 128, 16, 12, COL_ACCENT],  # mid foothold for touch wall-jumps
-		# Secret alcove (high, left of shaft)
-		[208, 0, 16, 64, COL_WALL],
-		[224, 0, 96, 16, COL_WALL],
-		[224, 48, 80, 16, COL_ACCENT],
-		[208, 48, 16, 16, COL_WALL],
-		# Mid stretch (wider pads)
-		[400, 144, 64, 16, COL_FLOOR],
-		[480, 112, 56, 16, COL_METAL],
-		[552, 80, 56, 16, COL_ACCENT],
-		# Stage floor
-		[624, 176, 144, 48, COL_FLOOR],
-		[624, 120, 48, 16, COL_METAL],
-		[688, 144, 56, 16, COL_FLOOR],
-		# Slide tunnel — 20px clearance
-		[800, 176, 144, 48, COL_FLOOR],
-		[800, 108, 144, 48, COL_WALL],
-		# Final stretch continuous (no softlock hole)
-		[944, 160, 192, 64, COL_FLOOR],
 		[-32, 0, 32, 224, COL_WALL],
+		# low path
+		[0, 176, 210, 48, COL_FLOOR],
+		[246, 176, 370, 48, COL_FLOOR],
+		[632, 176, 32, 48, COL_FLOOR],
+		[680, 176, 456, 48, COL_FLOOR],
+		# upper path
+		[56, 144, 64, 16, COL_METAL],
+		[136, 112, 64, 16, COL_FLOOR],
+		[216, 80, 80, 16, COL_ACCENT],
+		[312, 80, 64, 16, COL_METAL],
+		[392, 96, 64, 16, COL_FLOOR],
+		[472, 112, 64, 16, COL_ACCENT],
+		[552, 128, 64, 16, COL_METAL],
+		# wall-jump shaft — 32px open air, mid foothold
+		[616, 24, 16, 152, COL_WALL],
+		[664, 96, 16, 80, COL_WALL],
+		[632, 140, 16, 12, COL_ACCENT],
+		[680, 96, 72, 16, COL_METAL],
+		[768, 128, 64, 16, COL_FLOOR],
+		[848, 160, 64, 16, COL_ACCENT],
+		# sealed helmet room
+		[768, 64, 64, 16, COL_ACCENT],
+		[832, 64, 112, 16, COL_WALL],
+		[832, 0, 128, 16, COL_WALL],
+		[944, 0, 16, 80, COL_WALL],
+		# optional crawl
+		[900, 144, 48, 16, COL_METAL],
+		[948, 112, 48, 16, COL_FLOOR],
+		[996, 108, 72, 48, COL_WALL],
 	]
 
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 
-	# Spike pit fair for touch
 	for i in range(3):
-		_add_spike(256.0 + i * 12.0, 200.0)
+		_add_spike(214.0 + i * 12.0, 200.0)
+	_add_rect_platform(210, 208, 36, 16, COL_WALL)
 
-	# Ambient static pockets (hazard stubs between beats)
-	_add_static_pocket(Vector2(430, 156), 1.6)
-	_add_static_pocket(Vector2(680, 192), 1.4)
-	_add_static_pocket(Vector2(920, 148), 1.8)
+	_add_static_pocket(Vector2(340, 96), 1.6)
+	_add_static_pocket(Vector2(500, 128), 1.5)
+	_add_static_pocket(Vector2(860, 150), 1.7)
 
 	_build_secret_encore_helmet()
 
@@ -125,7 +126,6 @@ func _build_course() -> void:
 	theme_lbl.add_theme_font_size_override("font_size", 7)
 	theme_lbl.modulate = Color(0.65, 0.6, 0.8, 0.7)
 	geometry.add_child(theme_lbl)
-
 
 func _add_static_pocket(pos: Vector2, life: float) -> void:
 	var zone: Area2D = StaticZoneScene.instantiate()
@@ -362,11 +362,10 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 func _build_secret_encore_helmet() -> void:
 	## Alcoba secreta: casco Encore Guard (revela debilidades en HUD).
-	_seal_secret_rect(224.0, 16.0, 320.0, 48.0)
-	_seal_secret_rect(304.0, 48.0, 320.0, 80.0)
+	_seal_secret_rect(832.0, 16.0, 864.0, 64.0)
 	var pickup: Area2D = ArmorPickupScene.instantiate()
 	pickup.name = "EncoreHelmetPickup"
-	pickup.position = Vector2(252.0, 40.0)
+	pickup.position = Vector2(890.0, 46.0)
 	pickup.armor_set = "encore"
 	pickup.armor_piece = "head"
 	pickup.display_name_es = "Casco Encore Guard"
@@ -377,7 +376,6 @@ func _build_secret_encore_helmet() -> void:
 		pickup.get_node("Visual").color = Color(0.8, 0.5, 0.2, 1.0)
 	entities.add_child(pickup)
 	print("LevelStaticShadow: secreto Encore Guard helmet en alcoba x~220")
-
 
 func _seal_secret_rect(x0: float, y0: float, x1: float, y1: float) -> void:
 	## Rellena el hueco con bloques que se ven como la pared. El pickup no se mueve.
@@ -398,10 +396,9 @@ func _add_breakable(x: float, y: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	_add_met(96.0, 176.0, false)
-	_add_met(500.0, 112.0, true)   # invisible between beats
-	_add_met(880.0, 176.0, true)
-
+	_add_met(80.0, 176.0, false)
+	_add_met(400.0, 176.0, true)
+	_add_met(1000.0, 176.0, true)
 
 func _add_met(x: float, floor_y: float, stealth: bool = false) -> void:
 	var met: Area2D = MetBeatScene.instantiate()
@@ -441,8 +438,8 @@ func _add_spike(x: float, y: float) -> void:
 func _add_mid_checkpoints() -> void:
 	## Clear mid-stage markers for static_shadow (touch-visible cyan pillars).
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(432.0, 144.0), "static_shadow", "CK1")
-	CheckpointScript.place(parent_n, Vector2(992.0, 160.0), "static_shadow", "CK2")
+	CheckpointScript.place(parent_n, Vector2(400.0, 176.0), "static_shadow", "CK1")
+	CheckpointScript.place(parent_n, Vector2(1040.0, 176.0), "static_shadow", "CK2")
 
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()

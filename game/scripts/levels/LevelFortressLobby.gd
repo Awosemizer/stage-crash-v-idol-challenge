@@ -60,24 +60,32 @@ func _ready() -> void:
 
 
 func _build_course() -> void:
+	# v0.54 — low path to the door; upper path climbs a short shaft over the spikes.
 	var solids: Array = [
-		# Touch-first lobby — sealed pits, fair jumps, 20px slide
-		[0, 176, 168, 48, COL_FLOOR],
-		[152, 144, 56, 16, COL_NEON],
-		[216, 112, 48, 16, COL_FLOOR],
-		[272, 176, 112, 48, COL_FLOOR],
-		[400, 144, 56, 16, COL_NEON],
-		[464, 176, 176, 48, COL_FLOOR],
-		# Slide tunnel — 20px clearance over continuous floor
-		[480, 108, 128, 48, COL_WALL],
 		[-32, 0, 32, 224, COL_WALL],
+		# low path reaches the arena
+		[0, 176, 168, 48, COL_FLOOR],
+		[168, 208, 32, 16, COL_WALL],
+		[200, 176, 440, 48, COL_FLOOR],
+		# upper path
+		[40, 144, 56, 16, COL_NEON],
+		[112, 112, 56, 16, COL_FLOOR],
+		# short shaft, 36px, then drop back to the door
+		[168, 48, 16, 80, COL_WALL],
+		[220, 64, 16, 64, COL_WALL],
+		[184, 80, 16, 12, COL_NEON],
+		[236, 64, 64, 16, COL_NEON],
+		[316, 112, 56, 16, COL_FLOOR],
+		[388, 144, 56, 16, COL_NEON],
+		# optional crawl before the door — bypass on the roof
+		[430, 144, 48, 16, COL_FLOOR],
+		[478, 112, 48, 16, COL_NEON],
+		[526, 108, 80, 48, COL_WALL],
 	]
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
-	# Narrow spike pit — floor under spikes so fall can't softlock out of bounds
-	_add_rect_platform(160.0, 208.0, 48.0, 16.0, COL_WALL)
-	_add_spike(172.0, 200.0)
-	_add_spike(184.0, 200.0)
+	_add_spike(176.0, 200.0)
+	_add_spike(188.0, 200.0)
 	var theme := Label.new()
 	theme.text = "LOBBY NEON · SYNTHOCORP"
 	theme.position = Vector2(12, 8)
@@ -90,7 +98,6 @@ func _build_course() -> void:
 	lbl.add_theme_font_size_override("font_size", 8)
 	lbl.modulate = COL_NEON
 	geometry.add_child(lbl)
-
 
 func _build_boss_arena() -> void:
 	_add_rect_platform(ARENA_LEFT, ARENA_FLOOR_Y, 304.0, 48.0, COL_ARENA)
@@ -297,8 +304,8 @@ func _add_spike(x: float, y: float) -> void:
 
 func _add_mid_checkpoints() -> void:
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(300.0, 176.0), "fortress_lobby", "CK1")
-	CheckpointScript.place(parent_n, Vector2(520.0, 176.0), "fortress_lobby", "CK2")
+	CheckpointScript.place(parent_n, Vector2(80.0, 176.0), "fortress_lobby", "CK1")
+	CheckpointScript.place(parent_n, Vector2(400.0, 176.0), "fortress_lobby", "CK2")
 
 
 func _spawn_player() -> void:

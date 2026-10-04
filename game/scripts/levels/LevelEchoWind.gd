@@ -60,53 +60,50 @@ func _ready() -> void:
 
 
 func _build_course() -> void:
-	# Torres + plataformas con huecos de wall-jump y corrientes
+	# v0.54 — low path walks the tower bases; upper path rides the lips through wind.
+	# Shaft gap 40px with a mid foothold. Slide crawl is optional.
 	var solids: Array = [
-		# Touch-first layout — sealed pits, fair gaps, 20px slide clearance
-		[0, 176, 176, 48, COL_FLOOR],
-		# Torre 1 + landing pad before spikes
-		[144, 112, 32, 112, COL_TOWER],
-		[144, 96, 56, 16, COL_ACCENT],
-		[208, 144, 56, 16, COL_FLOOR],
-		[264, 160, 40, 16, COL_FLOOR],  # ledge before spike pit
-		# Torre 2 (alta)
-		[320, 64, 32, 160, COL_TOWER],
-		[320, 48, 64, 16, COL_ACCENT],
-		[384, 128, 56, 16, COL_FLOOR],
-		# Wall-jump corridor — 36px gap + mid foothold
-		[448, 80, 16, 128, COL_WALL],
-		[500, 32, 28, 176, COL_WALL],  # inner gap 36px
-		[448, 192, 80, 32, COL_FLOOR],
-		[464, 128, 16, 12, COL_ACCENT],  # mid foothold for touch wall-jumps
-		# Exit ledge (wide)
-		[528, 64, 80, 16, COL_ACCENT],
-		# Secreto casco (alcoba izq)
-		[336, 0, 16, 64, COL_WALL],
-		[352, 0, 112, 16, COL_WALL],
-		[352, 48, 96, 16, COL_ACCENT],
-		[336, 48, 16, 16, COL_WALL],
-		# Soft drops after corridor
-		[624, 96, 56, 16, COL_TOWER],
-		[624, 80, 64, 16, COL_FLOOR],
-		[704, 128, 64, 16, COL_FLOOR],
-		# Slide tunnel — 20px clearance
-		[800, 176, 144, 48, COL_FLOOR],
-		[800, 108, 144, 48, COL_WALL],
-		# Final stretch continuous
-		[944, 160, 192, 64, COL_FLOOR],
 		[-32, 0, 32, 224, COL_WALL],
+		# low path
+		[0, 176, 176, 48, COL_FLOOR],
+		[176, 208, 36, 16, COL_WALL],
+		[212, 176, 332, 48, COL_FLOOR],
+		[560, 176, 40, 48, COL_FLOOR],
+		[616, 176, 520, 48, COL_FLOOR],
+		# upper path lips
+		[80, 144, 64, 16, COL_TOWER],
+		[160, 112, 64, 16, COL_FLOOR],
+		[240, 80, 80, 16, COL_ACCENT],
+		[336, 80, 64, 16, COL_TOWER],
+		[416, 96, 64, 16, COL_FLOOR],
+		[496, 112, 48, 16, COL_ACCENT],
+		# wall-jump shaft — 40px open air, mid foothold
+		[544, 24, 16, 152, COL_WALL],
+		[600, 96, 16, 80, COL_WALL],
+		[560, 136, 16, 12, COL_ACCENT],
+		[616, 96, 80, 16, COL_ACCENT],
+		[712, 128, 64, 16, COL_FLOOR],
+		[792, 160, 64, 16, COL_TOWER],
+		# sealed helmet room
+		[712, 64, 64, 16, COL_ACCENT],
+		[776, 64, 120, 16, COL_WALL],
+		[776, 0, 136, 16, COL_WALL],
+		[896, 0, 16, 80, COL_WALL],
+		# optional crawl
+		[900, 144, 64, 16, COL_TOWER],
+		[964, 112, 48, 16, COL_FLOOR],
+		[1012, 108, 80, 48, COL_WALL],
 	]
 
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 
-	# Spike pit fair for touch (gap ~40px after safe ledge)
 	for i in range(3):
-		_add_spike(288.0 + i * 12.0, 200.0)
+		_add_spike(182.0 + i * 12.0, 200.0)
 
-	_add_wind(200.0, 120.0, Vector2(70.0, -8.0), Vector2(64, 40))
-	_add_wind(400.0, 100.0, Vector2(-55.0, 0.0), Vector2(48, 40))
-	_add_wind(680.0, 100.0, Vector2(70.0, -5.0), Vector2(64, 40))
+	_add_wind(200.0, 96.0, Vector2(48.0, -4.0), Vector2(56, 28))
+	_add_wind(360.0, 64.0, Vector2(-42.0, 0.0), Vector2(56, 28))
+	_add_wind(660.0, 80.0, Vector2(46.0, -4.0), Vector2(56, 28))
 
 	_build_secret_helmet()
 
@@ -123,7 +120,6 @@ func _build_course() -> void:
 	theme_lbl.add_theme_font_size_override("font_size", 7)
 	theme_lbl.modulate = Color(0.5, 0.9, 0.85, 0.7)
 	geometry.add_child(theme_lbl)
-
 
 func _add_wind(x: float, y: float, force: Vector2, size: Vector2) -> void:
 	var wind: Area2D = WindCurrentScene.instantiate()
@@ -371,11 +367,10 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 func _build_secret_helmet() -> void:
 	## Alcoba secreta: casco Stage Flight (radar stub) — 2/3 si ya hay torso.
-	_seal_secret_rect(352.0, 16.0, 464.0, 48.0)
-	_seal_secret_rect(448.0, 48.0, 464.0, 80.0)
+	_seal_secret_rect(776.0, 16.0, 808.0, 64.0)
 	var pickup: Area2D = ArmorPickupScene.instantiate()
 	pickup.name = "FlightHelmetPickup"
-	pickup.position = Vector2(392.0, 40.0)  # alcove floor y=48
+	pickup.position = Vector2(840.0, 46.0)
 	pickup.armor_set = "flight"
 	pickup.armor_piece = "head"
 	pickup.display_name_es = "Casco Stage Flight"
@@ -383,7 +378,6 @@ func _build_secret_helmet() -> void:
 		pickup.toast_hint_es = "Radar Stage Flight (stub)"
 	entities.add_child(pickup)
 	print("LevelEchoWind: secreto Stage Flight (casco) en alcoba x~392")
-
 
 func _seal_secret_rect(x0: float, y0: float, x1: float, y1: float) -> void:
 	## Rellena el hueco con bloques que se ven como la pared. El pickup no se mueve.
@@ -404,10 +398,9 @@ func _add_breakable(x: float, y: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	_add_met(96.0, 176.0)
-	_add_met(400.0, 128.0)
-	_add_met(880.0, 176.0)
-
+	_add_met(80.0, 176.0)
+	_add_met(300.0, 176.0)
+	_add_met(1000.0, 176.0)
 
 func _add_met(x: float, floor_y: float) -> void:
 	var met: Area2D = MetBeatScene.instantiate()
@@ -442,8 +435,8 @@ func _add_spike(x: float, y: float) -> void:
 func _add_mid_checkpoints() -> void:
 	## Clear mid-stage markers for echo_wind (touch-visible cyan pillars).
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(568.0, 64.0), "echo_wind", "CK1")
-	CheckpointScript.place(parent_n, Vector2(992.0, 160.0), "echo_wind", "CK2")
+	CheckpointScript.place(parent_n, Vector2(300.0, 176.0), "echo_wind", "CK1")
+	CheckpointScript.place(parent_n, Vector2(1040.0, 176.0), "echo_wind", "CK2")
 
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()

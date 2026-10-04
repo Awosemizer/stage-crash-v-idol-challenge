@@ -58,44 +58,46 @@ func _ready() -> void:
 
 
 func _build_course() -> void:
-	# Touch-first Beatfire layout (16px grid). Gaps sized for jump ~40px / slide 14px.
-	# [x, y, w, h, color] — top-left of rect in world px
+	# v0.54 — low path on the kiln floor, upper path over the trench and up the chimney.
+	# Pads >= 48px, required gaps <= 36px. Slide crawl is optional. Jump ~40px.
 	var solids: Array = [
-		# Continuous starter floor (no death gap) → stepped climb
-		[0, 176, 192, 48, COL_FLOOR],
-		[176, 160, 64, 16, COL_FLOOR],
-		[240, 144, 64, 16, COL_FLOOR],
-		[288, 160, 40, 16, COL_FLOOR],  # safe ledge before spike pit
-		[368, 160, 80, 64, COL_FLOOR],  # landing after spikes
-		# Wall-jump corridor — 36px gap; secreto sellado a la izquierda
-		[448, 80, 16, 128, COL_WALL],
-		[500, 32, 28, 176, COL_WALL],  # inner gap 36px
-		[448, 192, 80, 32, COL_FLOOR],
-		[464, 128, 16, 12, COL_ACCENT],  # mid foothold for touch wall-jumps
-		# Exit ledge (wide for landing)
-		[528, 80, 80, 16, COL_ACCENT],
-		# Secret alcove Stage Flight (left of corridor)
-		[336, 16, 16, 80, COL_WALL],
-		[352, 16, 112, 16, COL_WALL],
-		[352, 80, 96, 16, COL_ACCENT],
-		[336, 80, 16, 16, COL_WALL],
-		# Soft drops after corridor (smaller falls, wider pads)
-		[624, 112, 64, 16, COL_FLOOR],
-		[704, 144, 64, 16, COL_FLOOR],
-		# Slide tunnel — 20px clearance (standing 28 won't fit; slide 14 OK)
-		[800, 176, 144, 48, COL_FLOOR],
-		[800, 108, 144, 48, COL_WALL],
-		# Final stretch toward arena (continuous, no softlock holes)
-		[944, 160, 192, 64, COL_FLOOR],
 		[-32, 0, 32, 224, COL_WALL],
+		# low path
+		[0, 176, 192, 48, COL_FLOOR],
+		[192, 208, 36, 16, COL_WALL],
+		[228, 176, 220, 48, COL_FLOOR],
+		[464, 176, 36, 48, COL_FLOOR],
+		[500, 176, 300, 48, COL_FLOOR],
+		[800, 176, 144, 48, COL_FLOOR],
+		[944, 176, 192, 48, COL_FLOOR],
+		# upper path skips the spike trench
+		[64, 144, 64, 16, COL_ACCENT],
+		[144, 112, 80, 16, COL_FLOOR],
+		[240, 144, 64, 16, COL_ACCENT],
+		# wall-jump shaft — 36px between inner walls, mid foothold
+		[448, 32, 16, 144, COL_WALL],
+		[500, 96, 16, 80, COL_WALL],
+		[464, 128, 16, 12, COL_ACCENT],
+		# upper path after the climb, then a stair back down
+		[516, 96, 80, 16, COL_ACCENT],
+		[596, 128, 80, 16, COL_FLOOR],
+		[692, 160, 80, 16, COL_ACCENT],
+		# sealed armor room off the catwalk (not on the first screen)
+		[612, 64, 80, 16, COL_ACCENT],
+		[692, 64, 128, 16, COL_WALL],
+		[692, 0, 144, 16, COL_WALL],
+		[820, 0, 16, 80, COL_WALL],
+		# optional slide — 20px crawl, roof is the bypass
+		[688, 144, 64, 16, COL_ACCENT],
+		[752, 112, 48, 16, COL_FLOOR],
+		[800, 108, 144, 48, COL_WALL],
 	]
 
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 
-	# Spike pit: 3 spikes in a 40px gap (x=328..368) — fair on touch
 	for i in range(3):
-		_add_spike(328.0 + i * 12.0, 200.0)
+		_add_spike(198.0 + i * 12.0, 200.0)
 
 	_build_secret_flight()
 
@@ -105,7 +107,6 @@ func _build_course() -> void:
 	label.add_theme_font_size_override("font_size", 8)
 	label.modulate = Color(1.0, 0.55, 0.25)
 	geometry.add_child(label)
-
 
 func _build_boss_arena() -> void:
 	# Arena floor + ceiling trim + right wall
@@ -344,16 +345,15 @@ func _build_secret_flight() -> void:
 	## Alcoba secreta arriba-izq del corredor wall-jump.
 	## Entrada: subir el corredor y romper los bloques soft a la izquierda.
 	# Breakables aligned with left wall gap (reachable from mid foothold / wall-slide)
-	_seal_secret_rect(352.0, 32.0, 464.0, 80.0)
+	_seal_secret_rect(692.0, 16.0, 724.0, 64.0)
 	var pickup: Area2D = ArmorPickupScene.instantiate()
 	pickup.name = "FlightTorsoPickup"
-	pickup.position = Vector2(392.0, 68.0)
+	pickup.position = Vector2(760.0, 46.0)
 	pickup.armor_set = "flight"
 	pickup.armor_piece = "torso"
 	pickup.display_name_es = "Torso Stage Flight"
 	entities.add_child(pickup)
 	print("Level01: secreto Stage Flight (torso) en alcoba x~392")
-
 
 func _seal_secret_rect(x0: float, y0: float, x1: float, y1: float) -> void:
 	## Rellena el hueco con bloques que se ven como la pared. El pickup no se mueve.
@@ -376,9 +376,8 @@ func _add_breakable(x: float, y: float) -> void:
 func _spawn_enemies() -> void:
 	# Suelo de cada plataforma (y = top del sólido). Met anclado por la base.
 	_add_met(96.0, 176.0)
-	_add_met(260.0, 144.0)
-	_add_met(880.0, 176.0)
-
+	_add_met(340.0, 176.0)
+	_add_met(1020.0, 176.0)
 
 func _add_met(x: float, floor_y: float) -> void:
 	var met: Area2D = MetBeatScene.instantiate()
@@ -413,8 +412,8 @@ func _add_spike(x: float, y: float) -> void:
 func _add_mid_checkpoints() -> void:
 	## Clear mid-stage markers for beatfire (touch-visible cyan pillars).
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(568.0, 80.0), "beatfire", "CK1")
-	CheckpointScript.place(parent_n, Vector2(992.0, 160.0), "beatfire", "CK2")
+	CheckpointScript.place(parent_n, Vector2(360.0, 176.0), "beatfire", "CK1")
+	CheckpointScript.place(parent_n, Vector2(1040.0, 176.0), "beatfire", "CK2")
 
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()
