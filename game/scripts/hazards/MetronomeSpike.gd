@@ -14,6 +14,7 @@ var _extended := false
 var _hurt_cd := 0.0
 
 @onready var visual: Polygon2D = $Polygon2D
+@onready var spike_sprite: Sprite2D = $SpikeSprite
 @onready var warn: ColorRect = $Warn
 @onready var collision: CollisionShape2D = $CollisionShape2D
 
@@ -50,18 +51,21 @@ func _physics_process(delta: float) -> void:
 
 func _refresh_state(warning: bool = false) -> void:
 	if visual:
+		visual.visible = false
+	if spike_sprite:
+		spike_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		if _extended:
-			visual.color = Color(0.9, 0.25, 0.3, 1.0)
-			visual.scale = Vector2(1.0, 1.0)
-			visual.position = Vector2.ZERO
+			spike_sprite.modulate = Color(1, 1, 1, 1)
+			spike_sprite.scale = Vector2(0.5, 0.5)
+			spike_sprite.position = Vector2.ZERO
 		elif warning:
-			visual.color = Color(1.0, 0.78, 0.22, 0.9)
-			visual.scale = Vector2(1.0, 0.62)
-			visual.position = Vector2(0, 3)
+			spike_sprite.modulate = Color(1.35, 1.05, 0.45, 1)
+			spike_sprite.scale = Vector2(0.5, 0.31)
+			spike_sprite.position = Vector2(0, 3)
 		else:
-			visual.color = Color(0.45, 0.4, 0.5, 0.55)
-			visual.scale = Vector2(1.0, 0.35)
-			visual.position = Vector2(0, 5)
+			spike_sprite.modulate = Color(0.75, 0.75, 0.8, 0.65)
+			spike_sprite.scale = Vector2(0.5, 0.18)
+			spike_sprite.position = Vector2(0, 5)
 	if collision:
 		collision.disabled = not _extended
 	if warn:

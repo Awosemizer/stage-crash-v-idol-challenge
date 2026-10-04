@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://bmetronomespike01"]
+[gd_scene load_steps=4 format=3 uid="uid://bmetronomespike01"]
 
 [ext_resource type="Script" path="res://scripts/hazards/MetronomeSpike.gd" id="1_ms"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tiles/spike.png" id="2_spike"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ms"]
 size = Vector2(14, 12)
@@ -19,8 +20,15 @@ offset_bottom = 8.0
 color = Color(0.95, 0.85, 0.3, 0.4)
 
 [node name="Polygon2D" type="Polygon2D" parent="."]
+visible = false
 color = Color(0.45, 0.4, 0.5, 0.55)
 polygon = PackedVector2Array(-8, 8, 0, -10, 8, 8)
+
+[node name="SpikeSprite" type="Sprite2D" parent="."]
+texture_filter = 1
+texture = ExtResource("2_spike")
+centered = true
+scale = Vector2(0.5, 0.5)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, 1)

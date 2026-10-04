@@ -52,6 +52,7 @@ func _physics_process(delta: float) -> void:
 		else:
 			visual.color = Color(0.95, 0.45, 0.75, 0.7 + 0.25 * absf(sin(_t * 5.0)))
 			visual.scale = Vector2.ONE
+		ArtKit.dress_hazard(visual, "res://assets/sprites/tiles/hazard_petal.png")
 
 
 func _on_body_entered(body: Node) -> void:

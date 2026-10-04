@@ -20,6 +20,7 @@ polygon = PackedVector2Array(-8, 8, 0, -8, 8, 8)
 texture_filter = 1
 texture = ExtResource("2_spike")
 centered = true
+scale = Vector2(0.5, 0.5)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, 2)

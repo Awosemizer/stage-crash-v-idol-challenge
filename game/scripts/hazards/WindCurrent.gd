@@ -22,12 +22,14 @@ func _ready() -> void:
 	if visual:
 		visual.color = visual_tint
 		visual.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		ArtKit.dress_hazard(visual, "res://assets/sprites/tiles/hazard_wind.png")
 
 
 func _physics_process(_delta: float) -> void:
 	# Pulse visual
 	if visual:
 		visual.color.a = 0.18 + 0.14 * absf(sin(Time.get_ticks_msec() * 0.006))
+		ArtKit.dress_hazard(visual, "res://assets/sprites/tiles/hazard_wind.png")
 	for id in _bodies.keys():
 		var body: Node = _bodies[id]
 		if body == null or not is_instance_valid(body):

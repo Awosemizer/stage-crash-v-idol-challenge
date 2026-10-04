@@ -204,6 +204,64 @@ const RUN_FRAMES := 8
 const ShotPixelScript := preload("res://scripts/art/ShotPixel.gd")
 
 
+
+static func dress_hazard(visual: ColorRect, tex_path: String) -> void:
+	## Baldosa pixel del peligro. El ColorRect queda como tinte ligero (aviso ámbar / on-off).
+	if visual == null:
+		return
+	var tex := load_tex(tex_path)
+	if tex == null:
+		return
+	var holder := visual.get_node_or_null("HazardTiles") as Node2D
+	if holder == null:
+		holder = Node2D.new()
+		holder.name = "HazardTiles"
+		holder.z_index = 0
+		visual.add_child(holder)
+	var tint := visual.get_node_or_null("ArtTint") as ColorRect
+	if tint == null:
+		tint = ColorRect.new()
+		tint.name = "ArtTint"
+		tint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		tint.z_index = 2
+		visual.add_child(tint)
+	var sz := visual.size
+	if sz.x < 1.0 or sz.y < 1.0:
+		return
+	var cell := 16.0
+	var cols := maxi(1, int(ceil(sz.x / cell)))
+	var rows := maxi(1, int(ceil(sz.y / cell)))
+	var tw := sz.x / float(cols)
+	var th := sz.y / float(rows)
+	var need := cols * rows
+	while holder.get_child_count() < need:
+		var spr := Sprite2D.new()
+		spr.centered = true
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		holder.add_child(spr)
+	var i := 0
+	var twf := float(tex.get_width())
+	var thf := float(tex.get_height())
+	for r in rows:
+		for c in cols:
+			var tile := holder.get_child(i) as Sprite2D
+			tile.visible = true
+			tile.texture = tex
+			tile.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			tile.position = Vector2(c * tw + tw * 0.5, r * th + th * 0.5)
+			tile.scale = Vector2(tw / twf, th / thf)
+			i += 1
+	while i < holder.get_child_count():
+		(holder.get_child(i) as CanvasItem).visible = false
+		i += 1
+	tint.position = Vector2.ZERO
+	tint.size = sz
+	var col := visual.color
+	col.a = clampf(col.a * 0.55, 0.1, 0.38)
+	tint.color = col
+	visual.self_modulate = Color(1, 1, 1, 0)
+
+
 static func skin_projectile(visual: CanvasItem, path: String, frame: int = 0, frame_w: int = 0) -> void:
 	## Replace a flat ColorRect with a nearest-neighbor sprite. Collision stays put.
 	if visual == null or not (visual is ColorRect):

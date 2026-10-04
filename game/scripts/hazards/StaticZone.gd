@@ -51,9 +51,9 @@ func _physics_process(delta: float) -> void:
 			visual.scale = Vector2.ONE
 			visual.color = Color(0.85, 0.85, 0.95, 0.2 + 0.35 * absf(sin(_t * 28.0)))
 		visual.position.x = -visual.size.x * 0.5 + sin(_t * 55.0) * 1.5
+		ArtKit.dress_hazard(visual, "res://assets/sprites/tiles/hazard_static.png")
 	if flicker:
-		flicker.visible = int(_t * 20.0) % 3 != 0
-		flicker.color.a = 0.15 + 0.4 * absf(sin(_t * 60.0))
+		flicker.visible = false
 	if _life <= 0.0:
 		queue_free()
 		return

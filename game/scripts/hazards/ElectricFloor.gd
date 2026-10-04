@@ -58,13 +58,13 @@ func _refresh_state() -> void:
 		else:
 			visual.color = Color(0.25, 0.2, 0.35, 0.22)
 	if spark:
-		spark.visible = _active or _warning
+		# El pulso ámbar basta. El texto ⚡⚡ / ! no se muestra.
+		spark.visible = false
 		if _warning and not _active:
 			spark.text = "!"
-			spark.modulate = Color(1.0, 0.85, 0.3, 0.95)
 		else:
 			spark.text = "⚡⚡"
-			spark.modulate = Color(1.0, 1.0, 0.4, 0.95) if _active else Color(0.4, 0.4, 0.5, 0.3)
+	ArtKit.dress_hazard(visual, "res://assets/sprites/tiles/hazard_electric.png")
 
 
 func is_electrified() -> bool:

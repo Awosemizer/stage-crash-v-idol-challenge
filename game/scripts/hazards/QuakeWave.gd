@@ -54,6 +54,8 @@ func _apply_look() -> void:
 			collision.shape = shape
 		shape.size = Vector2(28, 12)
 		collision.position = Vector2(0, -6)
+	if visual:
+		ArtKit.dress_hazard(visual, "res://assets/sprites/tiles/hazard_quake.png")
 
 
 func _physics_process(delta: float) -> void:
@@ -70,6 +72,7 @@ func _physics_process(delta: float) -> void:
 			visual.color = Color(0.75, 0.45, 0.15, 0.45 + 0.35 * absf(sin(Time.get_ticks_msec() * 0.025)))
 		visual.size.x = 24.0 + 8.0 * absf(sin(Time.get_ticks_msec() * 0.02))
 		visual.position.x = -visual.size.x * 0.5
+		ArtKit.dress_hazard(visual, "res://assets/sprites/tiles/hazard_quake.png")
 	if _life <= 0.0:
 		queue_free()
 		return
