@@ -1451,7 +1451,7 @@ func _update_visual() -> void:
 		visual.texture = _tex_run
 		visual.region_enabled = true
 		# ArtKit.RUN_FRAMES was the 8-frame cycle. This sheet is walk + run.
-		_run_frame = int(_anim_time * 8.0) % 2
+		_run_frame = int(_anim_time * 8.0) % 4
 		visual.region_rect = Rect2(_run_frame * FRAME_W, 0, FRAME_W, FRAME_H)
 	elif _tex_idle:
 		visual.texture = _tex_idle
@@ -1831,17 +1831,29 @@ func _ensure_armor_overlays() -> void:
 		_pads.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		_pads.texture = load("res://assets/sprites/player/armor_shoulders.png")
 		_pads.position = Vector2(0, -8)
-		_pads.z_index = 1
+		_pads.z_index = 2
 		_pads.visible = false
 		add_child(_pads)
 
 
 func _sync_armor_overlays() -> void:
-	# 64px wing/shoulder art was drawn for the procedural sprites and would cover these sheets.
+	# Wings / pads follow the body. Hidden on slide (that pose doesn't match) and when the torso isn't equipped.
+	var base := visual.position if visual else Vector2.ZERO
+	var sc := Vector2(_visual_scale, _visual_scale)
 	if _wings:
-		_wings.visible = false
+		_wings.visible = _has_flight_torso and not _is_sliding
+		_wings.scale = sc
+		_wings.flip_h = facing < 0
+		_wings.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_wings.z_index = -1
+		_wings.position = base + Vector2(-6.0 * float(facing), 0.0)
 	if _pads:
-		_pads.visible = false
+		_pads.visible = _has_encore_torso and not _is_sliding
+		_pads.scale = sc
+		_pads.flip_h = facing < 0
+		_pads.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_pads.z_index = 2
+		_pads.position = base + Vector2(0.0, -7.0)
 
 
 
