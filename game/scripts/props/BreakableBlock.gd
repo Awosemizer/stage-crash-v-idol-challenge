@@ -8,6 +8,10 @@ signal broken
 
 @export var max_hp := 1
 @export var block_color := Color(0.35, 0.15, 0.18, 1.0)
+## v0.57: false dentro de una pared (sin línea clara que delate el sello).
+@export var show_top_edge := true
+## v0.57: misma variante y tinte que add_tiled_platform_visuals (columna dentro de la pared).
+@export var tile_variant := 0
 
 var hp := 1
 var _alive := true
@@ -45,7 +49,8 @@ func _build_wall_visual() -> void:
 	holder.z_index = 0
 	add_child(holder)
 	move_child(holder, 0)
-	var spr := ArtKit.make_tile_sprite(ArtKit.theme_from_color(block_color), 0)
+	var spr := ArtKit.make_tile_sprite(ArtKit.theme_from_color(block_color), tile_variant)
+	spr.modulate = Color.WHITE.lerp(block_color, ArtKit.TILE_TINT)
 	spr.position = Vector2.ZERO
 	holder.add_child(spr)
 	var edge := ColorRect.new()
@@ -54,6 +59,7 @@ func _build_wall_visual() -> void:
 	edge.size = Vector2(16, 2)
 	edge.position = Vector2(-8, -8)
 	edge.color = block_color.lightened(0.35)
+	edge.visible = show_top_edge
 	holder.add_child(edge)
 	# Marca diminuta. Solo visible con el casco Flight equipado.
 	_hint_blip = ColorRect.new()

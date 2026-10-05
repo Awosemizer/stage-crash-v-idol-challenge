@@ -4,6 +4,8 @@ extends Object
 ## Original SynthoCorp / Miku×Teto look — not Capcom assets.
 
 const TILE_SIZE := 16
+## v0.57: tinte de baldosa por color de etapa (antes 0.25) — cada etapa con su paleta.
+const TILE_TINT := 0.42
 
 const BOSS_TEX := {
 	"beatfire": "res://assets/sprites/bosses/beatfire.png",
@@ -17,6 +19,19 @@ const BOSS_TEX := {
 	"core9": "res://assets/sprites/bosses/core9.png",
 	"overdub": "res://assets/sprites/bosses/overdub.png",
 	"refrain": "res://assets/sprites/bosses/refrain.png",
+}
+
+## v0.57: atenuación por tema de la pintura de fondo (más oscuro = más contraste con el suelo).
+const STAGE_BG_DIM := {
+	"beatfire": Color(0.66, 0.62, 0.66),
+	"glitch_ice": Color(0.62, 0.68, 0.76),
+	"bassquake": Color(0.68, 0.64, 0.7),
+	"echo_wind": Color(0.7, 0.74, 0.8),
+	"neon_volt": Color(0.66, 0.66, 0.78),
+	"metronome": Color(0.68, 0.68, 0.7),
+	"chorus_bloom": Color(0.68, 0.7, 0.72),
+	"static_shadow": Color(0.66, 0.62, 0.74),
+	"fortress": Color(0.62, 0.58, 0.7),
 }
 
 const COLOR_TO_THEME := {
@@ -109,7 +124,7 @@ static func add_tiled_platform_visuals(body: Node2D, w: float, h: float, color: 
 			spr.position = origin + Vector2(col * tw + tw * 0.5, row * th + th * 0.5)
 			spr.scale = Vector2(tw / float(TILE_SIZE), th / float(TILE_SIZE))
 			# Mild stage tint. The tile's own cyan edge stays visible (no TopEdge strip).
-			spr.modulate = Color.WHITE.lerp(color, 0.25)
+			spr.modulate = Color.WHITE.lerp(color, TILE_TINT)
 			holder.add_child(spr)
 
 
@@ -328,8 +343,13 @@ static func setup_stage_parallax(parallax_root: Node2D, theme: String, level_wid
 	var painted := load_tex(painted_path)
 	if painted:
 		var far := _make_painted_bg("ParallaxFar", painted, level_width, stage_height)
+		# v0.57: pintura atenuada para que plataformas, Mets y disparos se lean primero.
+		far.modulate = STAGE_BG_DIM.get(t, Color(0.72, 0.72, 0.8))
 		scroller.add_child(far)
 		scroller.far_layer = far
+		# Bruma inferior fija: la pintura se funde con el suelo, sensación de sala.
+		if stage_height <= 240.0:
+			scroller.add_child(_make_floor_haze(level_width, stage_height))
 		return
 
 	var far_path := "res://assets/sprites/bg/parallax_%s_far.png" % t
@@ -357,7 +377,9 @@ static func _make_painted_bg(layer_name: String, tex: Texture2D, level_width: fl
 	holder.z_index = 0
 	var src_h := float(tex.get_height())
 	var src_w := float(tex.get_width())
-	var s := stage_height / src_h if src_h > 0.0 else 1.0
+	# v0.57: la pintura sube 32px por encima de y=0 (la cámara ve un poco más arriba).
+	var top_pad := 32.0
+	var s := (stage_height + top_pad + 16.0) / src_h if src_h > 0.0 else 1.0
 	var tile_w := src_w * s
 	if tile_w < 1.0:
 		tile_w = 1.0
@@ -369,10 +391,37 @@ static func _make_painted_bg(layer_name: String, tex: Texture2D, level_width: fl
 		var spr := Sprite2D.new()
 		spr.texture = tex
 		spr.centered = false
-		spr.position = Vector2(start_x + float(i) * tile_w, 0.0)
+		spr.position = Vector2(start_x + float(i) * tile_w, -top_pad)
 		spr.scale = Vector2(s, s)
-		spr.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		# v0.57: espejo alterno → sin costura visible entre copias.
+		spr.flip_h = (i % 2) == 1
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		holder.add_child(spr)
+	return holder
+
+
+static func _make_floor_haze(level_width: float, stage_height: float) -> Node2D:
+	## Degradado vertical (transparente arriba → oscuro abajo) en todo el ancho del nivel.
+	var holder := Node2D.new()
+	holder.name = "FloorHaze"
+	holder.z_index = 2
+	var g := Gradient.new()
+	g.set_color(0, Color(0.03, 0.02, 0.06, 0.0))
+	g.set_color(1, Color(0.03, 0.02, 0.06, 0.55))
+	g.add_point(0.55, Color(0.03, 0.02, 0.06, 0.08))
+	var gt := GradientTexture2D.new()
+	gt.gradient = g
+	gt.fill_from = Vector2(0, 0)
+	gt.fill_to = Vector2(0, 1)
+	gt.width = 4
+	gt.height = 64
+	var rect := TextureRect.new()
+	rect.texture = gt
+	rect.stretch_mode = TextureRect.STRETCH_SCALE
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.position = Vector2(-64.0, 0.0)
+	rect.size = Vector2(level_width + 512.0, minf(stage_height, 224.0))
+	holder.add_child(rect)
 	return holder
 
 

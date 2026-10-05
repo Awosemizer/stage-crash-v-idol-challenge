@@ -193,7 +193,7 @@ func _build_course() -> void:
 
 	var theme_lbl := Label.new()
 	theme_lbl.text = "SUBWOOFER INDUSTRIAL"
-	theme_lbl.position = Vector2(16, 8)
+	theme_lbl.position = Vector2(132, 40)  # v0.57: fuera del HUD
 	theme_lbl.add_theme_font_size_override("font_size", 7)
 	theme_lbl.modulate = Color(0.9, 0.65, 0.3, 0.75)
 	geometry.add_child(theme_lbl)
@@ -428,7 +428,7 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 	lbl.add_theme_font_size_override("font_size", 12)
 	lbl.modulate = color
 	lbl.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-	lbl.position = Vector2(48, 24)
+	lbl.position = Vector2(119, 36)
 	lbl.size = Vector2(160, 20)
 	layer.add_child(lbl)
 	get_tree().create_timer(duration).timeout.connect(func () -> void:
@@ -439,7 +439,7 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 func _build_secret_encore_torso() -> void:
 	## Alcoba secreta dentro de la pared derecha del pozo de wall-jump.
-	_seal_secret_rect(1364.0, 96.0, 1380.0, 128.0)
+	_seal_secret_rect(1364.0, 96.0, 1412.0, 128.0)
 	var pickup: Area2D = ArmorPickupScene.instantiate()
 	pickup.name = "EncoreTorsoPickup"
 	pickup.position = Vector2(1396.0, 110.0)
@@ -451,6 +451,9 @@ func _build_secret_encore_torso() -> void:
 		pickup.get_node("Glow").color = Color(0.85, 0.55, 0.25, 0.4)
 	if pickup.has_node("Visual"):
 		pickup.get_node("Visual").color = Color(0.8, 0.5, 0.2, 1.0)
+	pickup.z_index = -2  # detrás de los bloques: la alcoba no se ve
+	var _seal_lbl = pickup.get_node_or_null("Label")
+	if _seal_lbl: _seal_lbl.visible = false
 	entities.add_child(pickup)
 	print("LevelBassquake: secreto Encore Guard torso en alcoba x~220")
 
@@ -460,15 +463,17 @@ func _seal_secret_rect(x0: float, y0: float, x1: float, y1: float) -> void:
 	while x < x1 - 0.1:
 		var y := y0 + 8.0
 		while y < y1 - 0.1:
-			_add_breakable(x, y)
+			_add_breakable(x, y, int(round((x - 8.0 - x0) / 16.0)) % 3)
 			y += 16.0
 		x += 16.0
 
 
-func _add_breakable(x: float, y: float) -> void:
+func _add_breakable(x: float, y: float, variant: int = 0) -> void:
 	var block: StaticBody2D = BreakableBlockScene.instantiate()
+	block.set("tile_variant", variant)
 	block.position = Vector2(x, y)
 	block.set("block_color", COL_WALL)
+	block.set("show_top_edge", false)
 	geometry.add_child(block)
 
 

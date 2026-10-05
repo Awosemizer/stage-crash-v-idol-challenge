@@ -1028,6 +1028,9 @@ func _try_bind_boss() -> void:
 			continue
 		if "hp" in b and int(b.hp) <= 0:
 			continue
+		# v0.57: la barra del jefe aparece cuando empieza la pelea, no en todo el nivel.
+		if b != _boss_bound and "_active" in b and not bool(b.get("_active")):
+			continue
 		alive = b
 		break
 	if alive == _boss_bound:

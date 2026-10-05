@@ -118,15 +118,18 @@ func _build_course() -> void:
 	_add_seal(2344.0, 176.0)
 	_add_seal(2360.0, 176.0)
 	# Tank alcove — blocks look like the wall.
-	_seal_secret_rect(1076.0, 96.0, 1092.0, 128.0)
+	_seal_secret_rect(1076.0, 96.0, 1124.0, 128.0)
 	var tank: Area2D = EnergyTankScene.instantiate()
 	tank.name = "ArchiveTank"
 	tank.position = Vector2(1108.0, 110.0)
+	tank.z_index = -2  # detrás de los bloques: la alcoba no se ve
+	var _seal_lbl = tank.get_node_or_null("Label")
+	if _seal_lbl: _seal_lbl.visible = false
 	entities.add_child(tank)
 
 	var theme := Label.new()
 	theme.text = "VOICE ARCHIVE · SELLOS VOCALES"
-	theme.position = Vector2(12, 20)
+	theme.position = Vector2(132, 40)  # v0.57: fuera del HUD
 	theme.add_theme_font_size_override("font_size", 7)
 	theme.modulate = Color(0.55, 0.85, 1.0, 0.8)
 	geometry.add_child(theme)
@@ -166,15 +169,17 @@ func _seal_secret_rect(x0: float, y0: float, x1: float, y1: float) -> void:
 	while x < x1 - 0.1:
 		var y := y0 + 8.0
 		while y < y1 - 0.1:
-			_add_breakable(x, y)
+			_add_breakable(x, y, int(round((x - 8.0 - x0) / 16.0)) % 3)
 			y += 16.0
 		x += 16.0
 
 
-func _add_breakable(x: float, y: float) -> void:
+func _add_breakable(x: float, y: float, variant: int = 0) -> void:
 	var block: StaticBody2D = BreakableBlockScene.instantiate()
+	block.set("tile_variant", variant)
 	block.position = Vector2(x, y)
 	block.set("block_color", COL_WALL)
+	block.set("show_top_edge", false)
 	geometry.add_child(block)
 
 
@@ -223,7 +228,7 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_size_override("font_size", 10)
 	lbl.modulate = color
-	lbl.position = Vector2(28, 28)
+	lbl.position = Vector2(99, 36)
 	lbl.size = Vector2(200, 18)
 	layer.add_child(lbl)
 	get_tree().create_timer(duration).timeout.connect(func () -> void:

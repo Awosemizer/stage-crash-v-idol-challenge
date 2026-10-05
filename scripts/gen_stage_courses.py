@@ -102,7 +102,7 @@ def s_shaft(c, x0):
     c.cat(x0 + 276, 112, 48)
     c.cat(x0 + 340, 144, 48)
     if c.want_secret:
-        c.secret = ((x0 + 148, 96, x0 + 164, 128), (x0 + 180, 110))
+        c.secret = ((x0 + 148, 96, x0 + 196, 128), (x0 + 180, 110))  # whole alcove filled
     c.met(x0 + 420)
     return 448
 
@@ -451,6 +451,9 @@ def gen_archive():
           "\tvar tank: Area2D = EnergyTankScene.instantiate()",
           "\ttank.name = \"ArchiveTank\"",
           f"\ttank.position = Vector2({px}.0, {py}.0)",
+          "\ttank.z_index = -2  # detrás de los bloques: la alcoba no se ve",
+          "\tvar _seal_lbl = tank.get_node_or_null(\"Label\")",
+          "\tif _seal_lbl: _seal_lbl.visible = false",
           "\tentities.add_child(tank)", ""]
     body = "\n".join(L) + "\n"
     for blk in label_blocks:
@@ -464,10 +467,10 @@ def gen_archive():
             "func _seal_secret_rect(x0: float, y0: float, x1: float, y1: float) -> void:\n"
             "\t## Rellena el hueco con bloques que se ven como la pared.\n"
             "\tvar x := x0 + 8.0\n\twhile x < x1 - 0.1:\n\t\tvar y := y0 + 8.0\n"
-            "\t\twhile y < y1 - 0.1:\n\t\t\t_add_breakable(x, y)\n\t\t\ty += 16.0\n\t\tx += 16.0\n\n\n"
-            "func _add_breakable(x: float, y: float) -> void:\n"
-            "\tvar block: StaticBody2D = BreakableBlockScene.instantiate()\n"
-            "\tblock.position = Vector2(x, y)\n\tblock.set(\"block_color\", COL_WALL)\n"
+            "\t\twhile y < y1 - 0.1:\n\t\t\t_add_breakable(x, y, int(round((x - 8.0 - x0) / 16.0)) % 3)\n\t\t\ty += 16.0\n\t\tx += 16.0\n\n\n"
+            "func _add_breakable(x: float, y: float, variant: int = 0) -> void:\n"
+            "\tvar block: StaticBody2D = BreakableBlockScene.instantiate()\n\tblock.set(\"tile_variant\", variant)\n"
+            "\tblock.position = Vector2(x, y)\n\tblock.set(\"block_color\", COL_WALL)\n\tblock.set(\"show_top_edge\", false)\n"
             "\tgeometry.add_child(block)\n\n\n")
         src = src.replace("func _add_seal(", helpers + "func _add_seal(", 1)
     if "func _add_spike(" not in src:

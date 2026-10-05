@@ -118,7 +118,7 @@ func _build_course() -> void:
 
 	var theme := Label.new()
 	theme.text = "LOBBY NEON · SYNTHOCORP"
-	theme.position = Vector2(12, 8)
+	theme.position = Vector2(132, 40)  # v0.57: fuera del HUD
 	theme.add_theme_font_size_override("font_size", 7)
 	theme.modulate = Color(0.95, 0.5, 1.0, 0.75)
 	geometry.add_child(theme)
@@ -295,7 +295,7 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_size_override("font_size", 12)
 	lbl.modulate = color
-	lbl.position = Vector2(40, 24)
+	lbl.position = Vector2(111, 36)
 	lbl.size = Vector2(176, 20)
 	layer.add_child(lbl)
 	get_tree().create_timer(duration).timeout.connect(func () -> void:

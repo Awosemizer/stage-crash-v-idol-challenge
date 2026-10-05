@@ -23,6 +23,8 @@ Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → 
 
 **v0.40:** Player pixel pass — 32px Miku (cyan twin-tails, buster pose) and Teto (red drills, saber pose): idle, 8-frame run, jump, wall, slide. Flight wings and Encore shoulders overlay when a piece is owned. Hitboxes unchanged.
 **v0.41:** Robot Master pixel pass — 48×64 idle + attack for the 8 stages (fire, ice, quake, wind, neon, metronome, bloom, static), CORE-9 hologram, 16×16 stage floors. Combat numbers and hitboxes unchanged.
+**v0.57:** fondos más legibles: la pintura de cada etapa se atenúa, se repite en espejo (sin costuras), cubre toda la pantalla y se funde con el suelo; las baldosas toman el color de la etapa. La barra del jefe solo aparece al empezar la pelea. Los secretos quedan tapados por completo (la alcoba ya no se ve a través de la pared). Carteles de etapa y avisos fuera del HUD.
+
 **v0.56:** las 8 etapas, el Lobby y el Voice Archive son ~2.5× más largos: un tramo por pantalla (fosos con pinchos, islas sobre el vacío, escaleras, el truco de cada etapa), un pozo de wall-jump con repisa, pasarelas que se cruzan desde abajo, checkpoint en cada tramo y 6–7 Met-Beats. Arreglado: el pozo de 0.54 cerraba el camino.
 **v0.55:** Core Shaft se sube en tres tramos (foso con Met abajo o pasarela arriba, pozo de wall-jump, pasarelas que se cruzan desde abajo) y la arena de CORE-9 tiene tres repisas para esquivar.
 **v0.54:** stages have a low path, an upper path, and a hidden armor wall.

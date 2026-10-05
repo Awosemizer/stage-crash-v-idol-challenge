@@ -165,7 +165,7 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_size_override("font_size", 11)
 	lbl.modulate = color
-	lbl.position = Vector2(28, 44)
+	lbl.position = Vector2(99, 44)
 	lbl.size = Vector2(200, 18)
 	_phase_banner.add_child(lbl)
 	var layer_ref := _phase_banner
