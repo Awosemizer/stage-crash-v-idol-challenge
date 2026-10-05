@@ -1,6 +1,8 @@
 extends Node2D
 ## Heart CORE-9 — touch-first final arena.
 ## Heart of CORE-9 — arena final. Tras victoria → Ending.
+## v0.55: suelo + tres repisas (32px por escalón) para esquivar ondas y notas.
+## Las repisas quedan bajo la línea de tiro de CORE-9: no hay rincón seguro.
 
 const PlayerScene := preload("res://scenes/player/Player.tscn")
 const TouchControlsScene := preload("res://scenes/ui/TouchControls.tscn")
@@ -14,7 +16,7 @@ const COL_WALL := Color(0.1, 0.05, 0.16, 1.0)
 const COL_ACCENT := Color(0.9, 0.4, 1.0, 1.0)
 const COL_BG := Color(0.07, 0.02, 0.12, 1.0)
 
-const LEVEL_RIGHT := 384.0
+const LEVEL_RIGHT := 416.0
 const FLOOR_Y := 176.0
 
 @onready var geometry: Node2D = $Geometry
@@ -49,18 +51,16 @@ func _ready() -> void:
 func _build_arena() -> void:
 	_add_rect_platform(0, FLOOR_Y, LEVEL_RIGHT, 48, COL_FLOOR)
 	_add_rect_platform(0, 0, LEVEL_RIGHT, 20, COL_WALL)
-	_add_rect_platform(-16, 0, 24, 224, COL_WALL)
-	_add_rect_platform(LEVEL_RIGHT - 8, 0, 24, 224, COL_WALL)
-	# Pads above touch UI zone
-	_add_rect_platform(40, 112, 56, 12, COL_ACCENT)
-	_add_rect_platform(LEVEL_RIGHT - 96, 112, 56, 12, COL_ACCENT)
-
-	var theme := Label.new()
-	theme.text = "HEART OF CORE-9"
-	theme.position = Vector2(70, 28)
-	theme.add_theme_font_size_override("font_size", 9)
-	theme.modulate = Color(0.95, 0.55, 1.0, 0.9)
-	geometry.add_child(theme)
+	_add_rect_platform(-40, 0, 48, 224, COL_WALL)
+	_add_rect_platform(LEVEL_RIGHT - 8, 0, 48, 224, COL_WALL)
+	# Dodge tiers, one-way so a jump from below never bonks.
+	# Left pair: step (144) then perch (112). The perch ends at x=120 so CORE-9's
+	# upper note still clears its edge and reaches a player standing on it.
+	# Steps are 6px thick: the level note (y=156) passes under them.
+	_add_rect_platform(136, FLOOR_Y - 32.0, 48, 6, COL_ACCENT, true)
+	_add_rect_platform(64, FLOOR_Y - 64.0, 56, 10, COL_ACCENT, true)
+	# Right step behind CORE-9 — turrets drop at boss ±56, this sits past them.
+	_add_rect_platform(LEVEL_RIGHT - 88.0, FLOOR_Y - 32.0, 56, 6, COL_ACCENT, true)
 
 	_boss = Core9Scene.instantiate()
 	_boss.name = "Core9"
@@ -175,7 +175,7 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 	)
 
 
-func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) -> void:
+func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color, one_way := false) -> void:
 	var body := StaticBody2D.new()
 	body.collision_layer = 1
 	body.position = Vector2(x + w * 0.5, y + h * 0.5)
@@ -184,6 +184,7 @@ func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) ->
 	shape.size = Vector2(w, h)
 	var col := CollisionShape2D.new()
 	col.shape = shape
+	col.one_way_collision = one_way
 	body.add_child(col)
 	geometry.add_child(body)
 

@@ -3,6 +3,7 @@
 
 **v0.40:** sprites de Miku y Teto a 32 px — idle, correr, salto, pared, desliz, disparo y sable. Alas de Stage Flight y hombreras de Encore si llevas la pieza. Sin cambiar el combate.
 **v0.41:** sprites de los 8 Robot Masters (idle + ataque, 48×64) y baldosas de suelo 16×16. CORE-9 holograma. Sin cambiar el combate.
+**v0.55:** Core Shaft se sube en tres tramos (foso con Met abajo o pasarela arriba, pozo de wall-jump, pasarelas que se cruzan desde abajo) y la arena de CORE-9 tiene tres repisas para esquivar.
 **v0.54:** stages have a low path, an upper path, and a hidden armor wall.
 **v0.53:** la carrera usa cuatro frames y se ven las alas de Flight y los hombros de Encore.
 **v0.52:** los disparos y los peligros de etapa usan el pixel art nuevo.
@@ -39,7 +40,7 @@ Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.54.0-proto`
+- Versión demo: `0.55.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)
