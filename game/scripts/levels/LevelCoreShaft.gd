@@ -22,9 +22,9 @@ const COL_ARENA := Color(0.25, 0.16, 0.38, 1.0)
 
 # Tall vertical level — camera follows Y. Arena is the top screen (0..224).
 const LEVEL_RIGHT := 384.0
-const LEVEL_BOTTOM := 784.0
+const LEVEL_BOTTOM := 800.0
 const ARENA_FLOOR_Y := 176.0
-const SHAFT_FLOOR_Y := 736.0
+const SHAFT_FLOOR_Y := 752.0
 const ARENA_HOLE_X := 8.0      # climb enters the arena through a gap in its floor
 const ARENA_HOLE_W := 40.0
 
@@ -73,24 +73,25 @@ func _build_course() -> void:
 		[176, SHAFT_FLOOR_Y + 16, 32, 32, COL_WALL],
 		[208, SHAFT_FLOOR_Y, 168, 48, COL_FLOOR],
 		# landing A (checkpoint) — shaft entrance on the left
-		[8, 608, 288, 12, COL_FLOOR],
+		[8, 624, 288, 12, COL_FLOOR],
 		# ── Tramo 2 · wall-jump shaft: 36px open air, mid foothold ──
-		[44, 512, 16, 56, COL_WALL],
-		[8, 560, 10, 8, COL_LEDGE],
+		[44, 544, 16, 40, COL_WALL],
+		[8, 576, 10, 8, COL_LEDGE],
 		# landing B (checkpoint) — its left end is the shaft lip
-		[44, 496, LEVEL_RIGHT - 52, 16, COL_FLOOR],
+		[44, 528, LEVEL_RIGHT - 52, 16, COL_FLOOR],
 	]
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 	var catwalks: Array = [
 		# low path climbs the right wall after the Met
-		[320, 704, 56, 10],
-		[248, 672, 64, 10],
-		[312, 640, 64, 10],
+		[320, 720, 56, 10],
+		[248, 688, 64, 10],
+		[312, 656, 64, 10],
 		# upper path: corner step + catwalk over the pit and the Met
-		[8, 704, 48, 10],
-		[64, 672, 168, 10],
+		[8, 720, 48, 10],
+		[64, 688, 168, 10],
 		# ── Tramo 3 · open climb to the arena hole ──
+		[216, 496, 72, 10],
 		[304, 464, 72, 10],
 		[176, 432, 112, 10],
 		[64, 400, 96, 10],
@@ -297,8 +298,8 @@ func _add_spike(x: float, y: float) -> void:
 
 func _add_mid_checkpoints() -> void:
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(232.0, 608.0), "core_shaft", "CK1")
-	CheckpointScript.place(parent_n, Vector2(120.0, 496.0), "core_shaft", "CK2")
+	CheckpointScript.place(parent_n, Vector2(232.0, 624.0), "core_shaft", "CK1")
+	CheckpointScript.place(parent_n, Vector2(120.0, 528.0), "core_shaft", "CK2")
 
 
 func _spawn_player() -> void:

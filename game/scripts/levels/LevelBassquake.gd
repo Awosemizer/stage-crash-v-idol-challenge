@@ -23,10 +23,10 @@ const COL_ARENA := Color(0.38, 0.3, 0.2, 1.0)
 const COL_GATE := Color(0.95, 0.65, 0.25, 1.0)
 const COL_METAL := Color(0.4, 0.38, 0.35, 1.0)
 
-const LEVEL_RIGHT := 1472.0
-const ARENA_LEFT := 1136.0
+const LEVEL_RIGHT := 3216.0
+const ARENA_LEFT := 2880.0
 const ARENA_FLOOR_Y := 176.0
-const GATE_X := 1120.0
+const GATE_X := 2864.0
 
 @onready var geometry: Node2D = $Geometry
 @onready var hazards: Node2D = $Hazards
@@ -96,7 +96,10 @@ func _tick_ambient_quake(delta: float) -> void:
 	_ambient_quake_t = randf_range(2.8, 4.5)
 	_trigger_screen_shake(0.45, 0.28)
 	# Spawn a pair of weak quake waves mid-stage
-	var wave_x := 400.0 + randf() * 400.0
+	# Long course: spawn near the player (never on top of them), inside the course.
+	var px := _player.global_position.x if _player else 400.0
+	var side := 1.0 if randf() < 0.5 else -1.0
+	var wave_x := clampf(px + side * randf_range(110.0, 180.0), 48.0, GATE_X - 48.0)
 	_spawn_ambient_wave(wave_x, 1)
 	_spawn_ambient_wave(wave_x, -1)
 
@@ -115,55 +118,75 @@ func _trigger_screen_shake(amp: float, duration: float) -> void:
 
 
 func _build_course() -> void:
-	# v0.54 — low path is bolted steel; upper path crosses collapsing decks.
-	# Shaft gap 32px with a mid foothold. Slide crawl is optional.
+	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
+	# and most have an upper path. Rises <= 32px, one wall-jump shaft with a mid foothold.
+	#   x0: start run
+	#   x320: bottomless gaps between raised islands
+	#   x768: spike trenches — low path jumps them, upper path catwalk
+	#   x1216: wall-jump shaft 36px + mid foothold, secret in the right wall
+	#   x1664: collapsing decks bridge two wide pits
+	#   x2112: block stairs up and down, Met on the summit
+	#   x2560: corridor to the gate
 	var solids: Array = [
 		[-32, 0, 32, 224, COL_WALL],
-		# low path
-		[0, 176, 200, 48, COL_FLOOR],
-		[200, 208, 36, 16, COL_WALL],
-		[236, 176, 388, 48, COL_FLOOR],
-		[640, 176, 32, 48, COL_FLOOR],
-		[688, 176, 448, 48, COL_FLOOR],
-		# upper path steps
-		[72, 144, 64, 16, COL_METAL],
-		[152, 112, 64, 16, COL_FLOOR],
-		[232, 80, 80, 16, COL_ACCENT],
-		[476, 112, 64, 16, COL_METAL],
-		[556, 144, 64, 16, COL_FLOOR],
-		# wall-jump shaft — 32px open air, mid foothold
-		[624, 28, 16, 148, COL_WALL],
-		[672, 96, 16, 80, COL_WALL],
-		[640, 140, 16, 12, COL_ACCENT],
-		[688, 96, 64, 16, COL_METAL],
-		[768, 128, 64, 16, COL_FLOOR],
-		[848, 160, 64, 16, COL_ACCENT],
-		# sealed encore room
-		[768, 64, 64, 16, COL_ACCENT],
-		[832, 64, 120, 16, COL_WALL],
-		[832, 0, 136, 16, COL_WALL],
-		[952, 0, 16, 80, COL_WALL],
-		# optional crawl
-		[900, 144, 64, 16, COL_METAL],
-		[964, 112, 48, 16, COL_FLOOR],
-		[1012, 108, 80, 48, COL_WALL],
+		[0, 176, 320, 48, COL_FLOOR],
+		[320, 176, 96, 48, COL_FLOOR],
+		[456, 160, 64, 64, COL_METAL],
+		[560, 144, 48, 80, COL_METAL],
+		[656, 176, 112, 48, COL_FLOOR],
+		[768, 176, 128, 48, COL_FLOOR],
+		[896, 208, 48, 16, COL_WALL],
+		[944, 176, 80, 48, COL_FLOOR],
+		[1024, 208, 48, 16, COL_WALL],
+		[1072, 176, 144, 48, COL_FLOOR],
+		[1216, 176, 448, 48, COL_FLOOR],
+		[1312, 40, 16, 104, COL_WALL],
+		[1328, 128, 10, 8, COL_METAL],
+		[1364, 80, 64, 16, COL_WALL],
+		[1412, 96, 16, 32, COL_WALL],
+		[1364, 128, 64, 48, COL_WALL],
+		[1428, 80, 48, 16, COL_FLOOR],
+		[1664, 176, 128, 48, COL_FLOOR],
+		[1888, 176, 96, 48, COL_FLOOR],
+		[2080, 176, 32, 48, COL_FLOOR],
+		[2112, 176, 448, 48, COL_FLOOR],
+		[2176, 144, 64, 32, COL_FLOOR],
+		[2240, 112, 64, 64, COL_METAL],
+		[2304, 80, 64, 96, COL_FLOOR],
+		[2368, 112, 64, 64, COL_METAL],
+		[2432, 144, 64, 32, COL_FLOOR],
+		[2560, 176, 320, 48, COL_FLOOR],
 	]
-
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
-
-	for i in range(3):
-		_add_spike(206.0 + i * 12.0, 200.0)
-
-	_add_collapse(Vector2(360, 86), Vector2(56, 12), 0.70, 0.90, 2.2)
-	_add_collapse(Vector2(432, 86), Vector2(56, 12), 0.65, 0.90, 2.0)
-	_add_collapse(Vector2(360, 124), Vector2(56, 12), 0.70, 0.95, 2.4)
-
+	# upper path catwalks — one-way, jump up through them
+	var catwalks: Array = [
+		[816, 144, 56, 8, COL_METAL],
+		[880, 112, 208, 8, COL_METAL],
+		[1104, 144, 56, 8, COL_METAL],
+		[1492, 112, 48, 8, COL_METAL],
+		[1556, 144, 48, 8, COL_METAL],
+		[1912, 128, 48, 8, COL_METAL],
+	]
+	for cw in catwalks:
+		_add_rect_platform(float(cw[0]), float(cw[1]), float(cw[2]), float(cw[3]), cw[4], true)
+	var spikes: Array = [
+		Vector2(904, 200),
+		Vector2(920, 200),
+		Vector2(936, 200),
+		Vector2(1032, 200),
+		Vector2(1048, 200),
+		Vector2(1064, 200),
+	]
+	for sp in spikes:
+		_add_spike(sp.x, sp.y)
+	_add_collapse(Vector2(1840, 166), Vector2(48, 12), 0.65, 0.9, 2.2)
+	_add_collapse(Vector2(2032, 166), Vector2(48, 12), 0.65, 0.9, 2.2)
 	_build_secret_encore_torso()
 
 	var label := Label.new()
 	label.text = "JEFE →"
-	label.position = Vector2(1080, 136)
+	label.position = Vector2(2824, 136)
 	label.add_theme_font_size_override("font_size", 8)
 	label.modulate = Color(0.95, 0.7, 0.35)
 	geometry.add_child(label)
@@ -174,6 +197,7 @@ func _build_course() -> void:
 	theme_lbl.add_theme_font_size_override("font_size", 7)
 	theme_lbl.modulate = Color(0.9, 0.65, 0.3, 0.75)
 	geometry.add_child(theme_lbl)
+
 
 func _add_collapse(pos: Vector2, sz: Vector2, warn: float, fall: float, respawn: float) -> void:
 	var plat: AnimatableBody2D = CollapsingFloorScene.instantiate()
@@ -414,11 +438,11 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 
 func _build_secret_encore_torso() -> void:
-	## Alcoba secreta: torso Encore Guard (defensa / hyper armor en slide).
-	_seal_secret_rect(832.0, 16.0, 864.0, 64.0)
+	## Alcoba secreta dentro de la pared derecha del pozo de wall-jump.
+	_seal_secret_rect(1364.0, 96.0, 1380.0, 128.0)
 	var pickup: Area2D = ArmorPickupScene.instantiate()
 	pickup.name = "EncoreTorsoPickup"
-	pickup.position = Vector2(900.0, 46.0)
+	pickup.position = Vector2(1396.0, 110.0)
 	pickup.armor_set = "encore"
 	pickup.armor_piece = "torso"
 	pickup.display_name_es = "Torso Encore Guard"
@@ -449,9 +473,14 @@ func _add_breakable(x: float, y: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	_add_met(80.0, 176.0)
-	_add_met(400.0, 176.0)
-	_add_met(1000.0, 176.0)
+	# 1 Met per screen-ish, always on a floor top (y = floor).
+	_add_met(248.0, 176.0)
+	_add_met(728.0, 176.0)
+	_add_met(984.0, 176.0)
+	_add_met(1636.0, 176.0)
+	_add_met(2336.0, 80.0)
+	_add_met(2720.0, 176.0)
+
 
 func _add_met(x: float, floor_y: float) -> void:
 	var met: Area2D = MetBeatScene.instantiate()
@@ -459,7 +488,7 @@ func _add_met(x: float, floor_y: float) -> void:
 	entities.add_child(met)
 
 
-func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) -> void:
+func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color, one_way := false) -> void:
 	var body := StaticBody2D.new()
 	body.collision_layer = 1
 	body.collision_mask = 0
@@ -471,6 +500,7 @@ func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) ->
 	shape.size = Vector2(w, h)
 	var col := CollisionShape2D.new()
 	col.shape = shape
+	col.one_way_collision = one_way
 	body.add_child(col)
 
 	geometry.add_child(body)
@@ -484,10 +514,15 @@ func _add_spike(x: float, y: float) -> void:
 
 
 func _add_mid_checkpoints() -> void:
-	## Clear mid-stage markers for bassquake (touch-visible cyan pillars).
+	## v0.56: one checkpoint per section of the long bassquake course.
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(400.0, 176.0), "bassquake", "CK1")
-	CheckpointScript.place(parent_n, Vector2(1040.0, 176.0), "bassquake", "CK2")
+	CheckpointScript.place(parent_n, Vector2(360.0, 176.0), "bassquake", "CK1")
+	CheckpointScript.place(parent_n, Vector2(808.0, 176.0), "bassquake", "CK2")
+	CheckpointScript.place(parent_n, Vector2(1256.0, 176.0), "bassquake", "CK3")
+	CheckpointScript.place(parent_n, Vector2(1704.0, 176.0), "bassquake", "CK4")
+	CheckpointScript.place(parent_n, Vector2(2144.0, 176.0), "bassquake", "CK5")
+	CheckpointScript.place(parent_n, Vector2(2600.0, 176.0), "bassquake", "CK6")
+
 
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()

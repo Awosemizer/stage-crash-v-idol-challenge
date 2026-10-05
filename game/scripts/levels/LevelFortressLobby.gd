@@ -21,10 +21,10 @@ const COL_BG := Color(0.07, 0.02, 0.12, 1.0)
 const COL_ARENA := Color(0.28, 0.14, 0.35, 1.0)
 const COL_GATE := Color(0.9, 0.45, 1.0, 1.0)
 
-const LEVEL_RIGHT := 960.0
-const ARENA_LEFT := 640.0
+const LEVEL_RIGHT := 2752.0
+const ARENA_LEFT := 2432.0
 const ARENA_FLOOR_Y := 176.0
-const GATE_X := 624.0
+const GATE_X := 2416.0
 
 @onready var geometry: Node2D = $Geometry
 @onready var hazards: Node2D = $Hazards
@@ -60,44 +60,76 @@ func _ready() -> void:
 
 
 func _build_course() -> void:
-	# v0.54 — low path to the door; upper path climbs a short shaft over the spikes.
+	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
+	# and most have an upper path. Rises <= 32px, one wall-jump shaft with a mid foothold.
+	#   x0: start run
+	#   x320: spike trenches — low path jumps them, upper path catwalk
+	#   x768: wall-jump shaft 36px + mid foothold
+	#   x1216: bottomless gaps between raised islands
+	#   x1664: block stairs up and down, Met on the summit
+	#   x2112: corridor to the gate
 	var solids: Array = [
 		[-32, 0, 32, 224, COL_WALL],
-		# low path reaches the arena
-		[0, 176, 168, 48, COL_FLOOR],
-		[168, 208, 32, 16, COL_WALL],
-		[200, 176, 440, 48, COL_FLOOR],
-		# upper path
-		[40, 144, 56, 16, COL_NEON],
-		[112, 112, 56, 16, COL_FLOOR],
-		# short shaft, 36px, then drop back to the door
-		[168, 48, 16, 80, COL_WALL],
-		[220, 64, 16, 64, COL_WALL],
-		[184, 80, 16, 12, COL_NEON],
-		[236, 64, 64, 16, COL_NEON],
-		[316, 112, 56, 16, COL_FLOOR],
-		[388, 144, 56, 16, COL_NEON],
-		# optional crawl before the door — bypass on the roof
-		[430, 144, 48, 16, COL_FLOOR],
-		[478, 112, 48, 16, COL_NEON],
-		[526, 108, 80, 48, COL_WALL],
+		[0, 176, 320, 48, COL_FLOOR],
+		[320, 176, 128, 48, COL_FLOOR],
+		[448, 208, 48, 16, COL_WALL],
+		[496, 176, 80, 48, COL_FLOOR],
+		[576, 208, 48, 16, COL_WALL],
+		[624, 176, 144, 48, COL_FLOOR],
+		[768, 176, 448, 48, COL_FLOOR],
+		[864, 40, 16, 104, COL_WALL],
+		[880, 128, 10, 8, COL_NEON],
+		[916, 80, 64, 96, COL_WALL],
+		[980, 80, 48, 16, COL_FLOOR],
+		[1216, 176, 96, 48, COL_FLOOR],
+		[1352, 160, 64, 64, COL_NEON],
+		[1456, 144, 48, 80, COL_NEON],
+		[1552, 176, 112, 48, COL_FLOOR],
+		[1664, 176, 448, 48, COL_FLOOR],
+		[1728, 144, 64, 32, COL_FLOOR],
+		[1792, 112, 64, 64, COL_NEON],
+		[1856, 80, 64, 96, COL_FLOOR],
+		[1920, 112, 64, 64, COL_NEON],
+		[1984, 144, 64, 32, COL_FLOOR],
+		[2112, 176, 320, 48, COL_FLOOR],
 	]
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
-	_add_spike(176.0, 200.0)
-	_add_spike(188.0, 200.0)
+	# upper path catwalks — one-way, jump up through them
+	var catwalks: Array = [
+		[368, 144, 56, 8, COL_NEON],
+		[432, 112, 208, 8, COL_NEON],
+		[656, 144, 56, 8, COL_NEON],
+		[1044, 112, 48, 8, COL_NEON],
+		[1108, 144, 48, 8, COL_NEON],
+	]
+	for cw in catwalks:
+		_add_rect_platform(float(cw[0]), float(cw[1]), float(cw[2]), float(cw[3]), cw[4], true)
+	var spikes: Array = [
+		Vector2(456, 200),
+		Vector2(472, 200),
+		Vector2(488, 200),
+		Vector2(584, 200),
+		Vector2(600, 200),
+		Vector2(616, 200),
+	]
+	for sp in spikes:
+		_add_spike(sp.x, sp.y)
+
 	var theme := Label.new()
 	theme.text = "LOBBY NEON · SYNTHOCORP"
 	theme.position = Vector2(12, 8)
 	theme.add_theme_font_size_override("font_size", 7)
 	theme.modulate = Color(0.95, 0.5, 1.0, 0.75)
 	geometry.add_child(theme)
+
 	var lbl := Label.new()
 	lbl.text = "REFRAIN →"
-	lbl.position = Vector2(560, 136)
+	lbl.position = Vector2(2368, 136)
 	lbl.add_theme_font_size_override("font_size", 8)
 	lbl.modulate = COL_NEON
 	geometry.add_child(lbl)
+
 
 func _build_boss_arena() -> void:
 	_add_rect_platform(ARENA_LEFT, ARENA_FLOOR_Y, 304.0, 48.0, COL_ARENA)
@@ -273,8 +305,13 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	_add_met(96.0, 176.0)
-	_add_met(320.0, 176.0)
+	# 1 Met per screen-ish, always on a floor top (y = floor).
+	_add_met(248.0, 176.0)
+	_add_met(536.0, 176.0)
+	_add_met(1188.0, 176.0)
+	_add_met(1624.0, 176.0)
+	_add_met(1888.0, 80.0)
+	_add_met(2272.0, 176.0)
 
 
 func _add_met(x: float, floor_y: float) -> void:
@@ -283,7 +320,7 @@ func _add_met(x: float, floor_y: float) -> void:
 	entities.add_child(met)
 
 
-func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) -> void:
+func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color, one_way := false) -> void:
 	var body := StaticBody2D.new()
 	body.collision_layer = 1
 	body.position = Vector2(x + w * 0.5, y + h * 0.5)
@@ -292,6 +329,7 @@ func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) ->
 	shape.size = Vector2(w, h)
 	var col := CollisionShape2D.new()
 	col.shape = shape
+	col.one_way_collision = one_way
 	body.add_child(col)
 	geometry.add_child(body)
 
@@ -303,9 +341,13 @@ func _add_spike(x: float, y: float) -> void:
 
 
 func _add_mid_checkpoints() -> void:
+	## v0.56: one checkpoint per section of the long fortress_lobby course.
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(80.0, 176.0), "fortress_lobby", "CK1")
-	CheckpointScript.place(parent_n, Vector2(400.0, 176.0), "fortress_lobby", "CK2")
+	CheckpointScript.place(parent_n, Vector2(360.0, 176.0), "fortress_lobby", "CK1")
+	CheckpointScript.place(parent_n, Vector2(808.0, 176.0), "fortress_lobby", "CK2")
+	CheckpointScript.place(parent_n, Vector2(1256.0, 176.0), "fortress_lobby", "CK3")
+	CheckpointScript.place(parent_n, Vector2(1696.0, 176.0), "fortress_lobby", "CK4")
+	CheckpointScript.place(parent_n, Vector2(2152.0, 176.0), "fortress_lobby", "CK5")
 
 
 func _spawn_player() -> void:

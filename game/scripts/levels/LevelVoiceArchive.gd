@@ -11,6 +11,7 @@ const HUDScene := preload("res://scenes/ui/HUD.tscn")
 const MetBeatScene := preload("res://scenes/enemies/MetBeat.tscn")
 const VocalSealScene := preload("res://scenes/props/VocalSeal.tscn")
 const EnergyTankScene := preload("res://scenes/pickups/EnergyTankPickup.tscn")
+const BreakableBlockScene := preload("res://scenes/props/BreakableBlock.tscn")
 
 const NEXT_SCENE := "res://scenes/levels/LevelCoreShaft.tscn"
 
@@ -19,8 +20,8 @@ const COL_WALL := Color(0.1, 0.12, 0.2, 1.0)
 const COL_ACCENT := Color(0.45, 0.75, 1.0, 1.0)
 const COL_BG := Color(0.07, 0.02, 0.12, 1.0)
 
-const LEVEL_RIGHT := 880.0
-const EXIT_X := 820.0
+const LEVEL_RIGHT := 2680.0
+const EXIT_X := 2624.0
 
 @onready var geometry: Node2D = $Geometry
 @onready var hazards: Node2D = $Hazards
@@ -51,28 +52,76 @@ func _ready() -> void:
 
 
 func _build_course() -> void:
-	# v0.54 — floor still hits the seals; a stair climbs over them so the exit stays open.
+	# v0.56 long archive (scripts/gen_stage_courses.py): low path / upper path per screen,
+	# two vocal seal doors (wall above them — break the seals), wall-jump shaft with a
+	# mid foothold and the energy tank sealed inside its right wall.
+	#   x0: start run
+	#   x320: spike trenches — low path jumps them, upper path catwalk
+	#   x768: vocal seal door — the wall above means you have to break the seals
+	#   x928: wall-jump shaft 36px + mid foothold, secret in the right wall
+	#   x1376: bottomless gaps between raised islands
+	#   x1824: block stairs up and down, Met on the summit
+	#   x2272: vocal seal door — the wall above means you have to break the seals
+	#   x2432: exit run
 	var solids: Array = [
-		[0, 176, LEVEL_RIGHT, 48, COL_FLOOR],
 		[-32, 0, 32, 224, COL_WALL],
 		[LEVEL_RIGHT - 8, 0, 24, 224, COL_WALL],
 		[0, 0, LEVEL_RIGHT, 16, COL_WALL],
-		# Seal bypass — vertical stair over the vocal seals
-		[160, 144, 64, 16, COL_ACCENT],
-		[240, 112, 64, 16, COL_ACCENT],
-		[304, 80, 96, 16, COL_ACCENT],
-		[416, 112, 64, 16, COL_ACCENT],
-		[496, 144, 64, 16, COL_ACCENT],
+		[0, 176, 320, 48, COL_FLOOR],
+		[320, 176, 128, 48, COL_FLOOR],
+		[448, 208, 48, 16, COL_WALL],
+		[496, 176, 80, 48, COL_FLOOR],
+		[576, 208, 48, 16, COL_WALL],
+		[624, 176, 144, 48, COL_FLOOR],
+		[768, 176, 160, 48, COL_FLOOR],
+		[832, 16, 32, 112, COL_WALL],
+		[928, 176, 448, 48, COL_FLOOR],
+		[1024, 40, 16, 104, COL_WALL],
+		[1040, 128, 10, 8, COL_ACCENT],
+		[1076, 80, 64, 16, COL_WALL],
+		[1124, 96, 16, 32, COL_WALL],
+		[1076, 128, 64, 48, COL_WALL],
+		[1140, 80, 48, 16, COL_FLOOR],
+		[1376, 176, 96, 48, COL_FLOOR],
+		[1512, 160, 64, 64, COL_ACCENT],
+		[1616, 144, 48, 80, COL_ACCENT],
+		[1712, 176, 112, 48, COL_FLOOR],
+		[1824, 176, 448, 48, COL_FLOOR],
+		[1888, 144, 64, 32, COL_FLOOR],
+		[1952, 112, 64, 64, COL_ACCENT],
+		[2016, 80, 64, 96, COL_FLOOR],
+		[2080, 112, 64, 64, COL_ACCENT],
+		[2144, 144, 64, 32, COL_FLOOR],
+		[2272, 176, 160, 48, COL_FLOOR],
+		[2336, 16, 32, 112, COL_WALL],
+		[2432, 176, 240, 48, COL_FLOOR],
 	]
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
-
-	_add_seal(320.0, 176.0)
-	_add_seal(336.0, 176.0)
-
+	var catwalks: Array = [
+		[368, 144, 56, 8, COL_ACCENT],
+		[432, 112, 208, 8, COL_ACCENT],
+		[656, 144, 56, 8, COL_ACCENT],
+		[1204, 112, 48, 8, COL_ACCENT],
+		[1268, 144, 48, 8, COL_ACCENT],
+	]
+	for cw in catwalks:
+		_add_rect_platform(float(cw[0]), float(cw[1]), float(cw[2]), float(cw[3]), cw[4], true)
+	_add_spike(456.0, 200.0)
+	_add_spike(472.0, 200.0)
+	_add_spike(488.0, 200.0)
+	_add_spike(584.0, 200.0)
+	_add_spike(600.0, 200.0)
+	_add_spike(616.0, 200.0)
+	_add_seal(840.0, 176.0)
+	_add_seal(856.0, 176.0)
+	_add_seal(2344.0, 176.0)
+	_add_seal(2360.0, 176.0)
+	# Tank alcove — blocks look like the wall.
+	_seal_secret_rect(1076.0, 96.0, 1092.0, 128.0)
 	var tank: Area2D = EnergyTankScene.instantiate()
 	tank.name = "ArchiveTank"
-	tank.position = Vector2(352.0, 64.0)
+	tank.position = Vector2(1108.0, 110.0)
 	entities.add_child(tank)
 
 	var theme := Label.new()
@@ -89,6 +138,13 @@ func _build_course() -> void:
 	hint.modulate = Color(0.7, 0.8, 0.95, 0.7)
 	geometry.add_child(hint)
 
+	var exit_lbl := Label.new()
+	exit_lbl.text = "CORE SHAFT →"
+	exit_lbl.position = Vector2(2560, 130)
+	exit_lbl.add_theme_font_size_override("font_size", 7)
+	exit_lbl.modulate = COL_ACCENT
+	geometry.add_child(exit_lbl)
+
 	_exit_trigger = Area2D.new()
 	_exit_trigger.name = "ExitTrigger"
 	_exit_trigger.collision_layer = 0
@@ -103,12 +159,30 @@ func _build_course() -> void:
 	entities.add_child(_exit_trigger)
 	_exit_trigger.body_entered.connect(_on_exit)
 
-	var exit_lbl := Label.new()
-	exit_lbl.text = "CORE SHAFT →"
-	exit_lbl.position = Vector2(760, 130)
-	exit_lbl.add_theme_font_size_override("font_size", 7)
-	exit_lbl.modulate = COL_ACCENT
-	geometry.add_child(exit_lbl)
+
+func _seal_secret_rect(x0: float, y0: float, x1: float, y1: float) -> void:
+	## Rellena el hueco con bloques que se ven como la pared.
+	var x := x0 + 8.0
+	while x < x1 - 0.1:
+		var y := y0 + 8.0
+		while y < y1 - 0.1:
+			_add_breakable(x, y)
+			y += 16.0
+		x += 16.0
+
+
+func _add_breakable(x: float, y: float) -> void:
+	var block: StaticBody2D = BreakableBlockScene.instantiate()
+	block.position = Vector2(x, y)
+	block.set("block_color", COL_WALL)
+	geometry.add_child(block)
+
+
+func _add_spike(x: float, y: float) -> void:
+	var spike: Area2D = SpikeScene.instantiate()
+	spike.position = Vector2(x, y)
+	hazards.add_child(spike)
+
 
 func _add_seal(x: float, floor_y: float) -> void:
 	var seal: StaticBody2D = VocalSealScene.instantiate()
@@ -159,8 +233,13 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	_add_met(100.0, 176.0)
-	_add_met(500.0, 176.0)
+	_add_met(248.0, 176.0)
+	_add_met(536.0, 176.0)
+	_add_met(904.0, 176.0)
+	_add_met(1348.0, 176.0)
+	_add_met(1784.0, 176.0)
+	_add_met(2048.0, 80.0)
+	_add_met(2408.0, 176.0)
 
 
 func _add_met(x: float, floor_y: float) -> void:
@@ -169,7 +248,7 @@ func _add_met(x: float, floor_y: float) -> void:
 	entities.add_child(met)
 
 
-func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) -> void:
+func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color, one_way := false) -> void:
 	var body := StaticBody2D.new()
 	body.collision_layer = 1
 	body.position = Vector2(x + w * 0.5, y + h * 0.5)
@@ -178,14 +257,18 @@ func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) ->
 	shape.size = Vector2(w, h)
 	var col := CollisionShape2D.new()
 	col.shape = shape
+	col.one_way_collision = one_way
 	body.add_child(col)
 	geometry.add_child(body)
 
 
 func _add_mid_checkpoints() -> void:
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(200.0, 176.0), "voice_archive", "CK1")
-	CheckpointScript.place(parent_n, Vector2(640.0, 176.0), "voice_archive", "CK2")
+	CheckpointScript.place(parent_n, Vector2(360.0, 176.0), "voice_archive", "CK1")
+	CheckpointScript.place(parent_n, Vector2(968.0, 176.0), "voice_archive", "CK2")
+	CheckpointScript.place(parent_n, Vector2(1416.0, 176.0), "voice_archive", "CK3")
+	CheckpointScript.place(parent_n, Vector2(1856.0, 176.0), "voice_archive", "CK4")
+	CheckpointScript.place(parent_n, Vector2(2472.0, 176.0), "voice_archive", "CK5")
 
 
 func _spawn_player() -> void:

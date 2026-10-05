@@ -23,10 +23,10 @@ const COL_ARENA := Color(0.32, 0.42, 0.28, 1.0)
 const COL_GATE := Color(0.95, 0.55, 0.8, 1.0)
 const COL_VINE := Color(0.3, 0.7, 0.4, 1.0)
 
-const LEVEL_RIGHT := 1472.0
-const ARENA_LEFT := 1136.0
+const LEVEL_RIGHT := 3216.0
+const ARENA_LEFT := 2880.0
 const ARENA_FLOOR_Y := 176.0
-const GATE_X := 1120.0
+const GATE_X := 2864.0
 
 @onready var geometry: Node2D = $Geometry
 @onready var hazards: Node2D = $Hazards
@@ -62,61 +62,76 @@ func _ready() -> void:
 
 
 func _build_course() -> void:
-	# v0.54 — low path is the garden floor; upper path rides under the petals.
-	# Shaft gap 36px with a mid foothold. Slide crawl is optional.
+	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
+	# and most have an upper path. Rises <= 32px, one wall-jump shaft with a mid foothold.
+	#   x0: start run
+	#   x320: bottomless gaps between raised islands
+	#   x768: drifting vines over a pit, petals overhead
+	#   x1216: wall-jump shaft 36px + mid foothold, secret in the right wall
+	#   x1664: spike trenches — low path jumps them, upper path catwalk
+	#   x2112: block stairs up and down, Met on the summit
+	#   x2560: corridor to the gate
 	var solids: Array = [
 		[-32, 0, 32, 224, COL_WALL],
-		# low path
-		[0, 176, 200, 48, COL_FLOOR],
-		[236, 176, 300, 48, COL_FLOOR],
-		[552, 176, 36, 48, COL_FLOOR],
-		[604, 176, 532, 48, COL_FLOOR],
-		# upper path
-		[64, 144, 64, 16, COL_VINE],
-		[144, 112, 64, 16, COL_FLOOR],
-		[224, 80, 80, 16, COL_ACCENT],
-		[320, 80, 64, 16, COL_VINE],
-		[400, 96, 64, 16, COL_FLOOR],
-		[480, 112, 56, 16, COL_ACCENT],
-		# wall-jump shaft — 36px open air, mid foothold
-		[536, 28, 16, 148, COL_WALL],
-		[588, 96, 16, 80, COL_WALL],
-		[552, 136, 16, 12, COL_ACCENT],
-		[604, 96, 72, 16, COL_VINE],
-		[692, 128, 64, 16, COL_FLOOR],
-		[772, 160, 64, 16, COL_ACCENT],
-		# sealed tank room
-		[692, 64, 64, 16, COL_ACCENT],
-		[756, 64, 112, 16, COL_WALL],
-		[756, 0, 128, 16, COL_WALL],
-		[868, 0, 16, 80, COL_WALL],
-		# optional crawl
-		[860, 144, 64, 16, COL_VINE],
-		[924, 112, 48, 16, COL_FLOOR],
-		[972, 108, 80, 48, COL_WALL],
+		[0, 176, 320, 48, COL_FLOOR],
+		[320, 176, 96, 48, COL_FLOOR],
+		[456, 160, 64, 64, COL_VINE],
+		[560, 144, 48, 80, COL_VINE],
+		[656, 176, 112, 48, COL_FLOOR],
+		[768, 176, 96, 48, COL_FLOOR],
+		[1120, 176, 96, 48, COL_FLOOR],
+		[1216, 176, 448, 48, COL_FLOOR],
+		[1312, 40, 16, 104, COL_WALL],
+		[1328, 128, 10, 8, COL_VINE],
+		[1364, 80, 64, 16, COL_WALL],
+		[1412, 96, 16, 32, COL_WALL],
+		[1364, 128, 64, 48, COL_WALL],
+		[1428, 80, 48, 16, COL_FLOOR],
+		[1664, 176, 128, 48, COL_FLOOR],
+		[1792, 208, 48, 16, COL_WALL],
+		[1840, 176, 80, 48, COL_FLOOR],
+		[1920, 208, 48, 16, COL_WALL],
+		[1968, 176, 144, 48, COL_FLOOR],
+		[2112, 176, 448, 48, COL_FLOOR],
+		[2176, 144, 64, 32, COL_FLOOR],
+		[2240, 112, 64, 64, COL_VINE],
+		[2304, 80, 64, 96, COL_FLOOR],
+		[2368, 112, 64, 64, COL_VINE],
+		[2432, 144, 64, 32, COL_FLOOR],
+		[2560, 176, 320, 48, COL_FLOOR],
 	]
-
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
-
-	for i in range(3):
-		_add_spike(204.0 + i * 12.0, 200.0)
-	_add_rect_platform(200, 208, 36, 16, COL_WALL)
-
-	_add_vine(Vector2(360, 86), Vector2(360, 120), Vector2(52, 12), 2.2, 0.0)
-	_add_vine(Vector2(430, 102), Vector2(490, 102), Vector2(52, 12), 2.4, 0.5)
-	_add_vine(Vector2(760, 140), Vector2(820, 140), Vector2(48, 12), 2.1, 0.3)
-
-	_add_petal(250.0, 48.0)
-	_add_petal(380.0, 40.0)
-	_add_petal(470.0, 52.0)
-	_add_petal(730.0, 48.0)
-
+	# upper path catwalks — one-way, jump up through them
+	var catwalks: Array = [
+		[1492, 112, 48, 8, COL_VINE],
+		[1556, 144, 48, 8, COL_VINE],
+		[1712, 144, 56, 8, COL_VINE],
+		[1776, 112, 208, 8, COL_VINE],
+		[2000, 144, 56, 8, COL_VINE],
+	]
+	for cw in catwalks:
+		_add_rect_platform(float(cw[0]), float(cw[1]), float(cw[2]), float(cw[3]), cw[4], true)
+	var spikes: Array = [
+		Vector2(1800, 200),
+		Vector2(1816, 200),
+		Vector2(1832, 200),
+		Vector2(1928, 200),
+		Vector2(1944, 200),
+		Vector2(1960, 200),
+	]
+	for sp in spikes:
+		_add_spike(sp.x, sp.y)
+	_add_vine(Vector2(904, 156), Vector2(964, 156), Vector2(52, 12), 2.2, 0.0)
+	_add_vine(Vector2(1028, 140), Vector2(1088, 140), Vector2(52, 12), 2.4, 0.5)
+	_add_petal(918.0, 40.0)
+	_add_petal(998.0, 32.0)
+	_add_petal(1078.0, 36.0)
 	_build_secret_energy_tank()
 
 	var label := Label.new()
 	label.text = "JEFE →"
-	label.position = Vector2(1080, 136)
+	label.position = Vector2(2824, 136)
 	label.add_theme_font_size_override("font_size", 8)
 	label.modulate = Color(0.95, 0.6, 0.85)
 	geometry.add_child(label)
@@ -127,6 +142,7 @@ func _build_course() -> void:
 	theme_lbl.add_theme_font_size_override("font_size", 7)
 	theme_lbl.modulate = Color(0.7, 0.95, 0.55, 0.75)
 	geometry.add_child(theme_lbl)
+
 
 func _add_vine(a: Vector2, b: Vector2, sz: Vector2, period: float, phase: float) -> void:
 	var plat: AnimatableBody2D = VinePlatformScene.instantiate()
@@ -371,11 +387,11 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 
 func _build_secret_energy_tank() -> void:
-	## Alcoba secreta: Energy Tank (no armadura).
-	_seal_secret_rect(756.0, 16.0, 788.0, 64.0)
+	## Alcoba secreta dentro de la pared derecha del pozo de wall-jump.
+	_seal_secret_rect(1364.0, 96.0, 1380.0, 128.0)
 	var pickup: Area2D = EnergyTankScene.instantiate()
 	pickup.name = "EnergyTankPickup"
-	pickup.position = Vector2(820.0, 46.0)
+	pickup.position = Vector2(1396.0, 110.0)
 	entities.add_child(pickup)
 	print("LevelChorusBloom: secreto Energy Tank en alcoba x~220")
 
@@ -398,9 +414,15 @@ func _add_breakable(x: float, y: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	_add_met(80.0, 176.0)
-	_add_met(400.0, 176.0)
-	_add_met(1000.0, 176.0)
+	# 1 Met per screen-ish, always on a floor top (y = floor).
+	_add_met(248.0, 176.0)
+	_add_met(728.0, 176.0)
+	_add_met(1180.0, 176.0)
+	_add_met(1636.0, 176.0)
+	_add_met(1880.0, 176.0)
+	_add_met(2336.0, 80.0)
+	_add_met(2720.0, 176.0)
+
 
 func _add_met(x: float, floor_y: float) -> void:
 	var met: Area2D = MetBeatScene.instantiate()
@@ -408,7 +430,7 @@ func _add_met(x: float, floor_y: float) -> void:
 	entities.add_child(met)
 
 
-func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) -> void:
+func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color, one_way := false) -> void:
 	var body := StaticBody2D.new()
 	body.collision_layer = 1
 	body.collision_mask = 0
@@ -420,6 +442,7 @@ func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) ->
 	shape.size = Vector2(w, h)
 	var col := CollisionShape2D.new()
 	col.shape = shape
+	col.one_way_collision = one_way
 	body.add_child(col)
 
 	geometry.add_child(body)
@@ -433,10 +456,15 @@ func _add_spike(x: float, y: float) -> void:
 
 
 func _add_mid_checkpoints() -> void:
-	## Clear mid-stage markers for chorus_bloom (touch-visible cyan pillars).
+	## v0.56: one checkpoint per section of the long chorus_bloom course.
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(400.0, 176.0), "chorus_bloom", "CK1")
-	CheckpointScript.place(parent_n, Vector2(1040.0, 176.0), "chorus_bloom", "CK2")
+	CheckpointScript.place(parent_n, Vector2(360.0, 176.0), "chorus_bloom", "CK1")
+	CheckpointScript.place(parent_n, Vector2(808.0, 176.0), "chorus_bloom", "CK2")
+	CheckpointScript.place(parent_n, Vector2(1256.0, 176.0), "chorus_bloom", "CK3")
+	CheckpointScript.place(parent_n, Vector2(1704.0, 176.0), "chorus_bloom", "CK4")
+	CheckpointScript.place(parent_n, Vector2(2144.0, 176.0), "chorus_bloom", "CK5")
+	CheckpointScript.place(parent_n, Vector2(2600.0, 176.0), "chorus_bloom", "CK6")
+
 
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()

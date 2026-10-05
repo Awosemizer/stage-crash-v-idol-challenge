@@ -20,10 +20,10 @@ const COL_BG := Color(0.18, 0.05, 0.07, 1.0)
 const COL_ARENA := Color(0.45, 0.18, 0.14, 1.0)
 const COL_GATE := Color(0.7, 0.2, 0.15, 1.0)
 
-const LEVEL_RIGHT := 1472.0
-const ARENA_LEFT := 1136.0
+const LEVEL_RIGHT := 3216.0
+const ARENA_LEFT := 2880.0
 const ARENA_FLOOR_Y := 176.0
-const GATE_X := 1120.0
+const GATE_X := 2864.0
 
 @onready var geometry: Node2D = $Geometry
 @onready var hazards: Node2D = $Hazards
@@ -58,55 +58,93 @@ func _ready() -> void:
 
 
 func _build_course() -> void:
-	# v0.54 — low path on the kiln floor, upper path over the trench and up the chimney.
-	# Pads >= 48px, required gaps <= 36px. Slide crawl is optional. Jump ~40px.
+	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
+	# and most have an upper path. Rises <= 32px, one wall-jump shaft with a mid foothold.
+	#   x0: start run
+	#   x320: spike trenches — low path jumps them, upper path catwalk
+	#   x768: bottomless gaps between raised islands
+	#   x1216: wall-jump shaft 36px + mid foothold, secret in the right wall
+	#   x1664: block stairs up and down, Met on the summit
+	#   x2112: pillars over a spike floor — low path is the spikes, hop the tops
+	#   x2560: corridor to the gate
 	var solids: Array = [
 		[-32, 0, 32, 224, COL_WALL],
-		# low path
-		[0, 176, 192, 48, COL_FLOOR],
-		[192, 208, 36, 16, COL_WALL],
-		[228, 176, 220, 48, COL_FLOOR],
-		[464, 176, 36, 48, COL_FLOOR],
-		[500, 176, 300, 48, COL_FLOOR],
-		[800, 176, 144, 48, COL_FLOOR],
-		[944, 176, 192, 48, COL_FLOOR],
-		# upper path skips the spike trench
-		[64, 144, 64, 16, COL_ACCENT],
-		[144, 112, 80, 16, COL_FLOOR],
-		[240, 144, 64, 16, COL_ACCENT],
-		# wall-jump shaft — 36px between inner walls, mid foothold
-		[448, 32, 16, 144, COL_WALL],
-		[500, 96, 16, 80, COL_WALL],
-		[464, 128, 16, 12, COL_ACCENT],
-		# upper path after the climb, then a stair back down
-		[516, 96, 80, 16, COL_ACCENT],
-		[596, 128, 80, 16, COL_FLOOR],
-		[692, 160, 80, 16, COL_ACCENT],
-		# sealed armor room off the catwalk (not on the first screen)
-		[612, 64, 80, 16, COL_ACCENT],
-		[692, 64, 128, 16, COL_WALL],
-		[692, 0, 144, 16, COL_WALL],
-		[820, 0, 16, 80, COL_WALL],
-		# optional slide — 20px crawl, roof is the bypass
-		[688, 144, 64, 16, COL_ACCENT],
-		[752, 112, 48, 16, COL_FLOOR],
-		[800, 108, 144, 48, COL_WALL],
+		[0, 176, 320, 48, COL_FLOOR],
+		[320, 176, 128, 48, COL_FLOOR],
+		[448, 208, 48, 16, COL_WALL],
+		[496, 176, 80, 48, COL_FLOOR],
+		[576, 208, 48, 16, COL_WALL],
+		[624, 176, 144, 48, COL_FLOOR],
+		[768, 176, 96, 48, COL_FLOOR],
+		[904, 160, 64, 64, COL_ACCENT],
+		[1008, 144, 48, 80, COL_ACCENT],
+		[1104, 176, 112, 48, COL_FLOOR],
+		[1216, 176, 448, 48, COL_FLOOR],
+		[1312, 40, 16, 104, COL_WALL],
+		[1328, 128, 10, 8, COL_ACCENT],
+		[1364, 80, 64, 16, COL_WALL],
+		[1412, 96, 16, 32, COL_WALL],
+		[1364, 128, 64, 48, COL_WALL],
+		[1428, 80, 48, 16, COL_FLOOR],
+		[1664, 176, 448, 48, COL_FLOOR],
+		[1728, 144, 64, 32, COL_FLOOR],
+		[1792, 112, 64, 64, COL_ACCENT],
+		[1856, 80, 64, 96, COL_FLOOR],
+		[1920, 112, 64, 64, COL_ACCENT],
+		[1984, 144, 64, 32, COL_FLOOR],
+		[2112, 176, 96, 48, COL_FLOOR],
+		[2208, 208, 48, 16, COL_WALL],
+		[2256, 160, 32, 64, COL_ACCENT],
+		[2288, 208, 32, 16, COL_WALL],
+		[2320, 144, 32, 80, COL_ACCENT],
+		[2352, 208, 32, 16, COL_WALL],
+		[2384, 160, 32, 64, COL_ACCENT],
+		[2416, 208, 48, 16, COL_WALL],
+		[2464, 176, 96, 48, COL_FLOOR],
+		[2560, 176, 320, 48, COL_FLOOR],
 	]
-
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
-
-	for i in range(3):
-		_add_spike(198.0 + i * 12.0, 200.0)
-
+	# upper path catwalks — one-way, jump up through them
+	var catwalks: Array = [
+		[368, 144, 56, 8, COL_ACCENT],
+		[432, 112, 208, 8, COL_ACCENT],
+		[656, 144, 56, 8, COL_ACCENT],
+		[1492, 112, 48, 8, COL_ACCENT],
+		[1556, 144, 48, 8, COL_ACCENT],
+		[2280, 112, 112, 8, COL_ACCENT],
+	]
+	for cw in catwalks:
+		_add_rect_platform(float(cw[0]), float(cw[1]), float(cw[2]), float(cw[3]), cw[4], true)
+	var spikes: Array = [
+		Vector2(456, 200),
+		Vector2(472, 200),
+		Vector2(488, 200),
+		Vector2(584, 200),
+		Vector2(600, 200),
+		Vector2(616, 200),
+		Vector2(2216, 200),
+		Vector2(2232, 200),
+		Vector2(2248, 200),
+		Vector2(2296, 200),
+		Vector2(2312, 200),
+		Vector2(2360, 200),
+		Vector2(2376, 200),
+		Vector2(2424, 200),
+		Vector2(2440, 200),
+		Vector2(2456, 200),
+	]
+	for sp in spikes:
+		_add_spike(sp.x, sp.y)
 	_build_secret_flight()
 
 	var label := Label.new()
 	label.text = "JEFE →"
-	label.position = Vector2(1080, 136)
+	label.position = Vector2(2824, 136)
 	label.add_theme_font_size_override("font_size", 8)
 	label.modulate = Color(1.0, 0.55, 0.25)
 	geometry.add_child(label)
+
 
 func _build_boss_arena() -> void:
 	# Arena floor + ceiling trim + right wall
@@ -342,13 +380,13 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 
 func _build_secret_flight() -> void:
-	## Alcoba secreta arriba-izq del corredor wall-jump.
+	## Alcoba secreta dentro de la pared derecha del pozo de wall-jump.
 	## Entrada: subir el corredor y romper los bloques soft a la izquierda.
 	# Breakables aligned with left wall gap (reachable from mid foothold / wall-slide)
-	_seal_secret_rect(692.0, 16.0, 724.0, 64.0)
+	_seal_secret_rect(1364.0, 96.0, 1380.0, 128.0)
 	var pickup: Area2D = ArmorPickupScene.instantiate()
 	pickup.name = "FlightTorsoPickup"
-	pickup.position = Vector2(760.0, 46.0)
+	pickup.position = Vector2(1396.0, 110.0)
 	pickup.armor_set = "flight"
 	pickup.armor_piece = "torso"
 	pickup.display_name_es = "Torso Stage Flight"
@@ -374,10 +412,15 @@ func _add_breakable(x: float, y: float) -> void:
 
 
 func _spawn_enemies() -> void:
-	# Suelo de cada plataforma (y = top del sólido). Met anclado por la base.
-	_add_met(96.0, 176.0)
-	_add_met(340.0, 176.0)
-	_add_met(1020.0, 176.0)
+	# 1 Met per screen-ish, always on a floor top (y = floor).
+	_add_met(248.0, 176.0)
+	_add_met(536.0, 176.0)
+	_add_met(1176.0, 176.0)
+	_add_met(1636.0, 176.0)
+	_add_met(1888.0, 80.0)
+	_add_met(2528.0, 176.0)
+	_add_met(2720.0, 176.0)
+
 
 func _add_met(x: float, floor_y: float) -> void:
 	var met: Area2D = MetBeatScene.instantiate()
@@ -385,7 +428,7 @@ func _add_met(x: float, floor_y: float) -> void:
 	entities.add_child(met)
 
 
-func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) -> void:
+func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color, one_way := false) -> void:
 	var body := StaticBody2D.new()
 	body.collision_layer = 1
 	body.collision_mask = 0
@@ -397,6 +440,7 @@ func _add_rect_platform(x: float, y: float, w: float, h: float, color: Color) ->
 	shape.size = Vector2(w, h)
 	var col := CollisionShape2D.new()
 	col.shape = shape
+	col.one_way_collision = one_way
 	body.add_child(col)
 
 	geometry.add_child(body)
@@ -410,10 +454,15 @@ func _add_spike(x: float, y: float) -> void:
 
 
 func _add_mid_checkpoints() -> void:
-	## Clear mid-stage markers for beatfire (touch-visible cyan pillars).
+	## v0.56: one checkpoint per section of the long beatfire course.
 	var parent_n: Node = geometry if geometry else self
 	CheckpointScript.place(parent_n, Vector2(360.0, 176.0), "beatfire", "CK1")
-	CheckpointScript.place(parent_n, Vector2(1040.0, 176.0), "beatfire", "CK2")
+	CheckpointScript.place(parent_n, Vector2(808.0, 176.0), "beatfire", "CK2")
+	CheckpointScript.place(parent_n, Vector2(1256.0, 176.0), "beatfire", "CK3")
+	CheckpointScript.place(parent_n, Vector2(1696.0, 176.0), "beatfire", "CK4")
+	CheckpointScript.place(parent_n, Vector2(2152.0, 176.0), "beatfire", "CK5")
+	CheckpointScript.place(parent_n, Vector2(2600.0, 176.0), "beatfire", "CK6")
+
 
 func _spawn_player() -> void:
 	_player = PlayerScene.instantiate()
