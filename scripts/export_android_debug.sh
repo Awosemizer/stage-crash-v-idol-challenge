@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Export Stage Crash debug APK (Godot 4.5 + Android SDK + JDK).
 set -euo pipefail
-# Version: 0.57.0-proto
-echo "Stage Crash 0.57.0-proto"
+# Version: 0.58.0-proto
+echo "Stage Crash 0.58.0-proto"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 GAME="$ROOT/game"
 OUT="$ROOT/build/StageCrash-debug.apk"

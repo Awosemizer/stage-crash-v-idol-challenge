@@ -24,13 +24,13 @@ func _build_ui() -> void:
 	if concert:
 		concert.name = "MenuBG"
 		add_child(concert)
+	ArtKit.add_menu_frame(self)
 
 	var header := Label.new()
 	header.name = "Header"
 	header.text = "Elige tu V-Idol"
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header.add_theme_font_size_override("font_size", 14)
-	header.modulate = Color(0.95, 0.95, 1.0, 1.0)
+	ArtKit.style_title_label(header, 14, Color(0.45, 0.95, 1.0, 1.0), 3)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(header)
 
@@ -154,16 +154,20 @@ func _idle_frame(is_teto: bool) -> Texture2D:
 
 func _layout() -> void:
 	var area: Rect2 = _SafeArea.content_rect()
+	var tight := area.size.y < 190.0
+	var band_bottom := area.position.y + (36.0 if tight else 42.0)
+	ArtKit.layout_menu_frame(self, band_bottom)
 	var header := get_node_or_null("Header") as Label
 	if header:
 		header.position = Vector2(area.position.x, area.position.y + 2.0)
 		header.size = Vector2(area.size.x, 18)
 	var hint := get_node_or_null("Hint") as Label
 	if hint:
-		hint.position = Vector2(area.position.x, area.position.y + 22.0)
-		hint.size = Vector2(area.size.x, 12)
+		hint.position = Vector2(area.position.x, area.position.y + 20.0)
+		hint.size = Vector2(area.size.x, 14)
+		hint.visible = not tight
 
-	var footer_h := maxf(_SafeArea.MIN_BTN_H, 36.0)
+	var footer_h := maxf(_SafeArea.MIN_BTN_H, 32.0)
 	var back := get_node_or_null("BackButton") as Button
 	var diff := get_node_or_null("DiffButton") as Button
 	if back:
@@ -180,7 +184,7 @@ func _layout() -> void:
 			diff.size.x = dw
 		diff.position = Vector2(dx, area.end.y - footer_h)
 
-	var card_top := area.position.y + 38.0
+	var card_top := band_bottom + 6.0
 	var card_bottom := area.end.y - footer_h - 10.0
 	var card_h := maxf(card_bottom - card_top, 100.0)
 	var gap := 12.0

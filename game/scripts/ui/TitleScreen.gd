@@ -29,31 +29,24 @@ func _build_ui() -> void:
 	if concert:
 		concert.name = "MenuBG"
 		add_child(concert)
+	# v0.58: marco de concierto (velo + banda de cabecera) — el título ya no pisa los botones.
+	ArtKit.add_menu_frame(self)
 
+	# Logo pixel (cabecera); el layout lo coloca junto al SynthoMark.
 	var logo_px := ArtKit.load_tex("res://assets/sprites/ui/logo_stage_crash.png")
 	if logo_px:
-		var logo_word := ArtKit.make_texture_rect(logo_px, Vector2(132, 28), Vector2.ZERO)
+		var logo_word := ArtKit.make_texture_rect(logo_px, Vector2(96, 20), Vector2.ZERO)
 		logo_word.name = "PixelLogo"
+		logo_word.modulate = Color(1, 1, 1, 0.9)
 		add_child(logo_word)
 
-	var accent := ColorRect.new()
-	accent.name = "AccentBar"
-	accent.color = Color(0.25, 0.85, 0.95, 0.85)
-	accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(accent)
-
-	var accent2 := ColorRect.new()
-	accent2.name = "AccentBar2"
-	accent2.color = Color(0.92, 0.28, 0.35, 0.85)
-	accent2.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(accent2)
-
-	var chrome_tex := ArtKit.panel_chrome_tex()
-	if chrome_tex:
-		var chrome := ArtKit.make_texture_rect(chrome_tex, Vector2(220, 56), Vector2(0, 0))
-		chrome.name = "PanelChrome"
-		chrome.modulate = Color(1, 1, 1, 0.55)
-		add_child(chrome)
+	# Tira de luces del kit como fondo de la cabecera.
+	var banner_tex := ArtKit.title_banner_tex()
+	if banner_tex:
+		var banner := ArtKit.make_texture_rect(banner_tex, Vector2(398, 60), Vector2(0, 0))
+		banner.name = "TitleBanner"
+		banner.modulate = Color(1, 1, 1, 0.45)
+		add_child(banner)
 
 	var logo_tex := ArtKit.load_tex("res://assets/sprites/ui/synthocorp_mark.png")
 	if logo_tex:
@@ -61,29 +54,31 @@ func _build_ui() -> void:
 		logo.name = "SynthoMark"
 		add_child(logo)
 
-	var banner_tex := ArtKit.title_banner_tex()
-	if banner_tex:
-		var banner := ArtKit.make_texture_rect(banner_tex, Vector2(200, 28), Vector2(0, 0))
-		banner.name = "TitleBanner"
-		add_child(banner)
-
-	var miku_p := ArtKit.char_portrait_tex(false)
-	var teto_p := ArtKit.char_portrait_tex(true)
-	if miku_p:
-		var mp := ArtKit.make_texture_rect(miku_p, Vector2(32, 32), Vector2(0, 0))
-		mp.name = "PortraitMiku"
-		add_child(mp)
-	if teto_p:
-		var tp := ArtKit.make_texture_rect(teto_p, Vector2(32, 32), Vector2(0, 0))
-		tp.name = "PortraitTeto"
-		add_child(tp)
+	# Las dos V-Idols a los lados (sprite real del juego; retrato pixel si falta).
+	for who in ["Miku", "Teto"]:
+		var is_teto: bool = who == "Teto"
+		var tex := ArtKit.load_tex("res://assets/sprites/player/%s_idle.png" % who.to_lower())
+		if tex == null:
+			tex = ArtKit.char_portrait_tex(is_teto)
+		if tex:
+			var pr := ArtKit.make_texture_rect(tex, Vector2(84, 84), Vector2(0, 0))
+			pr.name = "Portrait" + who
+			pr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			pr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			pr.flip_h = is_teto
+			add_child(pr)
+			var spot := ColorRect.new()
+			spot.name = "Spot" + who
+			spot.color = (Color(0.25, 0.85, 0.95, 0.16) if not is_teto else Color(0.95, 0.3, 0.45, 0.16))
+			spot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			add_child(spot)
+			move_child(spot, pr.get_index())
 
 	var title := Label.new()
 	title.name = "Title"
-	title.text = "Stage Crash:"
+	title.text = "STAGE CRASH"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 16)
-	title.modulate = Color(0.45, 0.95, 1.0, 1.0)
+	ArtKit.style_title_label(title, 22, Color(0.45, 0.95, 1.0, 1.0), 4)
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(title)
 
@@ -91,19 +86,26 @@ func _build_ui() -> void:
 	subtitle.name = "Subtitle"
 	subtitle.text = "V-Idol Challenge"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_font_size_override("font_size", 18)
-	subtitle.modulate = Color(1.0, 0.95, 0.98, 1.0)
+	ArtKit.style_title_label(subtitle, 13, Color(1.0, 0.62, 0.82, 1.0), 3)
 	subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(subtitle)
 
 	var tag := Label.new()
 	tag.name = "Tagline"
-	tag.text = "Miku × Teto"
+	tag.text = "Miku × Teto · SynthoCorp"
 	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	tag.add_theme_font_size_override("font_size", 10)
+	tag.add_theme_font_size_override("font_size", 8)
 	tag.modulate = Color(0.75, 0.8, 0.9, 0.85)
 	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(tag)
+
+	# Marco del menú (chrome del kit) detrás de la columna de botones.
+	var chrome_tex := ArtKit.panel_chrome_tex()
+	if chrome_tex:
+		var chrome := ArtKit.make_texture_rect(chrome_tex, Vector2(170, 130), Vector2(0, 0))
+		chrome.name = "PanelChrome"
+		chrome.modulate = Color(1, 1, 1, 0.85)
+		add_child(chrome)
 
 	var has_saves := GameState.any_slot_exists()
 
@@ -114,7 +116,6 @@ func _build_ui() -> void:
 	_SafeArea.style_button(continue_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	continue_btn.disabled = not has_saves
 	if not has_saves:
-		continue_btn.modulate = Color(0.55, 0.55, 0.6, 1.0)
 		continue_btn.tooltip_text = "Aún no hay partidas"
 	continue_btn.pressed.connect(_on_continue_pressed)
 	add_child(continue_btn)
@@ -155,8 +156,8 @@ func _build_ui() -> void:
 
 	var ver := Label.new()
 	ver.name = "Version"
-	ver.text = "v0.57.0-proto · run"
-	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ver.text = "v0.58.0-proto · run"
+	ver.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	ver.add_theme_font_size_override("font_size", 8)
 	ver.modulate = Color(0.55, 0.6, 0.7, 0.75)
 	ver.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -164,108 +165,89 @@ func _build_ui() -> void:
 
 
 func _layout() -> void:
+	## v0.58 landscape: cabecera (título) arriba, V-Idols a los lados, columna de botones al centro.
 	var area: Rect2 = _SafeArea.content_rect()
 	var vp: Vector2 = _SafeArea.viewport_size()
-	var ox := _SafeArea.center_x(DESIGN_W, area)
-	# Compact header when vertical space is tight (short phones / tall safe insets)
-	var tight := area.size.y < 200.0
-	# Leave room for three primary buttons near 40px on the 224px design height.
-	var header_h := 46.0 if tight else 54.0
-
-	var accent := get_node_or_null("AccentBar") as ColorRect
-	if accent:
-		accent.position = Vector2(0, area.position.y + (34.0 if tight else 42.0))
-		accent.size = Vector2(vp.x, 3)
-	var accent2 := get_node_or_null("AccentBar2") as ColorRect
-	if accent2:
-		accent2.position = Vector2(0, area.position.y + (38.0 if tight else 46.0))
-		accent2.size = Vector2(vp.x, 2)
-
-	var chrome := get_node_or_null("PanelChrome") as Control
-	if chrome:
-		chrome.visible = not tight
-		chrome.position = Vector2(ox + 30, area.position.y + 6.0)
-		chrome.size = Vector2(220, 56)
-
-	var logo := get_node_or_null("SynthoMark") as Control
-	if logo:
-		logo.position = Vector2(area.position.x, area.position.y + 4.0)
-
-	var pixel_logo := get_node_or_null("PixelLogo") as Control
-	if pixel_logo:
-		pixel_logo.visible = not tight
-		pixel_logo.position = Vector2(ox + (DESIGN_W - 132.0) * 0.5, area.position.y + 6.0)
-		pixel_logo.size = Vector2(132, 28)
-	var title := get_node_or_null("Title") as Label
-	if title:
-		title.visible = tight or pixel_logo == null
-		title.position = Vector2(area.position.x, area.position.y + (4.0 if tight else 8.0))
-		title.size = Vector2(area.size.x, 20)
-		title.add_theme_font_size_override("font_size", 14 if tight else 16)
-
-	var subtitle := get_node_or_null("Subtitle") as Label
-	if subtitle:
-		subtitle.visible = tight or pixel_logo == null
-		subtitle.position = Vector2(area.position.x, area.position.y + (26.0 if tight else 52.0))
-		subtitle.size = Vector2(area.size.x, 20)
-		subtitle.add_theme_font_size_override("font_size", 15 if tight else 18)
-
-	var tag := get_node_or_null("Tagline") as Label
-	if tag:
-		tag.position = Vector2(area.position.x, area.position.y + (48.0 if tight else 74.0))
-		tag.size = Vector2(area.size.x, 12)
+	var tight := area.size.y < 190.0
+	var band_bottom := area.position.y + (44.0 if tight else 54.0)
+	ArtKit.layout_menu_frame(self, band_bottom)
 
 	var banner := get_node_or_null("TitleBanner") as Control
 	if banner:
-		# Hide banner on tight layouts so it never overlaps the button stack
-		banner.visible = not tight
-		banner.position = Vector2(ox + 40, area.position.y + 88.0)
-		banner.size = Vector2(200, 24)
+		banner.position = Vector2(0, 0)
+		banner.size = Vector2(vp.x, band_bottom)
+	var logo := get_node_or_null("SynthoMark") as Control
+	if logo:
+		logo.position = Vector2(area.position.x, area.position.y + 2.0)
+	var pixel_logo := get_node_or_null("PixelLogo") as Control
+	if pixel_logo:
+		# Cabecera centrada bajo el título en tight; a la derecha del SynthoMark si hay espacio.
+		var lw := 88.0 if tight else 110.0
+		pixel_logo.size = Vector2(lw, 18.0 if tight else 22.0)
+		pixel_logo.position = Vector2(area.position.x + (area.size.x - lw) * 0.5, area.position.y + (0.0 if tight else 2.0))
+		pixel_logo.visible = tight  # en landscape amplio el título tipográfico basta; en tight el logo pixel ayuda
 
-	var mp := get_node_or_null("PortraitMiku") as Control
-	if mp:
-		mp.visible = not tight
-		mp.position = Vector2(area.position.x + 4.0, area.position.y + header_h)
-	var tp := get_node_or_null("PortraitTeto") as Control
-	if tp:
-		tp.visible = not tight
-		tp.position = Vector2(area.end.x - 36.0, area.position.y + header_h)
+	var title := get_node_or_null("Title") as Label
+	if title:
+		title.position = Vector2(area.position.x, area.position.y - 2.0)
+		title.size = Vector2(area.size.x, 28)
+		title.add_theme_font_size_override("font_size", 18 if tight else 22)
+	var subtitle := get_node_or_null("Subtitle") as Label
+	if subtitle:
+		subtitle.position = Vector2(area.position.x, area.position.y + (20.0 if tight else 25.0))
+		subtitle.size = Vector2(area.size.x, 16)
+	var tag := get_node_or_null("Tagline") as Label
+	if tag:
+		tag.visible = not tight
+		tag.position = Vector2(area.position.x, area.position.y + 41.0)
+		tag.size = Vector2(area.size.x, 11)
 
-	# Primary stack: Continuar / Nueva / Logros — prefer 44px; reserve mute+version strip
-	var btn_w := minf(160.0, area.size.x - 24.0)
-	var stack_top := area.position.y + header_h
-	var stack_bottom := area.end.y - 32.0
-	var avail := maxf(stack_bottom - stack_top, 90.0)
-	var btn_h := _SafeArea.btn_h(avail, 3, 6.0, true)
+	# Columna de botones
+	var btn_w := minf(156.0, area.size.x * 0.42)
+	var gap := 6.0
+	var stack_top := band_bottom + 12.0
+	var foot := 24.0
+	var avail := area.end.y - foot - 6.0 - stack_top
+	var btn_h := clampf((avail - gap * 2.0) / 3.0, _SafeArea.MIN_BTN_H, 36.0)
 	var bx := area.position.x + (area.size.x - btn_w) * 0.5
+	var names := ["ContinueButton", "NewGameButton", "AchievementsButton"]
+	for i in names.size():
+		var b := get_node_or_null(names[i]) as Button
+		if b:
+			b.position = Vector2(bx, stack_top + float(i) * (btn_h + gap))
+			b.size = Vector2(btn_w, btn_h)
+			b.add_theme_font_size_override("font_size", 12 if btn_h >= 32.0 else 10)
+	var chrome := get_node_or_null("PanelChrome") as Control
+	if chrome:
+		chrome.position = Vector2(bx - 8.0, stack_top - 6.0)
+		chrome.size = Vector2(btn_w + 16.0, btn_h * 3.0 + gap * 2.0 + 12.0)
 
-	var continue_btn := get_node_or_null("ContinueButton") as Button
-	var new_btn := get_node_or_null("NewGameButton") as Button
-	var ach_btn := get_node_or_null("AchievementsButton") as Button
-	if continue_btn:
-		continue_btn.position = Vector2(bx, stack_top)
-		continue_btn.size = Vector2(btn_w, btn_h)
-		continue_btn.add_theme_font_size_override("font_size", 12 if btn_h >= 36.0 else 10)
-	if new_btn:
-		new_btn.position = Vector2(bx, stack_top + btn_h + 6.0)
-		new_btn.size = Vector2(btn_w, btn_h)
-		new_btn.add_theme_font_size_override("font_size", 12 if btn_h >= 36.0 else 10)
-	if ach_btn:
-		ach_btn.position = Vector2(bx, stack_top + (btn_h + 6.0) * 2.0)
-		ach_btn.size = Vector2(btn_w, maxf(btn_h * 0.85, _SafeArea.MIN_BTN_H))
-		ach_btn.add_theme_font_size_override("font_size", 11 if btn_h >= 36.0 else 9)
+	# V-Idols a los lados de la columna
+	var side_w := bx - 8.0 - area.position.x
+	var ps := clampf(minf(side_w, area.end.y - stack_top - 4.0), 48.0, 96.0)
+	for who in ["Miku", "Teto"]:
+		var pr := get_node_or_null("Portrait" + who) as Control
+		var spot := get_node_or_null("Spot" + who) as Control
+		if pr == null:
+			continue
+		var px := area.position.x + (side_w - ps) * 0.5 if who == "Miku" else area.end.x - side_w + (side_w - ps) * 0.5
+		pr.position = Vector2(px, stack_top + 2.0)
+		pr.size = Vector2(ps, ps)
+		pr.visible = side_w >= 44.0
+		if spot:
+			spot.position = Vector2(px + ps * 0.15, stack_top)
+			spot.size = Vector2(ps * 0.7, area.end.y - foot - stack_top)
+			spot.visible = pr.visible
 
 	var mute := get_node_or_null("MuteButton") as Button
 	if mute:
-		mute.size = Vector2(108, _SafeArea.MIN_BTN_H)
-		mute.position = Vector2(area.end.x - mute.size.x, area.end.y - mute.size.y)
-		mute.add_theme_font_size_override("font_size", 10)
-
+		mute.size = Vector2(92, foot)
+		mute.position = Vector2(area.end.x - mute.size.x, area.end.y - foot)
+		mute.add_theme_font_size_override("font_size", 9)
 	var ver := get_node_or_null("Version") as Label
 	if ver:
-		# Keep clear of mute button (left side)
-		ver.position = Vector2(area.position.x, area.end.y - 14.0)
-		ver.size = Vector2(maxf(area.size.x - mute.size.x - 8.0, 60.0), 12)
+		ver.position = Vector2(area.position.x, area.end.y - 12.0)
+		ver.size = Vector2(maxf(area.size.x - 100.0, 60.0), 12)
 		ver.clip_text = true
 
 

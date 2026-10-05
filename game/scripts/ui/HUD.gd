@@ -57,6 +57,7 @@ var _touch_size_btn: Button = null
 var _etank_btn: Button = null
 var _touch_op_btn: Button = null
 var _boss_hp_root: Control = null
+var _pause_dim: ColorRect = null
 var _boss_hp_bg: ColorRect = null
 var _boss_hp_fill: ColorRect = null
 var _boss_hp_label: Label = null
@@ -332,6 +333,14 @@ func _build_ui() -> void:
 		_armor_slots.append(slot)
 
 	# --- Pause panel (hidden) ---
+	# v0.58: velo oscuro detrás del panel; tapa el HUD y el nivel.
+	_pause_dim = ColorRect.new()
+	_pause_dim.name = "PauseDim"
+	_pause_dim.color = Color(0.0, 0.0, 0.02, 0.62)
+	_pause_dim.visible = false
+	_pause_dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_pause_dim.process_mode = Node.PROCESS_MODE_ALWAYS
+	_root.add_child(_pause_dim)
 	_pause_panel = _make_panel(Color(0.03, 0.03, 0.05, 0.94))
 	_pause_panel.name = "PausePanel"
 	_pause_panel.visible = false
@@ -382,6 +391,7 @@ func _build_ui() -> void:
 	_pause_panel.add_child(_weapon_strip_title)
 
 	_weapon_strip = HFlowContainer.new()
+	_weapon_strip.alignment = FlowContainer.ALIGNMENT_CENTER
 	_weapon_strip.name = "WeaponStrip"
 	_weapon_strip.process_mode = Node.PROCESS_MODE_ALWAYS
 	_weapon_strip.add_theme_constant_override("h_separation", 4)
@@ -514,25 +524,28 @@ func _layout() -> void:
 	if _weakness_label and _weakness_label.position.y + 10.0 > max_hud_bottom:
 		_weakness_label.position.y = max_hud_bottom - 12.0
 
-	# Centered pause panel — large touch targets + weapon strip + touch opts
-	var pw := minf(300.0, area.size.x * 0.94)
-	var btn_h := maxf(36.0, minf(_SafeArea.PREFERRED_BTN_H, 40.0))
-	var opt_h := maxf(22.0, btn_h * 0.72)
-	var strip_h := 64.0
-	var ph := 28.0 + btn_h + 34.0 + opt_h + 28.0 + strip_h + 16.0
-	ph = minf(ph, area.size.y * 0.94)
+	# Centered pause panel — v0.58 compact landscape layout: everything fits inside the panel.
+	var pw := minf(312.0, area.size.x * 0.94)
+	var btn_h := 32.0
+	var opt_h := 22.0
+	var n_wpn := maxi(_weapon_strip.get_child_count() if _weapon_strip else 1, 1)
+	var wpn_cols := maxi(int(floor((pw - 20.0 + 4.0) / 58.0)), 1)
+	var wpn_rows := int(ceil(float(n_wpn) / float(wpn_cols)))
+	var strip_h := float(wpn_rows) * 28.0
+	var ph := 22.0 + btn_h + 4.0 + 24.0 + 4.0 + opt_h + 4.0 + 14.0 + strip_h + 8.0
+	ph = minf(ph, area.size.y * 0.96)
 	_pause_panel.size = Vector2(pw, ph)
 	_pause_panel.position = Vector2(
 		area.position.x + (area.size.x - pw) * 0.5,
 		area.position.y + (area.size.y - ph) * 0.5
 	)
-	_pause_title.position = Vector2(0, 6)
+	_pause_title.position = Vector2(0, 3)
 	_pause_title.size = Vector2(pw, 18)
-	var bw := minf(260.0, pw - 24.0)
+	var bw := pw - 20.0
 	var gap := 6.0
 	var half := (bw - gap) * 0.5
-	var pair_x := (pw - bw) * 0.5
-	var row_y := 26.0
+	var pair_x := 10.0
+	var row_y := 22.0
 	_resume_btn.size = Vector2(half, btn_h)
 	_resume_btn.position = Vector2(pair_x, row_y)
 	if _quit_btn:
@@ -540,30 +553,33 @@ func _layout() -> void:
 		_quit_btn.position = Vector2(pair_x + half + gap, row_y)
 		_SafeArea.style_button(_resume_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 		_SafeArea.style_button(_quit_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
-	var etank_y := row_y + btn_h + 6.0
+	var etank_y := row_y + btn_h + 4.0
 	if _etank_btn:
-		_etank_btn.size = Vector2(bw, 28.0)
+		_etank_btn.size = Vector2(bw, 24.0)
 		_etank_btn.position = Vector2(pair_x, etank_y)
 		_refresh_etank_btn()
 		_SafeArea.style_button(_etank_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
-	var opt_top := etank_y + 36.0
+	var opt_top := etank_y + 28.0
 	var half_w := (bw - 6.0) * 0.5
 	if _touch_size_btn:
 		_touch_size_btn.size = Vector2(half_w, opt_h)
-		_touch_size_btn.position = Vector2((pw - bw) * 0.5, opt_top)
+		_touch_size_btn.position = Vector2(pair_x, opt_top)
 		_refresh_touch_opt_labels()
 		_SafeArea.style_button(_touch_size_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	if _touch_op_btn:
 		_touch_op_btn.size = Vector2(half_w, opt_h)
-		_touch_op_btn.position = Vector2((pw - bw) * 0.5 + half_w + 6.0, opt_top)
+		_touch_op_btn.position = Vector2(pair_x + half_w + 6.0, opt_top)
 		_SafeArea.style_button(_touch_op_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
-	var strip_top := opt_top + opt_h + 8.0
+	var strip_top := opt_top + opt_h + 4.0
 	if _weapon_strip_title:
 		_weapon_strip_title.position = Vector2(8, strip_top)
 		_weapon_strip_title.size = Vector2(pw - 16.0, 14)
 	if _weapon_strip:
-		_weapon_strip.position = Vector2(10, strip_top + 16.0)
-		_weapon_strip.size = Vector2(pw - 20.0, maxf(ph - (strip_top + 20.0), 36.0))
+		_weapon_strip.position = Vector2(10, strip_top + 14.0)
+		_weapon_strip.size = Vector2(pw - 20.0, maxf(ph - (strip_top + 18.0), 24.0))
+	if _pause_dim:
+		_pause_dim.position = Vector2.ZERO
+		_pause_dim.size = vp
 
 	# Boss HP — top center of safe area (above playfield, clear of pause)
 	if _boss_hp_root:
@@ -816,6 +832,18 @@ func _toggle_pause() -> void:
 	_is_paused = not _is_paused
 	if _pause_panel:
 		_pause_panel.visible = _is_paused
+		if _is_paused:
+			_root.move_child(_pause_panel, -1)
+	if _pause_dim:
+		_pause_dim.visible = _is_paused
+		if _is_paused:
+			_root.move_child(_pause_dim, _pause_panel.get_index() - 1 if _pause_panel else -1)
+	# v0.58: los controles táctiles se ocultan en pausa (no tapan el menú).
+	var tc := get_tree().root.find_child("TouchControls", true, false) if get_tree() else null
+	if tc is CanvasLayer:
+		if _is_paused and tc.has_method("_release_all_touch_actions"):
+			tc.call("_release_all_touch_actions")
+		(tc as CanvasLayer).visible = not _is_paused
 	var tree := get_tree()
 	# Always clear hitstop when pausing so time_scale can't stick at 0.05
 	var gs := tree.root.get_node_or_null("GameState") if tree else null
@@ -878,8 +906,8 @@ func _rebuild_weapon_strip() -> void:
 		var btn := Button.new()
 		btn.name = "Wpn_%s" % wid
 		btn.text = short
-		btn.custom_minimum_size = Vector2(72, 36)
-		btn.add_theme_font_size_override("font_size", 10)
+		btn.custom_minimum_size = Vector2(54, 24)
+		btn.add_theme_font_size_override("font_size", 8)
 		btn.process_mode = Node.PROCESS_MODE_ALWAYS
 		btn.focus_mode = Control.FOCUS_NONE
 		var selected := wid == cur_id

@@ -1,6 +1,8 @@
 # Stage Crash: V-Idol Challenge
 
 
+**v0.58:** menús con marco de concierto (velo + banda), título sin solapes, pausa con velo y tira de armas compacta en landscape. UI en español táctil.
+
 **v0.40:** sprites de Miku y Teto a 32 px — idle, correr, salto, pared, desliz, disparo y sable. Alas de Stage Flight y hombreras de Encore si llevas la pieza. Sin cambiar el combate.
 **v0.41:** sprites de los 8 Robot Masters (idle + ataque, 48×64) y baldosas de suelo 16×16. CORE-9 holograma. Sin cambiar el combate.
 **v0.57:** fondos más legibles: la pintura de cada etapa se atenúa, se repite en espejo (sin costuras), cubre toda la pantalla y se funde con el suelo; las baldosas toman el color de la etapa. La barra del jefe solo aparece al empezar la pelea. Los secretos quedan tapados por completo (la alcoba ya no se ve a través de la pared). Carteles de etapa y avisos fuera del HUD.
@@ -43,7 +45,7 @@ Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.57.0-proto`
+- Versión demo: `0.58.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)

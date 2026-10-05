@@ -24,13 +24,13 @@ func _build_ui() -> void:
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
+	ArtKit.add_menu_frame(self)
 
 	var header := Label.new()
 	header.name = "Header"
 	header.text = "LOGROS"
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header.add_theme_font_size_override("font_size", 14)
-	header.modulate = Color(1.0, 0.85, 0.3, 1.0)
+	ArtKit.style_title_label(header, 14, Color(1.0, 0.85, 0.3, 1.0), 3)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(header)
 
@@ -75,7 +75,7 @@ func _build_ui() -> void:
 	back.name = "BackButton"
 	back.text = "Volver"
 	back.add_theme_font_size_override("font_size", 10)
-	_SafeArea.style_button(back, Color(0.18, 0.18, 0.26, 0.95), Color(0.55, 0.6, 0.7, 0.85))
+	_SafeArea.style_button(back, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	back.pressed.connect(_on_back)
 	add_child(back)
 
@@ -91,13 +91,15 @@ func _build_ui() -> void:
 
 func _layout() -> void:
 	var area: Rect2 = _SafeArea.content_rect()
+	var band_bottom := area.position.y + 36.0
+	ArtKit.layout_menu_frame(self, band_bottom)
 	var header := get_node_or_null("Header") as Label
 	if header:
 		header.position = Vector2(area.position.x, area.position.y + 2.0)
 		header.size = Vector2(area.size.x, 18)
 	var count := get_node_or_null("CountLabel") as Label
 	if count:
-		count.position = Vector2(area.position.x, area.position.y + 22.0)
+		count.position = Vector2(area.position.x, area.position.y + 20.0)
 		count.size = Vector2(area.size.x, 12)
 
 	var btn_h := maxf(_SafeArea.MIN_BTN_H, 32.0)
@@ -112,7 +114,7 @@ func _layout() -> void:
 
 	var scroll := get_node_or_null("Scroll") as ScrollContainer
 	if scroll:
-		scroll.position = Vector2(area.position.x, area.position.y + 38.0)
+		scroll.position = Vector2(area.position.x, band_bottom + 4.0)
 		scroll.size = Vector2(area.size.x, maxf(area.end.y - btn_h - 8.0 - scroll.position.y, 60.0))
 		var list := scroll.get_node_or_null("AchList") as VBoxContainer
 		if list:

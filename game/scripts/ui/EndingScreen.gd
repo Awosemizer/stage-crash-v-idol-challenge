@@ -53,18 +53,13 @@ func _build_ui() -> void:
 	bg.gui_input.connect(_on_bg_input)
 	add_child(bg)
 
-	var accent := ColorRect.new()
-	accent.name = "Accent"
-	accent.color = Color(0.85, 0.35, 0.95, 0.9)
-	accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(accent)
+	ArtKit.add_menu_frame(self)
 
 	var header := Label.new()
 	header.name = "Header"
 	header.text = "STAGE CLEAR"
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header.add_theme_font_size_override("font_size", 16)
-	header.modulate = Color(0.95, 0.6, 1.0, 1.0)
+	ArtKit.style_title_label(header, 16, Color(0.95, 0.6, 1.0, 1.0), 3)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(header)
 
@@ -101,7 +96,7 @@ func _build_ui() -> void:
 	skip.name = "SkipButton"
 	skip.text = "Saltar →"
 	skip.add_theme_font_size_override("font_size", 10)
-	_SafeArea.style_button(skip, Color(0.14, 0.08, 0.2, 0.95), Color(0.85, 0.35, 0.95))
+	_SafeArea.style_button(skip, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
 	skip.pressed.connect(_go_credits)
 	add_child(skip)
 
@@ -109,30 +104,27 @@ func _build_ui() -> void:
 	nxt.name = "NextButton"
 	nxt.text = "Siguiente"
 	nxt.add_theme_font_size_override("font_size", 11)
-	_SafeArea.style_button(nxt, Color(0.12, 0.1, 0.22, 0.95), Color(0.55, 0.85, 1.0))
+	_SafeArea.style_button(nxt, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	nxt.pressed.connect(_advance)
 	add_child(nxt)
 
 
 func _layout() -> void:
 	var area: Rect2 = _SafeArea.content_rect()
-	var vp: Vector2 = _SafeArea.viewport_size()
-	var accent := get_node_or_null("Accent") as ColorRect
-	if accent:
-		accent.position = Vector2(0, area.position.y + 26.0)
-		accent.size = Vector2(vp.x, 2)
+	var band_bottom := area.position.y + 40.0
+	ArtKit.layout_menu_frame(self, band_bottom)
 	var header := get_node_or_null("Header") as Label
 	if header:
 		header.position = Vector2(area.position.x, area.position.y + 4.0)
 		header.size = Vector2(area.size.x, 20)
 	var char_lbl := get_node_or_null("CharLabel") as Label
 	if char_lbl:
-		char_lbl.position = Vector2(area.position.x, area.position.y + 28.0)
-		char_lbl.size = Vector2(area.size.x, 16)
+		char_lbl.position = Vector2(area.position.x, area.position.y + 24.0)
+		char_lbl.size = Vector2(area.size.x, 14)
 	var body := get_node_or_null("Body") as Label
 	if body:
-		body.position = Vector2(area.position.x + 20.0, area.position.y + 50.0)
-		body.size = Vector2(area.size.x - 40.0, maxf(area.size.y - 110.0, 48.0))
+		body.position = Vector2(area.position.x + 20.0, band_bottom + 8.0)
+		body.size = Vector2(area.size.x - 40.0, maxf(area.end.y - band_bottom - 70.0, 48.0))
 	var hint := get_node_or_null("Hint") as Label
 	var bh := maxf(_SafeArea.MIN_BTN_H, minf(_SafeArea.PREFERRED_BTN_H, 36.0))
 	var skip := get_node_or_null("SkipButton") as Button

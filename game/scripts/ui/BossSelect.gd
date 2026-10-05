@@ -59,11 +59,14 @@ func _build_ui() -> void:
 	if board:
 		board.name = "MenuBG"
 		add_child(board)
+	# v0.58: mismo marco de concierto que el título (velo + banda).
+	ArtKit.add_menu_frame(self)
 
 	var top_bar := ColorRect.new()
 	top_bar.name = "TopBar"
-	top_bar.color = Color(0.12, 0.1, 0.22, 1.0)
+	top_bar.color = Color(0.12, 0.1, 0.22, 0.0)  # replaced by HeaderBand
 	top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top_bar.visible = false
 	add_child(top_bar)
 
 	var hard_banner := ColorRect.new()
@@ -104,8 +107,7 @@ func _build_ui() -> void:
 	header.name = "Header"
 	header.text = "SYNTHOCORP · CARTELERA"
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header.add_theme_font_size_override("font_size", 11)
-	header.modulate = Color(0.45, 0.95, 1.0, 1.0)
+	ArtKit.style_title_label(header, 11, Color(0.45, 0.95, 1.0, 1.0), 2)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(header)
 
@@ -215,11 +217,14 @@ func _build_ui() -> void:
 func _layout() -> void:
 	var area: Rect2 = _SafeArea.content_rect()
 	var vp: Vector2 = _SafeArea.viewport_size()
+	var band_bottom := area.position.y + HEADER_H
+	ArtKit.layout_menu_frame(self, band_bottom)
 
 	var top_bar := get_node_or_null("TopBar") as ColorRect
 	if top_bar:
+		top_bar.visible = false
 		top_bar.position = Vector2(0, 0)
-		top_bar.size = Vector2(vp.x, area.position.y + HEADER_H - 2.0)
+		top_bar.size = Vector2(vp.x, band_bottom)
 	var hard_banner := get_node_or_null("HardBanner") as ColorRect
 	var hard_lbl := get_node_or_null("HardBannerLabel") as Label
 	var hard_on := GameState.is_hard()
@@ -234,13 +239,10 @@ func _layout() -> void:
 
 	var accent := get_node_or_null("AccentCyan") as ColorRect
 	if accent:
-		accent.position = Vector2(0, area.position.y + HEADER_H - 2.0)
-		accent.size = Vector2(vp.x, 2)
-
+		accent.visible = false  # HeaderLineC from menu frame
 	var accent2 := get_node_or_null("AccentMagenta") as ColorRect
 	if accent2:
-		accent2.position = Vector2(0, area.position.y + HEADER_H)
-		accent2.size = Vector2(vp.x, 1)
+		accent2.visible = false  # HeaderLineP from menu frame
 
 	var logo := get_node_or_null("SynthoMark") as Control
 	if logo:

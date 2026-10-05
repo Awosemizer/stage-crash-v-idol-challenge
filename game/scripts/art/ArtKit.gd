@@ -194,6 +194,59 @@ static func menu_backdrop(path: String) -> TextureRect:
 	return tr
 
 
+static func add_menu_frame(parent: Control) -> void:
+	## v0.58 marco de concierto común: velo sobre el fondo + banda de cabecera con doble línea.
+	## Posición/altura en layout_menu_frame() (depende del área segura).
+	if parent == null or parent.get_node_or_null("MenuDim") != null:
+		return
+	var dim := ColorRect.new()
+	dim.name = "MenuDim"
+	dim.color = Color(0.01, 0.0, 0.03, 0.42)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	parent.add_child(dim)
+	var band := ColorRect.new()
+	band.name = "HeaderBand"
+	band.color = Color(0.02, 0.01, 0.05, 0.9)
+	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(band)
+	var l1 := ColorRect.new()
+	l1.name = "HeaderLineC"
+	l1.color = Color(0.25, 0.85, 0.95, 0.9)
+	l1.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(l1)
+	var l2 := ColorRect.new()
+	l2.name = "HeaderLineP"
+	l2.color = Color(0.92, 0.28, 0.55, 0.85)
+	l2.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	parent.add_child(l2)
+
+
+static func layout_menu_frame(parent: Control, band_bottom: float) -> void:
+	if parent == null:
+		return
+	var w := parent.get_viewport_rect().size.x if parent.is_inside_tree() else 398.0
+	var band := parent.get_node_or_null("HeaderBand") as Control
+	if band:
+		band.position = Vector2.ZERO
+		band.size = Vector2(w, band_bottom)
+	var l1 := parent.get_node_or_null("HeaderLineC") as Control
+	if l1:
+		l1.position = Vector2(0, band_bottom)
+		l1.size = Vector2(w, 2)
+	var l2 := parent.get_node_or_null("HeaderLineP") as Control
+	if l2:
+		l2.position = Vector2(0, band_bottom + 2.0)
+		l2.size = Vector2(w, 1)
+
+
+static func style_title_label(lbl: Label, size: int, col: Color, outline: int = 3) -> void:
+	lbl.add_theme_font_size_override("font_size", size)
+	lbl.add_theme_color_override("font_color", col)
+	lbl.add_theme_color_override("font_outline_color", Color(0.02, 0.01, 0.05, 1.0))
+	lbl.add_theme_constant_override("outline_size", outline)
+
+
 static func title_banner_tex() -> Texture2D:
 	return load_tex("res://assets/sprites/ui/title_banner.png")
 
