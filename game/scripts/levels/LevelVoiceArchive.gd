@@ -134,12 +134,7 @@ func _build_course() -> void:
 	theme.modulate = Color(0.55, 0.85, 1.0, 0.8)
 	geometry.add_child(theme)
 
-	var hint := Label.new()
-	hint.text = "Rompe sellos con carga Nv2+ / arma especial / sable"
-	hint.position = Vector2(12, 32)
-	hint.add_theme_font_size_override("font_size", 5)
-	hint.modulate = Color(0.7, 0.8, 0.95, 0.7)
-	geometry.add_child(hint)
+	# v0.59: sin cartel de instrucción en etapa (los sellos se descubren jugando).
 
 	var exit_lbl := Label.new()
 	exit_lbl.text = "CORE SHAFT →"

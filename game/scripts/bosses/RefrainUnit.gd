@@ -49,6 +49,7 @@ func _ready() -> void:
 	if contact:
 		contact.body_entered.connect(_on_contact_body)
 	if name_label:
+		name_label.visible = false  # v0.59: nombre en barra HUD
 		name_label.text = "REFRAIN UNIT"
 	_refresh_hp_bar()
 	_active = false

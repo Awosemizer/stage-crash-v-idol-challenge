@@ -265,6 +265,8 @@ static func make_texture_rect(tex: Texture2D, size: Vector2, pos: Vector2 = Vect
 
 const BOSS_FRAME_W := 48
 const BOSS_FRAME_H := 64
+## v0.59: midjefes con hoja nueva (misma convención 0.48). Overdub es pesado, Refrain es un dron.
+const BOSS_DISPLAY_H := {"overdub": 72.0, "refrain": 56.0}
 const RUN_FRAMES := 8
 
 
@@ -356,7 +358,8 @@ static func skin_projectile(visual: CanvasItem, path: String, frame: int = 0, fr
 
 static func set_boss_pose(sprite: Sprite2D, pose: int = 0) -> void:
 	## pose 0 = idle, 1 = attack. Sheet is two equal frames side by side.
-	## On-screen height stays BOSS_FRAME_H (64). Feet stay at y=0. Hitboxes unchanged.
+	## On-screen height is BOSS_FRAME_H (64), or BOSS_DISPLAY_H for the midbosses
+	## (Overdub 72, Refrain 56). Feet stay at y=0. Hitboxes unchanged.
 	if sprite == null or sprite.texture == null:
 		return
 	var tw := sprite.texture.get_width()
@@ -369,11 +372,15 @@ static func set_boss_pose(sprite: Sprite2D, pose: int = 0) -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	var p := clampi(pose, 0, 1)
 	sprite.region_rect = Rect2(p * fw, 0, fw, fh)
-	var s := float(BOSS_FRAME_H) / float(fh)
+	var display_h := float(BOSS_FRAME_H)
+	var sheet_id := sprite.texture.resource_path.get_file().get_basename()
+	if BOSS_DISPLAY_H.has(sheet_id):
+		display_h = float(BOSS_DISPLAY_H[sheet_id])
+	var s := display_h / float(fh)
 	var sign_x := -1.0 if sprite.scale.x < 0.0 else 1.0
 	sprite.scale = Vector2(sign_x * s, s)
-	# Centered sprite, feet at the bottom of the frame, so the center sits at -32.
-	sprite.position.y = -float(BOSS_FRAME_H) * 0.5
+	# Centered sprite, feet at the bottom of the frame.
+	sprite.position.y = -display_h * 0.5
 
 
 static func setup_stage_parallax(parallax_root: Node2D, theme: String, level_width: float, stage_height: float = 224.0) -> void:

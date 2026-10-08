@@ -23,6 +23,8 @@ Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → 
 
 **v0.40:** Player pixel pass — 32px Miku (cyan twin-tails, buster pose) and Teto (red drills, saber pose): idle, 8-frame run, jump, wall, slide. Flight wings and Encore shoulders overlay when a piece is owned. Hitboxes unchanged.
 **v0.41:** Robot Master pixel pass — 48×64 idle + attack for the 8 stages (fire, ice, quake, wind, neon, metronome, bloom, static), CORE-9 hologram, 16×16 stage floors. Combat numbers and hitboxes unchanged.
+**v0.59:** Overdub Titan y Refrain Unit usan hojas dibujadas nuevas (idle + ataque, como los 8 jefes): Overdub ~72 px con su cañón, Refrain ~56 px flotando. Sin carteles de instrucción en etapa; el hub de la fortaleza usa el marco de menú. Combate y hitbox iguales.
+
 **v0.58:** menús con marco de concierto; pausa compacta.
 
 **v0.57:** fondos más legibles: la pintura de cada etapa se atenúa, se repite en espejo (sin costuras), cubre toda la pantalla y se funde con el suelo; las baldosas toman el color de la etapa. La barra del jefe solo aparece al empezar la pelea. Los secretos quedan tapados por completo (la alcoba ya no se ve a través de la pared). Carteles de etapa y avisos fuera del HUD.

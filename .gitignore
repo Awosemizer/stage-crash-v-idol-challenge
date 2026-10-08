@@ -30,3 +30,4 @@ Thumbs.db
 # Godot mono / C# (not used, ignore if appears)
 .mono/
 data_*/
+__pycache__/

@@ -1,6 +1,8 @@
 # Stage Crash: V-Idol Challenge
 
 
+**v0.59:** Overdub Titan y Refrain Unit usan hojas dibujadas nuevas (idle + ataque, como los 8 jefes): Overdub ~72 px con su cañón, Refrain ~56 px flotando. Sin carteles de instrucción en etapa; el hub de la fortaleza usa el marco de menú. Combate y hitbox iguales.
+
 **v0.58:** menús con marco de concierto (velo + banda), título sin solapes, pausa con velo y tira de armas compacta en landscape. UI en español táctil.
 
 **v0.40:** sprites de Miku y Teto a 32 px — idle, correr, salto, pared, desliz, disparo y sable. Alas de Stage Flight y hombreras de Encore si llevas la pieza. Sin cambiar el combate.
@@ -45,7 +47,7 @@ Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.58.0-proto`
+- Versión demo: `0.59.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)

@@ -33,6 +33,7 @@ func _build_ui() -> void:
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
+	ArtKit.add_menu_frame(self)
 
 	var accent := ColorRect.new()
 	accent.name = "Accent"
@@ -44,8 +45,7 @@ func _build_ui() -> void:
 	header.name = "Header"
 	header.text = "SYNTHOCORP · FORTALEZA CORE-9"
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	header.add_theme_font_size_override("font_size", 10)
-	header.modulate = Color(0.9, 0.55, 1.0, 1.0)
+	ArtKit.style_title_label(header, 11, Color(0.9, 0.55, 1.0, 1.0), 2)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(header)
 
@@ -76,7 +76,7 @@ func _build_ui() -> void:
 	else:
 		enter.text = "Entrar al asalto"
 	enter.add_theme_font_size_override("font_size", 11)
-	_SafeArea.style_button(enter, Color(0.2, 0.1, 0.28, 0.95), Color(0.85, 0.3, 0.95))
+	_SafeArea.style_button(enter, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
 	enter.pressed.connect(_on_enter)
 	add_child(enter)
 
@@ -84,7 +84,7 @@ func _build_ui() -> void:
 	back.name = "ReturnButton"
 	back.text = "Volver al selector"
 	back.add_theme_font_size_override("font_size", 10)
-	_SafeArea.style_button(back, Color(0.16, 0.1, 0.22, 0.95), Color(0.7, 0.55, 0.9))
+	_SafeArea.style_button(back, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	back.pressed.connect(_on_return)
 	add_child(back)
 
@@ -168,11 +168,12 @@ func _make_stage_row(data: Dictionary, index: int, cleared: int, core_done: bool
 func _layout() -> void:
 	var area: Rect2 = _SafeArea.content_rect()
 	var vp: Vector2 = _SafeArea.viewport_size()
+	var band_bottom := area.position.y + 28.0
+	ArtKit.layout_menu_frame(self, band_bottom)
 
 	var accent := get_node_or_null("Accent") as ColorRect
 	if accent:
-		accent.position = Vector2(0, area.position.y + 20.0)
-		accent.size = Vector2(vp.x, 2)
+		accent.visible = false
 
 	var header := get_node_or_null("Header") as Label
 	if header:

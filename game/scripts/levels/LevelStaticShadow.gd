@@ -580,13 +580,5 @@ func _add_vignette() -> void:
 		bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		root.add_child(bar)
 
-	var hint := Label.new()
-	hint.name = "VisionHint"
-	hint.text = "Visión OK (casco Flight)" if has_flight_helm else "Visión reducida…"
-	hint.add_theme_font_size_override("font_size", 5)
-	hint.modulate = Color(0.7, 0.65, 0.85, 0.55)
-	hint.position = Vector2(80, 210)
-	hint.size = Vector2(120, 10)
-	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(hint)
+	# v0.59: sin cartel de visión — la viñeta ya comunica el casco Flight.
 	print("LevelStaticShadow: vignette flight_helm=", has_flight_helm)
