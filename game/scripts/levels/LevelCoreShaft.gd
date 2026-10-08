@@ -63,7 +63,7 @@ func _ready() -> void:
 
 func _build_course() -> void:
 	# Solid floors/walls + thin catwalks you can jump up through (one-way).
-	# Footholds rise 32px (Teto jumps ~36). Gaps between steps stay ≤16px.
+	# Footholds rise <= 24px (Teto's real apex ~34). Gaps between steps stay <= 16px.
 	var solids: Array = [
 		# shaft walls (thick so wide phones never see past them)
 		[-40, 0, 48, LEVEL_BOTTOM + 80, COL_WALL],
@@ -83,24 +83,32 @@ func _build_course() -> void:
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 	var catwalks: Array = [
+		# v0.60: every required rise is <= 24px (Teto's real apex is ~34px).
 		# low path climbs the right wall after the Met
-		[320, 720, 56, 10],
-		[248, 688, 64, 10],
-		[312, 656, 64, 10],
+		[320, 728, 56, 10],
+		[248, 704, 64, 10],
 		# upper path: corner step + catwalk over the pit and the Met
-		[8, 720, 48, 10],
-		[64, 688, 168, 10],
-		# ── Tramo 3 · open climb to the arena hole ──
-		[216, 496, 72, 10],
-		[304, 464, 72, 10],
-		[176, 432, 112, 10],
-		[64, 400, 96, 10],
-		[8, 368, 48, 10],
-		[64, 336, 112, 10],
-		[192, 304, 72, 10],
-		[280, 272, 96, 10],
-		[8, 240, 256, 10],
-		[ARENA_HOLE_X, 208, ARENA_HOLE_W - 4.0, 8],
+		[8, 728, 48, 10],
+		[64, 704, 168, 10],
+		# both paths meet in the right column (landing A is overhead on the left)
+		[304, 680, 40, 10],
+		[336, 656, 40, 10],
+		[304, 632, 40, 10],
+		# ── Tramo 3 · zigzag climb to the arena hole ──
+		[216, 504, 72, 10],
+		[296, 480, 80, 10],
+		[200, 456, 80, 10],
+		[104, 432, 80, 10],
+		[8, 408, 80, 10],
+		[96, 384, 80, 10],
+		[192, 360, 80, 10],
+		[288, 336, 88, 10],
+		[192, 312, 80, 10],
+		[96, 288, 80, 10],
+		[8, 264, 80, 10],
+		[96, 248, 96, 10],
+		[8, 224, 96, 10],
+		[ARENA_HOLE_X, 200, ARENA_HOLE_W - 4.0, 8],
 	]
 	for c in catwalks:
 		_add_rect_platform(float(c[0]), float(c[1]), float(c[2]), float(c[3]), COL_LEDGE, true)
@@ -266,8 +274,8 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 func _spawn_enemies() -> void:
 	_add_met(296.0, SHAFT_FLOOR_Y)  # low path, past the pit
-	_add_met(196.0, 432.0)          # climb: guards the left lip
-	_add_met(156.0, 336.0)          # climb: guards the right lip
+	_add_met(144.0, 432.0)          # climb: first zig
+	_add_met(232.0, 312.0)          # climb: second zag
 
 
 func _add_met(x: float, floor_y: float) -> void:

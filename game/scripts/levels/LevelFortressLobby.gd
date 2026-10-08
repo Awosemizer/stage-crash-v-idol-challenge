@@ -61,7 +61,7 @@ func _ready() -> void:
 
 func _build_course() -> void:
 	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
-	# and most have an upper path. Rises <= 32px, one wall-jump shaft with a mid foothold.
+	# and most have an upper path. Required rises <= 24px (optional catwalks 32), one wall-jump shaft with a mid foothold.
 	#   x0: start run
 	#   x320: spike trenches — low path jumps them, upper path catwalk
 	#   x768: wall-jump shaft 36px + mid foothold
@@ -86,11 +86,11 @@ func _build_course() -> void:
 		[1456, 144, 48, 80, COL_NEON],
 		[1552, 176, 112, 48, COL_FLOOR],
 		[1664, 176, 448, 48, COL_FLOOR],
-		[1728, 144, 64, 32, COL_FLOOR],
-		[1792, 112, 64, 64, COL_NEON],
-		[1856, 80, 64, 96, COL_FLOOR],
-		[1920, 112, 64, 64, COL_NEON],
-		[1984, 144, 64, 32, COL_FLOOR],
+		[1728, 152, 64, 24, COL_FLOOR],
+		[1792, 128, 64, 48, COL_NEON],
+		[1856, 104, 64, 72, COL_FLOOR],
+		[1920, 128, 64, 48, COL_NEON],
+		[1984, 152, 64, 24, COL_FLOOR],
 		[2112, 176, 320, 48, COL_FLOOR],
 	]
 	for s in solids:
@@ -125,7 +125,7 @@ func _build_course() -> void:
 
 	var lbl := Label.new()
 	lbl.text = "REFRAIN →"
-	lbl.position = Vector2(2368, 136)
+	lbl.position = Vector2(2376, 136)
 	lbl.add_theme_font_size_override("font_size", 8)
 	lbl.modulate = COL_NEON
 	geometry.add_child(lbl)
@@ -310,7 +310,7 @@ func _spawn_enemies() -> void:
 	_add_met(536.0, 176.0)
 	_add_met(1188.0, 176.0)
 	_add_met(1624.0, 176.0)
-	_add_met(1888.0, 80.0)
+	_add_met(1888.0, 104.0)
 	_add_met(2272.0, 176.0)
 
 

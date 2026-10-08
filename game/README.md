@@ -1,6 +1,6 @@
-# Stage Crash: V-Idol Challenge — Prototype
+# Stage Crash: V-Idol Challenge — demo completa
 
-Godot **4.5** vertical slice: run / jump / wall-jump / slide on a Beatfire-style test course.
+Godot **4.5** project: 8 Robot Master stages, CORE-9 fortress, endings and credits (run / jump / wall-jump / slide, Miku buster or Teto saber).
 
 ## Open the project
 
@@ -23,6 +23,8 @@ Main scene: `scenes/ui/TitleScreen.tscn` → CharacterSelect → BossSelect → 
 
 **v0.40:** Player pixel pass — 32px Miku (cyan twin-tails, buster pose) and Teto (red drills, saber pose): idle, 8-frame run, jump, wall, slide. Flight wings and Encore shoulders overlay when a piece is owned. Hitboxes unchanged.
 **v0.41:** Robot Master pixel pass — 48×64 idle + attack for the 8 stages (fire, ice, quake, wind, neon, metronome, bloom, static), CORE-9 hologram, 16×16 stage floors. Combat numbers and hitboxes unchanged.
+**v0.60 — demo completa:** 8 Robot Masters + fortaleza (Lobby → Voice Archive → Core Shaft → Heart) + CORE-9 + endings de Miku y Teto, créditos y vuelta al título con la partida guardada. Todas las etapas revisadas para poder pasarse con Miku y Teto (escaleras de 24 px, primer pozo de pilares 40 px, Core Shaft en zigzag). Para jugar: instala **build/StageCrash-debug.apk** en Android (permite instalar apps desconocidas), en horizontal.
+
 **v0.59:** Overdub Titan y Refrain Unit usan hojas dibujadas nuevas (idle + ataque, como los 8 jefes): Overdub ~72 px con su cañón, Refrain ~56 px flotando. Sin carteles de instrucción en etapa; el hub de la fortaleza usa el marco de menú. Combate y hitbox iguales.
 
 **v0.58:** menús con marco de concierto; pausa compacta.

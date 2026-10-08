@@ -61,7 +61,7 @@ func _ready() -> void:
 
 func _build_course() -> void:
 	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
-	# and most have an upper path. Rises <= 32px, one wall-jump shaft with a mid foothold.
+	# and most have an upper path. Required rises <= 24px (optional catwalks 32), one wall-jump shaft with a mid foothold.
 	#   x0: start run
 	#   x320: spike trenches — low path jumps them, upper path catwalk
 	#   x768: updraft over the first gap, light headwind over the second (wind adds every frame — keep it small)
@@ -88,11 +88,11 @@ func _build_course() -> void:
 		[1364, 128, 64, 48, COL_WALL],
 		[1428, 80, 48, 16, COL_FLOOR],
 		[1664, 176, 448, 48, COL_FLOOR],
-		[1728, 144, 64, 32, COL_FLOOR],
-		[1792, 112, 64, 64, COL_TOWER],
-		[1856, 80, 64, 96, COL_FLOOR],
-		[1920, 112, 64, 64, COL_TOWER],
-		[1984, 144, 64, 32, COL_FLOOR],
+		[1728, 152, 64, 24, COL_FLOOR],
+		[1792, 128, 64, 48, COL_TOWER],
+		[1856, 104, 64, 72, COL_FLOOR],
+		[1920, 128, 64, 48, COL_TOWER],
+		[1984, 152, 64, 24, COL_FLOOR],
 		[2112, 176, 96, 48, COL_FLOOR],
 		[2248, 160, 64, 64, COL_TOWER],
 		[2352, 144, 48, 80, COL_TOWER],
@@ -129,7 +129,7 @@ func _build_course() -> void:
 
 	var label := Label.new()
 	label.text = "JEFE →"
-	label.position = Vector2(2816, 136)
+	label.position = Vector2(2824, 136)
 	label.add_theme_font_size_override("font_size", 8)
 	label.modulate = Color(0.45, 0.95, 0.8)
 	geometry.add_child(label)
@@ -396,7 +396,7 @@ func _build_secret_helmet() -> void:
 	pickup.armor_piece = "head"
 	pickup.display_name_es = "Casco Stage Flight"
 	if "toast_hint_es" in pickup:
-		pickup.toast_hint_es = "Radar Stage Flight (stub)"
+		pickup.toast_hint_es = "Radar de secretos · ves en la sombra"
 	pickup.z_index = -2  # detrás de los bloques: la alcoba no se ve
 	var _seal_lbl = pickup.get_node_or_null("Label")
 	if _seal_lbl: _seal_lbl.visible = false
@@ -429,7 +429,7 @@ func _spawn_enemies() -> void:
 	_add_met(536.0, 176.0)
 	_add_met(1188.0, 176.0)
 	_add_met(1636.0, 176.0)
-	_add_met(1888.0, 80.0)
+	_add_met(1888.0, 104.0)
 	_add_met(2520.0, 176.0)
 	_add_met(2720.0, 176.0)
 

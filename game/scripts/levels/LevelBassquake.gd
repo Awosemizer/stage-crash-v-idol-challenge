@@ -119,7 +119,7 @@ func _trigger_screen_shake(amp: float, duration: float) -> void:
 
 func _build_course() -> void:
 	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
-	# and most have an upper path. Rises <= 32px, one wall-jump shaft with a mid foothold.
+	# and most have an upper path. Required rises <= 24px (optional catwalks 32), one wall-jump shaft with a mid foothold.
 	#   x0: start run
 	#   x320: bottomless gaps between raised islands
 	#   x768: spike trenches — low path jumps them, upper path catwalk
@@ -150,11 +150,11 @@ func _build_course() -> void:
 		[1888, 176, 96, 48, COL_FLOOR],
 		[2080, 176, 32, 48, COL_FLOOR],
 		[2112, 176, 448, 48, COL_FLOOR],
-		[2176, 144, 64, 32, COL_FLOOR],
-		[2240, 112, 64, 64, COL_METAL],
-		[2304, 80, 64, 96, COL_FLOOR],
-		[2368, 112, 64, 64, COL_METAL],
-		[2432, 144, 64, 32, COL_FLOOR],
+		[2176, 152, 64, 24, COL_FLOOR],
+		[2240, 128, 64, 48, COL_METAL],
+		[2304, 104, 64, 72, COL_FLOOR],
+		[2368, 128, 64, 48, COL_METAL],
+		[2432, 152, 64, 24, COL_FLOOR],
 		[2560, 176, 320, 48, COL_FLOOR],
 	]
 	for s in solids:
@@ -483,7 +483,7 @@ func _spawn_enemies() -> void:
 	_add_met(728.0, 176.0)
 	_add_met(984.0, 176.0)
 	_add_met(1636.0, 176.0)
-	_add_met(2336.0, 80.0)
+	_add_met(2336.0, 104.0)
 	_add_met(2720.0, 176.0)
 
 

@@ -494,7 +494,7 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 		status.text = "ENTRAR"
 		status.modulate = accent
 	else:
-		status.text = "Pronto"
+		status.text = "BLOQUEADO"
 		status.modulate = Color(0.6, 0.6, 0.65, 0.85)
 	btn.add_child(status)
 

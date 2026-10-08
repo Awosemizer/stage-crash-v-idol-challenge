@@ -62,7 +62,7 @@ func _ready() -> void:
 
 func _build_course() -> void:
 	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
-	# and most have an upper path. Rises <= 32px, one wall-jump shaft with a mid foothold.
+	# and most have an upper path. Required rises <= 24px (optional catwalks 32), one wall-jump shaft with a mid foothold.
 	#   x0: start run
 	#   x320: spike trenches — low path jumps them, upper path catwalk
 	#   x768: frame-skip pads over a pit (upper path) / ice pillar
@@ -93,11 +93,11 @@ func _build_course() -> void:
 		[1904, 144, 48, 80, COL_ICE],
 		[2000, 176, 112, 48, COL_FLOOR],
 		[2112, 176, 448, 48, COL_FLOOR],
-		[2176, 144, 64, 32, COL_FLOOR],
-		[2240, 112, 64, 64, COL_ICE],
-		[2304, 80, 64, 96, COL_FLOOR],
-		[2368, 112, 64, 64, COL_ICE],
-		[2432, 144, 64, 32, COL_FLOOR],
+		[2176, 152, 64, 24, COL_FLOOR],
+		[2240, 128, 64, 48, COL_ICE],
+		[2304, 104, 64, 72, COL_FLOOR],
+		[2368, 128, 64, 48, COL_ICE],
+		[2432, 152, 64, 24, COL_FLOOR],
 		[2560, 176, 320, 48, COL_FLOOR],
 	]
 	for s in solids:
@@ -128,7 +128,7 @@ func _build_course() -> void:
 
 	var label := Label.new()
 	label.text = "JEFE →"
-	label.position = Vector2(2816, 136)
+	label.position = Vector2(2824, 136)
 	label.add_theme_font_size_override("font_size", 8)
 	label.modulate = Color(0.7, 0.95, 1.0)
 	geometry.add_child(label)
@@ -415,7 +415,7 @@ func _spawn_enemies() -> void:
 	_add_met(1168.0, 176.0)
 	_add_met(1636.0, 176.0)
 	_add_met(2072.0, 176.0)
-	_add_met(2336.0, 80.0)
+	_add_met(2336.0, 104.0)
 	_add_met(2720.0, 176.0)
 
 

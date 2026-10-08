@@ -66,7 +66,7 @@ func _ready() -> void:
 
 func _build_course() -> void:
 	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
-	# and most have an upper path. Rises <= 32px, one wall-jump shaft with a mid foothold.
+	# and most have an upper path. Required rises <= 24px (optional catwalks 32), one wall-jump shaft with a mid foothold.
 	#   x0: start run
 	#   x320: spike trenches — low path jumps them, upper path catwalk
 	#   x768: static pockets hang at jump height — low path walks under, upper path goes over
@@ -90,8 +90,8 @@ func _build_course() -> void:
 		[1412, 96, 16, 32, COL_WALL],
 		[1364, 128, 64, 48, COL_WALL],
 		[1428, 80, 48, 16, COL_FLOOR],
-		[1664, 176, 96, 48, COL_FLOOR],
-		[1760, 208, 48, 16, COL_WALL],
+		[1664, 176, 104, 48, COL_FLOOR],
+		[1768, 208, 40, 16, COL_WALL],
 		[1808, 160, 32, 64, COL_METAL],
 		[1840, 208, 32, 16, COL_WALL],
 		[1872, 144, 32, 80, COL_METAL],
@@ -100,11 +100,11 @@ func _build_course() -> void:
 		[1968, 208, 48, 16, COL_WALL],
 		[2016, 176, 96, 48, COL_FLOOR],
 		[2112, 176, 448, 48, COL_FLOOR],
-		[2176, 144, 64, 32, COL_FLOOR],
-		[2240, 112, 64, 64, COL_METAL],
-		[2304, 80, 64, 96, COL_FLOOR],
-		[2368, 112, 64, 64, COL_METAL],
-		[2432, 144, 64, 32, COL_FLOOR],
+		[2176, 152, 64, 24, COL_FLOOR],
+		[2240, 128, 64, 48, COL_METAL],
+		[2304, 104, 64, 72, COL_FLOOR],
+		[2368, 128, 64, 48, COL_METAL],
+		[2432, 152, 64, 24, COL_FLOOR],
 		[2560, 176, 320, 48, COL_FLOOR],
 	]
 	for s in solids:
@@ -130,9 +130,8 @@ func _build_course() -> void:
 		Vector2(584, 200),
 		Vector2(600, 200),
 		Vector2(616, 200),
-		Vector2(1768, 200),
-		Vector2(1784, 200),
-		Vector2(1800, 200),
+		Vector2(1776, 200),
+		Vector2(1792, 200),
 		Vector2(1848, 200),
 		Vector2(1864, 200),
 		Vector2(1912, 200),
@@ -443,7 +442,7 @@ func _spawn_enemies() -> void:
 	_add_met(1068.0, 176.0, true)
 	_add_met(1636.0, 176.0)
 	_add_met(2080.0, 176.0)
-	_add_met(2336.0, 80.0)
+	_add_met(2336.0, 104.0)
 	_add_met(2720.0, 176.0)
 
 

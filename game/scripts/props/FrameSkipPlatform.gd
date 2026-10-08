@@ -83,7 +83,7 @@ func _ensure_visuals() -> void:
 		_glitch_lbl = Label.new()
 		_glitch_lbl.name = "GlitchMark"
 		_glitch_lbl.add_theme_font_size_override("font_size", 5)
-		_glitch_lbl.text = "スキップ"
+		_glitch_lbl.text = "» SALTO «"
 		_glitch_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		add_child(_glitch_lbl)
 	_glitch_lbl.position = Vector2(-size.x * 0.5, -size.y * 0.5 - 10)
@@ -144,4 +144,4 @@ func _refresh_look(glitching: bool) -> void:
 			_edge.color = COL_ICE.lightened(0.3)
 		if _glitch_lbl:
 			_glitch_lbl.visible = false
-			_glitch_lbl.text = "スキップ"
+			_glitch_lbl.text = "» SALTO «"

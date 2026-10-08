@@ -1,5 +1,6 @@
 # Stage Crash: V-Idol Challenge
 
+**v0.60 — demo completa:** 8 Robot Masters + fortaleza (Lobby → Voice Archive → Core Shaft → Heart) + CORE-9 + endings de Miku y Teto, créditos y vuelta al título con la partida guardada. Todas las etapas revisadas para poder pasarse con Miku y Teto (escaleras de 24 px, primer pozo de pilares 40 px, Core Shaft en zigzag). Para jugar: instala **build/StageCrash-debug.apk** en Android (permite instalar apps desconocidas), en horizontal.
 
 **v0.59:** Overdub Titan y Refrain Unit usan hojas dibujadas nuevas (idle + ataque, como los 8 jefes): Overdub ~72 px con su cañón, Refrain ~56 px flotando. Sin carteles de instrucción en etapa; el hub de la fortaleza usa el marco de menú. Combate y hitbox iguales.
 
@@ -41,13 +42,13 @@
 **v0.17:** pixel-art placeholders (player Miku/Teto frames, bosses, tiles, Met-Beat, UI portraits).
 
 **v0.16:** logros (pantalla Logros, toast) + Hard (+2 daño, i-frames 0.6s).
-Demo / prototipo **Mega Man–like** con Hatsune Miku × Kasane Teto.
+Demo completa **Mega Man–like** con Hatsune Miku × Kasane Teto.
 
 - Motor: **Godot 4.5**
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.59.0-proto`
+- Versión demo: `0.60.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)
@@ -78,15 +79,16 @@ En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
 1. **Title** — *Continuar* / *Nueva partida* → **3 slots** (`user://save_N.json`)
 2. **Selección** — **Miku** (Buster + carga, cian) o **Teto** (Sable melee, rojo)
 3. **Boss Select** — grilla 3×3 SynthoCorp (8 Robot Masters + CORE-9); **autoguarda** al entrar
-4. **Etapas** — 8 Robot Masters + fortaleza CORE-9
+4. **Etapas** — 8 Robot Masters → arma obtenida → vuelta al selector
+5. **Fortaleza** — con los 8 vencidos: Lobby → Voice Archive → Core Shaft → Heart (CORE-9) → ending (Miku/Teto) → créditos → título
 
 ---
 
 ## Instalar el APK (Android)
 
-Archivo listo (debug, un solo archivo, ~27 MB):
+Archivo listo (debug, un solo archivo, ~46 MB):
 
-**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.35 — jefes/armadura)
+**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.60 — demo completa)
 
 1. Descarga el APK desde este repo (botón Raw / Download).
 2. En el teléfono: permite **orígenes desconocidos** / instalar apps desconocidas para el navegador o gestor de archivos.

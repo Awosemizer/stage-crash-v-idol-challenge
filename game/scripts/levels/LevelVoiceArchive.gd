@@ -87,11 +87,11 @@ func _build_course() -> void:
 		[1616, 144, 48, 80, COL_ACCENT],
 		[1712, 176, 112, 48, COL_FLOOR],
 		[1824, 176, 448, 48, COL_FLOOR],
-		[1888, 144, 64, 32, COL_FLOOR],
-		[1952, 112, 64, 64, COL_ACCENT],
-		[2016, 80, 64, 96, COL_FLOOR],
-		[2080, 112, 64, 64, COL_ACCENT],
-		[2144, 144, 64, 32, COL_FLOOR],
+		[1888, 152, 64, 24, COL_FLOOR],
+		[1952, 128, 64, 48, COL_ACCENT],
+		[2016, 104, 64, 72, COL_FLOOR],
+		[2080, 128, 64, 48, COL_ACCENT],
+		[2144, 152, 64, 24, COL_FLOOR],
 		[2272, 176, 160, 48, COL_FLOOR],
 		[2336, 16, 32, 112, COL_WALL],
 		[2432, 176, 240, 48, COL_FLOOR],
@@ -133,8 +133,6 @@ func _build_course() -> void:
 	theme.add_theme_font_size_override("font_size", 7)
 	theme.modulate = Color(0.55, 0.85, 1.0, 0.8)
 	geometry.add_child(theme)
-
-	# v0.59: sin cartel de instrucción en etapa (los sellos se descubren jugando).
 
 	var exit_lbl := Label.new()
 	exit_lbl.text = "CORE SHAFT →"
@@ -238,7 +236,7 @@ func _spawn_enemies() -> void:
 	_add_met(904.0, 176.0)
 	_add_met(1348.0, 176.0)
 	_add_met(1784.0, 176.0)
-	_add_met(2048.0, 80.0)
+	_add_met(2048.0, 104.0)
 	_add_met(2408.0, 176.0)
 
 

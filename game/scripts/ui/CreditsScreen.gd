@@ -1,12 +1,13 @@
 extends Control
-## Créditos con scroll / tap-to-advance → Boss Select (CORE-9 marcado).
+## Créditos con scroll / tap-to-advance → pantalla de título (v0.60; la partida queda guardada).
 
 const _SafeArea := preload("res://scripts/ui/SafeArea.gd")
 const BOSS_SELECT := "res://scenes/ui/BossSelect.tscn"
+const TITLE_SCENE := "res://scenes/ui/TitleScreen.tscn"
 
 const CREDIT_LINES: PackedStringArray = [
 	"Stage Crash: V-Idol Challenge",
-	"Prototipo Godot 4.5",
+	"Hecho con Godot 4.5",
 	"",
 	"Diseño / código",
 	"Luis L + asistente Grok",
@@ -151,4 +152,4 @@ func _go_select() -> void:
 		AudioManager.play_sfx("ui_confirm")
 	if GameState and GameState.active_slot >= 0:
 		GameState.autosave()
-	get_tree().change_scene_to_file(BOSS_SELECT)
+	get_tree().change_scene_to_file(TITLE_SCENE)

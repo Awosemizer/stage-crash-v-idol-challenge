@@ -63,7 +63,7 @@ func _ready() -> void:
 
 func _build_course() -> void:
 	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
-	# and most have an upper path. Rises <= 32px, one wall-jump shaft with a mid foothold.
+	# and most have an upper path. Required rises <= 24px (optional catwalks 32), one wall-jump shaft with a mid foothold.
 	#   x0: start run
 	#   x320: bottomless gaps between raised islands
 	#   x768: drifting vines over a pit, petals overhead
@@ -93,11 +93,11 @@ func _build_course() -> void:
 		[1920, 208, 48, 16, COL_WALL],
 		[1968, 176, 144, 48, COL_FLOOR],
 		[2112, 176, 448, 48, COL_FLOOR],
-		[2176, 144, 64, 32, COL_FLOOR],
-		[2240, 112, 64, 64, COL_VINE],
-		[2304, 80, 64, 96, COL_FLOOR],
-		[2368, 112, 64, 64, COL_VINE],
-		[2432, 144, 64, 32, COL_FLOOR],
+		[2176, 152, 64, 24, COL_FLOOR],
+		[2240, 128, 64, 48, COL_VINE],
+		[2304, 104, 64, 72, COL_FLOOR],
+		[2368, 128, 64, 48, COL_VINE],
+		[2432, 152, 64, 24, COL_FLOOR],
 		[2560, 176, 320, 48, COL_FLOOR],
 	]
 	for s in solids:
@@ -425,7 +425,7 @@ func _spawn_enemies() -> void:
 	_add_met(1180.0, 176.0)
 	_add_met(1636.0, 176.0)
 	_add_met(1880.0, 176.0)
-	_add_met(2336.0, 80.0)
+	_add_met(2336.0, 104.0)
 	_add_met(2720.0, 176.0)
 
 

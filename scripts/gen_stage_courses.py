@@ -2,7 +2,7 @@
 """Stage Crash — regenerate the 8 robot-master courses (v0.56 long stages).
 
 Each stage is a chain of ~1-screen sections. Physics budget (Player.gd, unchanged):
-  jump ~40px Miku / ~36px Teto  -> every required rise is <= 32px
+  jump ~40px Miku / ~36px Teto (discrete apex ~38 / ~34) -> required rises <= 24px (v0.60)
   flat gaps <= 48px, 16px rise gaps <= 40px, 32px rise gaps <= 16px
   wall-jump shaft 36px open air with a mid foothold
 Thin catwalks are one-way (jump up through them), floors and walls are solid.
@@ -111,17 +111,18 @@ def s_stairs(c, x0):
     c.notes.append(f"{x0}: block stairs up and down, Met on the summit")
     c.ck(x0 + 32)
     c.floor(x0, 448)
-    for i, top in enumerate((144, 112, 80, 112, 144)):
+    # v0.60: 24px steps (Teto's real apex is ~34px; 32px steps needed a perfect full jump).
+    for i, top in enumerate((152, 128, 104, 128, 152)):
         c.block(x0 + 64 + i * 64, top, 64, FY - top, "COL_FLOOR" if i % 2 == 0 else "COL_ALT")
-    c.met(x0 + 224, 80)
+    c.met(x0 + 224, 104)
     return 448
 
 
 def s_pillars(c, x0):
     c.notes.append(f"{x0}: pillars over a spike floor — low path is the spikes, hop the tops")
     c.ck(x0 + 40)
-    c.floor(x0, 96)
-    c.spike_pit(x0 + 96, 48)
+    c.floor(x0, 104)
+    c.spike_pit(x0 + 104, 40)  # v0.60: 40px so Teto clears gap + 16px rise with room
     c.floor(x0 + 144, 32, top=160, col="COL_ALT")
     c.spike_pit(x0 + 176, 32)
     c.floor(x0 + 208, 32, top=144, col="COL_ALT")
@@ -325,7 +326,7 @@ def gen(name):
     lines = [
         "func _build_course() -> void:",
         "\t# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path",
-        "\t# and most have an upper path. Rises <= 32px, one wall-jump shaft with a mid foothold.",
+        "\t# and most have an upper path. Required rises <= 24px (optional catwalks 32), one wall-jump shaft with a mid foothold.",
     ]
     for n in c.notes:
         lines.append(f"\t#   x{n}")
@@ -357,7 +358,7 @@ def gen(name):
     body = "\n".join(lines) + "\n"
     for blk in label_blocks:
         if "→" in blk:
-            blk = re.sub(r"(\w+)\.position = Vector2\([^)]*\)", lambda m: f"{m.group(1)}.position = Vector2({gate_x - 48}, 136)", blk)
+            blk = re.sub(r"(\w+)\.position = Vector2\([^)]*\)", lambda m: f"{m.group(1)}.position = Vector2({gate_x - 40}, 136)", blk)
         body += "\n" + blk
     src = replace_func(src, "_build_course", body)
 
