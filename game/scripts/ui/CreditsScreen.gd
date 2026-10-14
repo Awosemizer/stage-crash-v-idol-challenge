@@ -29,6 +29,7 @@ var _body: Label = null
 
 
 func _ready() -> void:
+	preload("res://scripts/ui/MenuKit.gd").fade_in(self)  # v0.64 fundido común
 	# Ensure CORE-9 stays marked when returning
 	if GameState:
 		if GameState.has_method("on_ending_reached"):
@@ -152,4 +153,5 @@ func _go_select() -> void:
 		AudioManager.play_sfx("ui_confirm")
 	if GameState and GameState.active_slot >= 0:
 		GameState.autosave()
+	Engine.set_meta("title_seen", false)
 	get_tree().change_scene_to_file(TITLE_SCENE)

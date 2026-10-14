@@ -247,7 +247,9 @@ func _show_win_banner() -> void:
 	sb.bg_color = Color(0.08, 0.04, 0.12, 0.94)
 	sb.set_border_width_all(2)
 	sb.border_color = COL_NEON
-	sb.set_corner_radius_all(4)
+	sb.set_corner_radius_all(0)  # v0.64 marco 16-bit
+	sb.shadow_color = Color(sb.border_color.r, sb.border_color.g, sb.border_color.b, 0.35)
+	sb.shadow_size = 3
 	panel.add_theme_stylebox_override("panel", sb)
 	panel.size = Vector2(196, 88)
 	var vp := get_viewport().get_visible_rect().size
@@ -257,6 +259,8 @@ func _show_win_banner() -> void:
 	title.text = "¡REFRAIN CAÍDO!"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 12)
+	title.add_theme_color_override("font_outline_color", Color(0.02, 0.0, 0.06))
+	title.add_theme_constant_override("outline_size", 4)
 	title.modulate = COL_NEON
 	title.position = Vector2(0, 8)
 	title.size = Vector2(196, 16)

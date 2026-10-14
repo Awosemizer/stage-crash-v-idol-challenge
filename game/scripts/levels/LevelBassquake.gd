@@ -365,7 +365,9 @@ func _show_win_banner() -> void:
 	sb.bg_color = Color(0.1, 0.08, 0.06, 0.92)
 	sb.set_border_width_all(2)
 	sb.border_color = Color(0.95, 0.65, 0.25, 1.0)
-	sb.set_corner_radius_all(4)
+	sb.set_corner_radius_all(0)  # v0.64 marco 16-bit
+	sb.shadow_color = Color(sb.border_color.r, sb.border_color.g, sb.border_color.b, 0.35)
+	sb.shadow_size = 3
 	panel.add_theme_stylebox_override("panel", sb)
 	panel.size = Vector2(196, 96)
 	var vp := get_viewport().get_visible_rect().size
@@ -376,6 +378,8 @@ func _show_win_banner() -> void:
 	title.text = "¡VICTORIA!"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 14)
+	title.add_theme_color_override("font_outline_color", Color(0.02, 0.0, 0.06))
+	title.add_theme_constant_override("outline_size", 4)
 	title.modulate = Color(0.95, 0.7, 0.35, 1.0)
 	title.position = Vector2(0, 6)
 	title.size = Vector2(196, 18)
@@ -399,7 +403,9 @@ func _show_win_banner() -> void:
 	bn.bg_color = Color(0.22, 0.16, 0.1, 0.95)
 	bn.set_border_width_all(2)
 	bn.border_color = Color(0.95, 0.65, 0.25, 1.0)
-	bn.set_corner_radius_all(3)
+	bn.set_corner_radius_all(0)  # v0.64 marco 16-bit
+	bn.shadow_color = Color(bn.border_color.r, bn.border_color.g, bn.border_color.b, 0.35)
+	bn.shadow_size = 3
 	var bh := bn.duplicate()
 	bh.bg_color = bn.bg_color.lightened(0.12)
 	var bp := bn.duplicate()

@@ -19,6 +19,7 @@ const STAGES: Array = [
 
 
 func _ready() -> void:
+	preload("res://scripts/ui/MenuKit.gd").fade_in(self)  # v0.64 fundido común
 	_build_ui()
 	get_viewport().size_changed.connect(_layout)
 	call_deferred("_layout")
@@ -133,7 +134,9 @@ func _make_stage_row(data: Dictionary, index: int, cleared: int, core_done: bool
 		sb.bg_color = Color(0.08, 0.06, 0.12, 0.9)
 		sb.border_color = Color(0.4, 0.35, 0.5, 0.7)
 	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(3)
+	sb.set_corner_radius_all(0)  # v0.64 marco 16-bit
+	sb.shadow_color = Color(sb.border_color.r, sb.border_color.g, sb.border_color.b, 0.35)
+	sb.shadow_size = 3
 	row.add_theme_stylebox_override("panel", sb)
 	row.custom_minimum_size = Vector2(0, 28)
 
@@ -141,6 +144,8 @@ func _make_stage_row(data: Dictionary, index: int, cleared: int, core_done: bool
 	title.name = "Title"
 	title.text = str(data.get("name", "?"))
 	title.add_theme_font_size_override("font_size", 8)
+	title.add_theme_color_override("font_outline_color", Color(0.02, 0.0, 0.06))
+	title.add_theme_constant_override("outline_size", 4)
 	title.modulate = Color(0.95, 0.9, 1.0, 1.0) if (done or current) else Color(0.55, 0.55, 0.65, 1.0)
 	title.position = Vector2(8, 2)
 	title.size = Vector2(200, 12)

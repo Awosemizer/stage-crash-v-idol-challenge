@@ -352,7 +352,9 @@ func _build_ui() -> void:
 	_pause_title.text = "PAUSA"
 	_pause_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_pause_title.add_theme_font_size_override("font_size", 14)
-	_pause_title.modulate = Color(0.4, 0.95, 1.0, 1.0)
+	_pause_title.add_theme_color_override("font_outline_color", Color(0.02, 0.0, 0.06))
+	_pause_title.add_theme_constant_override("outline_size", 4)
+	_pause_title.modulate = Color(1.0, 0.86, 0.35, 1.0)
 	_pause_title.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_pause_panel.add_child(_pause_title)
 
@@ -451,9 +453,11 @@ func _make_panel(col: Color) -> Panel:
 	var p := Panel.new()
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = col
-	sb.set_border_width_all(1)
+	sb.set_border_width_all(2)
 	sb.border_color = Color(0.35, 0.9, 1.0, 0.9)
-	sb.set_corner_radius_all(2)
+	sb.set_corner_radius_all(0)  # v0.64 marco 16-bit
+	sb.shadow_color = Color(sb.border_color.r, sb.border_color.g, sb.border_color.b, 0.35)
+	sb.shadow_size = 3
 	p.add_theme_stylebox_override("panel", sb)
 	return p
 

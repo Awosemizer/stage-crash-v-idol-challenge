@@ -3,6 +3,28 @@ extends Control
 ## Layout responsive: SafeArea + cells sized to fit 16:9 / 20:9 landscape.
 
 const _SafeArea := preload("res://scripts/ui/SafeArea.gd")
+const MenuKit := preload("res://scripts/ui/MenuKit.gd")
+const WALL := "res://assets/sprites/ui/bossselect_wall.png"
+## v0.64: marcos de neón del muro de monitores (coords del lienzo 398×224), fila por fila.
+const FRAME_RECTS: Array = [
+	Rect2(56, 48, 78, 38), Rect2(155, 48, 88, 38), Rect2(264, 48, 78, 38),
+	Rect2(56, 99, 78, 39), Rect2(146, 92, 107, 52), Rect2(264, 99, 78, 39),
+	Rect2(56, 152, 78, 38), Rect2(155, 152, 88, 38), Rect2(264, 152, 78, 38),
+]
+const STAGE_NAMES := {
+	"beatfire": "ESTADIO EN LLAMAS", "glitch_ice": "ESTUDIO GLITCH", "bassquake": "SUBWOOFER INDUSTRIAL",
+	"echo_wind": "TORRES DEL ECO", "neon_volt": "CLUB NEÓN", "metronome": "FÁBRICA DE RELOJES",
+	"chorus_bloom": "INVERNADERO SYNTHO", "static_shadow": "BACKSTAGE · RUIDO BLANCO", "core9": "FORTALEZA CORE-9",
+}
+## Arma que les hace ×3 (grupos weak_to_* de cada jefe).
+const WEAKNESS := {
+	"beatfire": ["freeze_sample", "Freeze Sample"], "glitch_ice": ["quake_drop", "Quake Drop"],
+	"bassquake": ["echo_gale", "Echo Gale"], "echo_wind": ["neon_arc", "Neon Arc"],
+	"neon_volt": ["tempo_spike", "Tempo Spike"], "metronome": ["petal_chorus", "Petal Chorus"],
+	"chorus_bloom": ["static_veil", "Static Veil"], "static_shadow": ["beat_blaze", "Beat Blaze"],
+}
+var _selected := ""
+var _intro: CanvasLayer = null
 
 const LEVEL_BEATFIRE := "res://scenes/levels/Level01.tscn"
 const LEVEL_ECHO_WIND := "res://scenes/levels/LevelEchoWind.tscn"
@@ -43,6 +65,8 @@ func _ready() -> void:
 	_build_ui()
 	get_viewport().size_changed.connect(_layout)
 	call_deferred("_layout")
+	call_deferred("_initial_focus")
+	MenuKit.fade_in(self)
 	if AudioManager:
 		AudioManager.play_bgm("boss_select")
 
@@ -55,12 +79,26 @@ func _build_ui() -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 
-	var board := ArtKit.menu_backdrop("res://assets/sprites/ui/menu_billboard.png")
-	if board:
-		board.name = "MenuBG"
-		add_child(board)
+	# v0.64: muro de monitores (fondo cubriendo + copia nítida 398×224 centrada).
+	if MenuKit.add_fullscreen_art(self, WALL, "MenuBG", 0.55) == null:
+		var board := ArtKit.menu_backdrop("res://assets/sprites/ui/menu_billboard.png")
+		if board:
+			board.name = "MenuBG"
+			add_child(board)
+	var wall_tex := ArtKit.load_tex(WALL)
+	if wall_tex:
+		var wall := TextureRect.new()
+		wall.name = "Wall"
+		wall.texture = wall_tex
+		wall.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		wall.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(wall)
 	# v0.58: mismo marco de concierto que el título (velo + banda).
 	ArtKit.add_menu_frame(self)
+	for n in ["MenuDim", "HeaderBand", "HeaderLineC", "HeaderLineP"]:
+		var fc := get_node_or_null(n) as CanvasItem
+		if fc:
+			fc.visible = false
 
 	var top_bar := ColorRect.new()
 	top_bar.name = "TopBar"
@@ -107,7 +145,7 @@ func _build_ui() -> void:
 	header.name = "Header"
 	header.text = "SYNTHOCORP · CARTELERA"
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	ArtKit.style_title_label(header, 11, Color(0.45, 0.95, 1.0, 1.0), 2)
+	ArtKit.style_title_label(header, 7, Color(0.55, 0.85, 1.0, 0.8), 2)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(header)
 
@@ -115,10 +153,21 @@ func _build_ui() -> void:
 	sub.name = "SubHeader"
 	sub.text = "Selecciona un Robot Master"
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	sub.add_theme_font_size_override("font_size", 9)
-	sub.modulate = Color(0.8, 0.85, 0.95, 0.85)
+	sub.add_theme_font_size_override("font_size", 8)
+	sub.add_theme_color_override("font_outline_color", Color(0.02, 0.0, 0.06))
+	sub.add_theme_constant_override("outline_size", 2)
+	sub.modulate = Color(0.85, 0.9, 1.0, 0.95)
 	sub.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(sub)
+
+	var bname := MenuKit.label("", 12, MenuKit.COL_GOLD, 3)
+	bname.name = "BossName"
+	bname.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(bname)
+	var bhint := MenuKit.label("", 8, Color(0.85, 0.9, 1.0), 2)
+	bhint.name = "BossHint"
+	bhint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(bhint)
 
 	var grid := Control.new()
 	grid.name = "BossGrid"
@@ -146,7 +195,7 @@ func _build_ui() -> void:
 	back.name = "BackButton"
 	back.text = "Volver"
 	back.add_theme_font_size_override("font_size", 11)
-	_SafeArea.style_button(back, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
+	MenuKit.style_button(back, MenuKit.COL_CYAN, 10)
 	back.pressed.connect(_on_back)
 	add_child(back)
 
@@ -154,7 +203,7 @@ func _build_ui() -> void:
 	ach_btn.name = "AchievementsButton"
 	ach_btn.text = "Logros"
 	ach_btn.add_theme_font_size_override("font_size", 11)
-	_SafeArea.style_button(ach_btn, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
+	MenuKit.style_button(ach_btn, MenuKit.COL_PINK, 10)
 	ach_btn.pressed.connect(_on_achievements)
 	add_child(ach_btn)
 
@@ -165,6 +214,13 @@ func _build_ui() -> void:
 	diff_btn.pressed.connect(_on_diff_toggle)
 	add_child(diff_btn)
 	_refresh_diff_label(diff_btn)
+
+	var go_btn := Button.new()
+	go_btn.name = "ConfirmButton"
+	go_btn.text = "¡Entrar! ▶"
+	MenuKit.style_button(go_btn, MenuKit.COL_GOLD, 10)
+	go_btn.pressed.connect(_on_confirm)
+	add_child(go_btn)
 
 	var char_lbl := Label.new()
 	char_lbl.name = "CharLabel"
@@ -183,7 +239,7 @@ func _build_ui() -> void:
 	datos.name = "DatosButton"
 	datos.text = "Datos"
 	datos.add_theme_font_size_override("font_size", 11)
-	_SafeArea.style_button(datos, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
+	MenuKit.style_button(datos, MenuKit.COL_CYAN, 10)
 	datos.pressed.connect(_toggle_datos)
 	add_child(datos)
 
@@ -196,7 +252,7 @@ func _build_ui() -> void:
 	sb.set_border_width_all(1)
 	sb.border_color = Color(0.35, 0.9, 1.0, 0.95)
 	sb.set_corner_radius_all(4)
-	panel.add_theme_stylebox_override("panel", sb)
+	panel.add_theme_stylebox_override("panel", MenuKit.panel_box(MenuKit.COL_CYAN))
 	add_child(panel)
 	var datos_body := Label.new()
 	datos_body.name = "DatosBody"
@@ -209,7 +265,7 @@ func _build_ui() -> void:
 	datos_close.name = "DatosClose"
 	datos_close.text = "Cerrar"
 	datos_close.add_theme_font_size_override("font_size", 12)
-	_SafeArea.style_button(datos_close, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
+	MenuKit.style_button(datos_close, MenuKit.COL_PINK, 11)
 	datos_close.pressed.connect(_toggle_datos)
 	panel.add_child(datos_close)
 
@@ -258,127 +314,118 @@ func _layout() -> void:
 		sub.position = Vector2(area.position.x, area.position.y + 14.0)
 		sub.size = Vector2(area.size.x, 10)
 
-	# Footer buttons sit at bottom of safe area — scale widths so they never clip
-	var btn_h := 36.0
-	var footer_y := area.end.y - btn_h
-	var back := get_node_or_null("BackButton") as Button
-	var ach := get_node_or_null("AchievementsButton") as Button
-	var diff := get_node_or_null("DiffButton") as Button
-	var datos := get_node_or_null("DatosButton") as Button
+	# v0.64: lienzo 398×224 centrado; las celdas caen dentro de los marcos del muro.
+	var o := MenuKit.stage_origin(self)
+	var wall := get_node_or_null("Wall") as Control
+	if wall:
+		wall.position = o
+		wall.size = MenuKit.STAGE
+	if header:
+		header.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		header.position = Vector2(o.x + 24.0, o.y)
+		header.size = Vector2(140, 9)
+	if sub:
+		sub.visible = false
+	var bn := get_node_or_null("BossName") as Label
+	if bn:
+		bn.position = Vector2(o.x + 8.0, o.y + 7.0)
+		bn.size = Vector2(MenuKit.STAGE.x - 16.0, 14)
+	var bh := get_node_or_null("BossHint") as Label
+	if bh:
+		bh.position = Vector2(o.x + 8.0, o.y + 20.0)
+		bh.size = Vector2(MenuKit.STAGE.x - 16.0, 10)
+	if logo:
+		logo.position = o + Vector2(6, 7)
 
-	var gap := 6.0
-	var back_w := 78.0
-	var ach_w := 78.0
-	var diff_w := 84.0
-	var datos_w := 78.0
-	var row_need := back_w + ach_w + diff_w + datos_w + gap * 3.0
-	if row_need > area.size.x:
-		var scale := area.size.x / row_need
-		back_w = floorf(back_w * scale)
-		ach_w = floorf(ach_w * scale)
-		diff_w = floorf(diff_w * scale)
-		datos_w = floorf(datos_w * scale)
-	var x := area.position.x
-	if back:
-		back.position = Vector2(x, footer_y)
-		back.size = Vector2(back_w, btn_h)
-		x += back_w + gap
-	if ach:
-		ach.position = Vector2(x, footer_y)
-		ach.size = Vector2(ach_w, btn_h)
-		x += ach_w + gap
-	if diff:
-		diff.position = Vector2(x, footer_y)
-		diff.size = Vector2(diff_w, btn_h)
-		x += diff_w + gap
-	if datos:
-		datos.position = Vector2(x, footer_y)
-		datos.size = Vector2(maxf(datos_w, 64.0), btn_h)
-
+	# Fila inferior (banda de máquinas del muro): Volver · Logros · Dificultad · Datos · ¡Entrar!
+	var btn_h := 20.0
+	var footer_y := minf(o.y + 200.0, area.end.y - btn_h)
+	var row := ["BackButton", "AchievementsButton", "DiffButton", "DatosButton", "ConfirmButton"]
+	var widths := [62.0, 62.0, 96.0, 58.0, 76.0]
+	var gap := 4.0
+	var row_need := gap * 4.0
+	for wv in widths:
+		row_need += wv
+	var row_scale := minf(1.0, (area.size.x) / row_need)
+	var x := o.x + (MenuKit.STAGE.x - row_need * row_scale) * 0.5
+	x = maxf(x, area.position.x)
+	for i in row.size():
+		var rb := get_node_or_null(row[i]) as Button
+		if rb == null:
+			continue
+		rb.position = Vector2(x, footer_y)
+		rb.size = Vector2(floorf(widths[i] * row_scale), btn_h)
+		x += widths[i] * row_scale + gap
 	var footer := get_node_or_null("Footer") as Label
 	if footer:
-		footer.position = Vector2(area.position.x, footer_y - 11.0)
-		footer.size = Vector2(area.size.x, 10)
+		footer.visible = false
 		footer.clip_text = true
-
-	# Grid fills remaining middle band — MUST fit 3×3 without clipping footer/header
-	var grid_top := area.position.y + HEADER_H + 2.0
-	var grid_bottom := footer_y - 12.0
-	var grid_h := maxf(grid_bottom - grid_top, 84.0)
-	var grid_w := area.size.x
-	_cell_w = floorf((grid_w - CELL_GAP * 2.0) / 3.0)
-	_cell_h = floorf((grid_h - CELL_GAP * 2.0) / 3.0)
-	# Clamp to available space first (prevents overflow), then raise floor if room
-	_cell_w = maxf(_cell_w, 1.0)
-	_cell_h = maxf(_cell_h, 1.0)
-	var need_h := _cell_h * 3.0 + CELL_GAP * 2.0
-	if need_h > grid_h:
-		_cell_h = maxf(floorf((grid_h - CELL_GAP * 2.0) / 3.0), 28.0)
-	var need_w := _cell_w * 3.0 + CELL_GAP * 2.0
-	if need_w > grid_w:
-		_cell_w = maxf(floorf((grid_w - CELL_GAP * 2.0) / 3.0), 56.0)
 
 	var grid := get_node_or_null("BossGrid") as Control
 	if grid == null:
 		return
-	var total_w := _cell_w * 3.0 + CELL_GAP * 2.0
-	var total_h := _cell_h * 3.0 + CELL_GAP * 2.0
-	grid.size = Vector2(total_w, total_h)
-	grid.position = Vector2(
-		area.position.x + maxf((grid_w - total_w) * 0.5, 0.0),
-		grid_top + maxf((grid_h - total_h) * 0.5, 0.0)
-	)
-
+	grid.position = o
+	grid.size = MenuKit.STAGE
 	for i in grid.get_child_count():
 		var cell := grid.get_child(i) as Control
 		if cell == null:
 			continue
-		var col := i % 3
-		var row := int(i / 3)
-		cell.position = Vector2(col * (_cell_w + CELL_GAP), row * (_cell_h + CELL_GAP))
-		cell.size = Vector2(_cell_w, _cell_h)
-		_relayout_cell(cell, _cell_w, _cell_h)
+		var r: Rect2 = FRAME_RECTS[i]
+		cell.position = r.position
+		cell.size = r.size
+		_relayout_cell(cell, r.size.x, r.size.y)
 	_layout_datos_panel(area)
 
 
 func _relayout_cell(root: Control, cw: float, ch: float) -> void:
+	## v0.64: retrato 64×64 a ½ (32 px) a la izquierda del monitor, nombre a la derecha;
+	## el centro muestra a la idol (o CORE-9) grande.
 	var btn := root.get_node_or_null("SelectButton") as Button
 	if btn == null:
 		return
 	btn.size = Vector2(cw, ch)
 	btn.position = Vector2.ZERO
+	var is_center := bool(root.get_meta("is_core", false))
 	var portrait := btn.get_node_or_null("Portrait") as Control
-	var ps := 22.0
 	if portrait:
-		ps = 32.0 if ch >= 46.0 else 24.0
-		ps = minf(ps, maxf(ch - 16.0, 22.0))
-		portrait.size = Vector2(ps, ps)
-		portrait.position = Vector2(4, 4)
+		if is_center:
+			var ps := minf(ch - 4.0, 48.0)
+			portrait.size = Vector2(ps, ps)
+			portrait.position = Vector2(4, (ch - ps) * 0.5)
+		else:
+			portrait.size = Vector2(32, 32)
+			portrait.position = Vector2(3, (ch - 32.0) * 0.5)
 	var name_lbl := btn.get_node_or_null("NameLabel") as Label
 	if name_lbl:
-		name_lbl.position = Vector2(ps + 6.0, 3)
-		name_lbl.size = Vector2(maxf(cw - 32.0, 20.0), maxf(ch * 0.4, 16.0))
-		name_lbl.add_theme_font_size_override("font_size", 9 if ch >= 40.0 else 8)
-		# Leave the check badge clear of the name.
-		name_lbl.size = Vector2(maxf(cw - 48.0, 24.0), maxf(ch * 0.46, 16.0))
+		var nx := (56.0 if is_center else 37.0)
+		name_lbl.position = Vector2(nx, 3)
+		name_lbl.size = Vector2(cw - nx - 1.0, ch - 4.0)
+		name_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		name_lbl.add_theme_constant_override("line_spacing", -2)
+		name_lbl.add_theme_font_size_override("font_size", 8 if is_center else 7)
 	var status := btn.get_node_or_null("StatusLabel") as Label
 	if status:
-		status.position = Vector2(4, ch - 14.0)
-		status.size = Vector2(maxf(cw - 28.0, 20.0), 12)
-		status.add_theme_font_size_override("font_size", 8)
+		status.visible = is_center  # en los demás manda el sello ✓ / el foco
+		var sx := (56.0 if is_center else 37.0)
+		status.position = Vector2(sx, ch - 12.0)
+		status.size = Vector2(cw - sx - 2.0, 10)
+		status.add_theme_font_size_override("font_size", 7)
+	var dimr := btn.get_node_or_null("DefeatDim") as Control
+	if dimr:
+		dimr.position = Vector2.ZERO
+		dimr.size = Vector2(cw, ch)
 	var check := btn.get_node_or_null("Checkmark") as Control
 	if check:
-		check.position = Vector2(cw - 20.0, 2)
 		check.size = Vector2(18, 18)
+		check.position = Vector2(20, ch - 20.0)  # sello sobre el retrato
 	var secret := btn.get_node_or_null("SecretStub") as Label
 	if secret:
-		secret.position = Vector2(cw - 20.0, 22.0)
-		secret.size = Vector2(18, 16)
-		secret.add_theme_font_size_override("font_size", 12)
+		secret.position = Vector2(cw - 14.0, 1.0)
+		secret.size = Vector2(12, 12)
+		secret.add_theme_font_size_override("font_size", 9)
 	var frame := btn.get_node_or_null("SelectFrame") as Control
 	if frame:
-		frame.size = Vector2(cw, ch)
-		frame.position = Vector2.ZERO
+		frame.visible = false
 
 
 func _make_boss_cell(data: Dictionary, index: int) -> Control:
@@ -422,7 +469,13 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 	if defeated:
 		border_col = Color(0.35, 0.95, 0.45, 1.0)
 
-	_SafeArea.style_button(btn, bg_col, border_col, 3)
+	# v0.64: el muro ya dibuja el marco; el botón solo muestra el foco (borde dorado).
+	MenuKit.style_button(btn, border_col, 8)
+	var clear := StyleBoxEmpty.new()
+	for st in ["normal", "disabled"]:
+		btn.add_theme_stylebox_override(st, clear)
+	root.set_meta("is_core", is_core)
+	btn.focus_entered.connect(_select.bind(id))
 	if greyed and not is_core:
 		btn.disabled = true
 		btn.modulate = Color(0.55, 0.55, 0.6, 1.0)
@@ -430,16 +483,27 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 		btn.disabled = true
 		btn.modulate = Color(0.65, 0.55, 0.75, 1.0)
 	else:
-		btn.pressed.connect(_on_boss_pressed.bind(id))
+		btn.pressed.connect(_on_cell_tap.bind(id))
+	if locked_core:
+		btn.disabled = false  # se puede enfocar para leer «BLOQUEADO»
+		btn.pressed.connect(_on_cell_tap.bind(id))
+		btn.modulate = Color(0.8, 0.75, 0.9, 1.0)
 
 	root.add_child(btn)
 
 	var ptex := ArtKit.boss_portrait_tex(id)
+	if is_core and not GameState.is_core9_unlocked():
+		# Centro: la idol elegida hasta vencer a los 8; luego CORE-9 / la fortaleza.
+		var who := "teto" if GameState.get_character_id() == "teto" else "miku"
+		var ct := ArtKit.load_tex("res://assets/sprites/ui/portrait_%s.png" % who)
+		if ct:
+			ptex = ct
 	var swatch: Control
 	if ptex:
 		swatch = ArtKit.make_texture_rect(ptex, Vector2(22, 22), Vector2(3, 3))
 		swatch.name = "Portrait"
-		if greyed:
+		swatch.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		if greyed and not is_core:
 			swatch.modulate = Color(0.45, 0.45, 0.5, 0.9)
 	else:
 		swatch = ColorRect.new()
@@ -463,7 +527,10 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 	name_lbl.add_theme_font_size_override("font_size", 8)
 	name_lbl.position = Vector2(24, 4)
 	name_lbl.size = Vector2(46, 20)
-	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD
+	name_lbl.text = boss_name if not (is_core and locked_core) else GameState.get_character_display_name()
+	name_lbl.add_theme_color_override("font_outline_color", Color(0.02, 0.0, 0.06))
+	name_lbl.add_theme_constant_override("outline_size", 2)
 	if greyed:
 		name_lbl.modulate = Color(0.55, 0.55, 0.6, 1.0)
 	else:
@@ -499,6 +566,11 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 	btn.add_child(status)
 
 	if defeated:
+		var dimr := ColorRect.new()
+		dimr.name = "DefeatDim"
+		dimr.color = Color(0.0, 0.0, 0.03, 0.6)
+		dimr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		btn.add_child(dimr)
 		var check_bg := Panel.new()
 		check_bg.name = "Checkmark"
 		var csb := StyleBoxFlat.new()
@@ -517,7 +589,7 @@ func _make_boss_cell(data: Dictionary, index: int) -> Control:
 		check.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		check.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		check.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		check.add_theme_font_size_override("font_size", 13)
+		check.add_theme_font_size_override("font_size", 15)
 		check.modulate = Color(0.85, 1.0, 0.9, 1.0)
 		check.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		check_bg.add_child(check)
@@ -591,9 +663,153 @@ func _toggle_datos() -> void:
 		AudioManager.play_sfx("ui_confirm")
 
 
+func _initial_focus() -> void:
+	var grid := get_node_or_null("BossGrid")
+	if grid == null:
+		return
+	for c in grid.get_children():
+		var b := c.get_node_or_null("SelectButton") as Button
+		if b and not b.disabled and not (c.has_meta("boss_id") and GameState.is_boss_defeated(str(c.get_meta("boss_id")))):
+			b.grab_focus()
+			return
+	var first := grid.get_child(0).get_node_or_null("SelectButton") as Button
+	if first:
+		first.grab_focus()
+
+
+func _slot_data(id: String) -> Dictionary:
+	for d in BOSS_SLOTS:
+		if str(d.get("id", "")) == id:
+			return d
+	return {}
+
+
+func _select(id: String) -> void:
+	## Cabecera: nombre del jefe + pista de debilidad (solo si ya tienes esa arma).
+	_selected = id
+	var header := get_node_or_null("BossName") as Label
+	var sub := get_node_or_null("BossHint") as Label
+	var d := _slot_data(id)
+	if id == "core9":
+		if header:
+			header.text = "CORE-9" if GameState.is_core9_unlocked() else GameState.get_character_display_name().to_upper()
+		if sub:
+			sub.text = "Fortaleza abierta · ¡al asalto!" if GameState.is_core9_unlocked() else "Vence a los 8 Robot Masters para abrir la fortaleza"
+		return
+	if header:
+		header.text = str(d.get("name", id)).to_upper() + "  ·  " + str(STAGE_NAMES.get(id, ""))
+	if sub:
+		var w: Array = WEAKNESS.get(id, [])
+		var hint := "Debilidad: ???"
+		if not w.is_empty() and GameState.has_weapon_unlocked(str(w[0])):
+			hint = "Debilidad: " + str(w[1])
+		if GameState.is_boss_defeated(id):
+			hint = "VENCIDO ✓ · " + hint
+		sub.text = hint
+
+
+func _on_cell_tap(id: String) -> void:
+	## 1.er toque elige (y enfoca), 2.º toque o «¡Entrar!» confirma.
+	if _selected == id:
+		_on_confirm()
+		return
+	var grid := get_node_or_null("BossGrid")
+	var cell := grid.get_node_or_null("BossCell_%s" % id) if grid else null
+	if cell:
+		(cell.get_node("SelectButton") as Button).grab_focus()
+	_select(id)
+
+
+func _on_confirm() -> void:
+	if _selected == "":
+		return
+	if _selected == "core9" and not GameState.is_core9_unlocked():
+		if AudioManager:
+			AudioManager.play_sfx("menu_move")
+		return
+	_on_boss_pressed(_selected)
+
+
 func _on_boss_pressed(boss_id: String) -> void:
 	if AudioManager:
 		AudioManager.play_sfx("ui_confirm")
+	if MenuKit.is_headless() or boss_id == "core9" or _intro != null:
+		_launch(boss_id)
+	else:
+		_show_intro(boss_id)
+
+
+func _show_intro(boss_id: String) -> void:
+	## «Intro de jefe»: franja, retrato que entra deslizando, nombre y etapa (~1.5 s, toca para saltar).
+	_intro = CanvasLayer.new()
+	_intro.name = "BossIntro"
+	_intro.layer = 110
+	add_child(_intro)
+	var vp := get_viewport_rect().size
+	var root := Control.new()
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_STOP
+	_intro.add_child(root)
+	var shade := ColorRect.new()
+	shade.color = Color(0, 0, 0.03, 0.0)
+	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(shade)
+	var d := _slot_data(boss_id)
+	var accent: Color = d.get("accent", MenuKit.COL_PINK)
+	var band := ColorRect.new()
+	band.color = Color(accent.r * 0.35, accent.g * 0.35, accent.b * 0.35, 0.95)
+	band.position = Vector2(0, vp.y * 0.5 - 40.0)
+	band.size = Vector2(vp.x, 80)
+	band.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(band)
+	for yy in [band.position.y, band.position.y + 79.0]:
+		var ln := ColorRect.new()
+		ln.color = accent
+		ln.position = Vector2(0, yy)
+		ln.size = Vector2(vp.x, 1)
+		ln.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		root.add_child(ln)
+	var ptex := ArtKit.boss_portrait_tex(boss_id)
+	var por := TextureRect.new()
+	por.texture = ptex
+	por.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	por.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	por.size = Vector2(64, 64)
+	por.position = Vector2(-70, band.position.y + 8.0)
+	root.add_child(por)
+	var name_l := MenuKit.label(str(d.get("name", boss_id)).to_upper(), 18, Color(1, 1, 1), 4)
+	name_l.position = Vector2(vp.x * 0.5 - 70.0, band.position.y + 16.0)
+	name_l.size = Vector2(vp.x * 0.5 + 60.0, 24)
+	name_l.modulate.a = 0.0
+	root.add_child(name_l)
+	var stage_l := MenuKit.label(str(STAGE_NAMES.get(boss_id, "")), 9, accent.lightened(0.4), 2)
+	stage_l.position = Vector2(vp.x * 0.5 - 68.0, band.position.y + 44.0)
+	stage_l.size = Vector2(vp.x * 0.5 + 60.0, 12)
+	stage_l.modulate.a = 0.0
+	root.add_child(stage_l)
+	root.gui_input.connect(func(ev: InputEvent):
+		if (ev is InputEventScreenTouch or ev is InputEventMouseButton) and ev.pressed:
+			_launch(boss_id))
+	var tw := create_tween()
+	tw.tween_property(shade, "color:a", 0.7, 0.15)
+	tw.tween_property(por, "position:x", vp.x * 0.5 - 150.0, 0.3).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(name_l, "modulate:a", 1.0, 0.15)
+	tw.tween_property(stage_l, "modulate:a", 1.0, 0.15)
+	tw.tween_interval(0.85)
+	tw.tween_callback(_launch.bind(boss_id))
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if _intro != null and (event.is_action_pressed("ui_accept") or event.is_action_pressed("ui_cancel")):
+		get_viewport().set_input_as_handled()
+		_launch(_selected if _selected != "" else "beatfire")
+
+
+func _launch(boss_id: String) -> void:
+	if has_meta("launching"):
+		return
+	set_meta("launching", true)
 	if boss_id == "beatfire":
 		print("BossSelect: entrando etapa Beatfire Man")
 		get_tree().change_scene_to_file(LEVEL_BEATFIRE)
@@ -631,7 +847,7 @@ func _on_boss_pressed(boss_id: String) -> void:
 func _on_back() -> void:
 	if AudioManager:
 		AudioManager.play_sfx("menu_move")
-	get_tree().change_scene_to_file(CHAR_SELECT)
+	MenuKit.go(self, CHAR_SELECT)
 
 
 func _refresh_diff_label(btn: Button = null) -> void:
@@ -642,10 +858,10 @@ func _refresh_diff_label(btn: Button = null) -> void:
 		return
 	if GameState.is_hard():
 		b.text = "DIFÍCIL ●"
-		_SafeArea.style_button(b, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
+		MenuKit.style_button(b, MenuKit.COL_PINK, 10)
 	else:
 		b.text = "Normal"
-		_SafeArea.style_button(b, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
+		MenuKit.style_button(b, MenuKit.COL_CYAN, 10)
 	var char_lbl = get_node_or_null("CharLabel") as Label
 	if char_lbl:
 		var diff_tag := " · DIFÍCIL" if GameState.is_hard() else ""

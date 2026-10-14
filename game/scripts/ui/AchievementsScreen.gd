@@ -10,6 +10,7 @@ var return_to := "title"
 
 
 func _ready() -> void:
+	preload("res://scripts/ui/MenuKit.gd").fade_in(self)  # v0.64 fundido común
 	if Engine.has_meta("achievements_return"):
 		return_to = str(Engine.get_meta("achievements_return"))
 	_build_ui()

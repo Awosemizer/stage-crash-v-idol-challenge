@@ -78,7 +78,7 @@ static func style_button(btn: Button, bg: Color, border: Color, radius: int = 4)
 	normal.bg_color = bg
 	normal.set_border_width_all(1)
 	normal.border_color = border
-	normal.set_corner_radius_all(radius)
+	normal.set_corner_radius_all(0)  # v0.64: esquinas rectas en todos los menús (look 16-bit)
 	normal.content_margin_left = 8
 	normal.content_margin_right = 8
 	normal.content_margin_top = 4
@@ -94,8 +94,17 @@ static func style_button(btn: Button, bg: Color, border: Color, radius: int = 4)
 	btn.add_theme_stylebox_override("normal", normal)
 	btn.add_theme_stylebox_override("hover", hover)
 	btn.add_theme_stylebox_override("pressed", pressed)
-	btn.add_theme_stylebox_override("focus", hover)
+	# v0.64: foco visible para mando/teclado — borde dorado con brillo, igual que MenuKit.
+	var focus := StyleBoxFlat.new()
+	focus.bg_color = Color(0, 0, 0, 0)
+	focus.set_border_width_all(2)
+	focus.border_color = Color(1.0, 0.86, 0.35)
+	hover.border_color = Color(1.0, 0.86, 0.35)
+	btn.add_theme_stylebox_override("focus", focus)
 	btn.add_theme_stylebox_override("disabled", disabled)
+	btn.add_theme_color_override("font_outline_color", Color(0.02, 0.0, 0.06))
+	btn.add_theme_constant_override("outline_size", 2)
+	btn.add_theme_color_override("font_focus_color", Color(1.0, 0.86, 0.35))
 
 
 ## Center a fixed design-width cluster inside the safe content rect.

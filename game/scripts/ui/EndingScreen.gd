@@ -11,6 +11,7 @@ var _auto_timer: SceneTreeTimer = null
 
 
 func _ready() -> void:
+	preload("res://scripts/ui/MenuKit.gd").fade_in(self)  # v0.64 fundido común
 	if GameState and GameState.has_method("on_ending_reached"):
 		GameState.on_ending_reached()
 	_prepare_lines()

@@ -12,6 +12,7 @@ var _slot_h := 44.0
 
 
 func _ready() -> void:
+	preload("res://scripts/ui/MenuKit.gd").fade_in(self)  # v0.64 fundido común
 	_build_ui()
 	get_viewport().size_changed.connect(_layout)
 	call_deferred("_layout")

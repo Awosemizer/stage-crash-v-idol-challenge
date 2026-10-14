@@ -116,7 +116,9 @@ func _show_win_then_ending() -> void:
 	sb.bg_color = Color(0.08, 0.03, 0.12, 0.95)
 	sb.set_border_width_all(2)
 	sb.border_color = COL_ACCENT
-	sb.set_corner_radius_all(4)
+	sb.set_corner_radius_all(0)  # v0.64 marco 16-bit
+	sb.shadow_color = Color(sb.border_color.r, sb.border_color.g, sb.border_color.b, 0.35)
+	sb.shadow_size = 3
 	panel.add_theme_stylebox_override("panel", sb)
 	panel.size = Vector2(210, 100)
 	var vp := get_viewport().get_visible_rect().size
@@ -126,6 +128,8 @@ func _show_win_then_ending() -> void:
 	title.text = "¡CORE-9 CAÍDO!"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 12)
+	title.add_theme_color_override("font_outline_color", Color(0.02, 0.0, 0.06))
+	title.add_theme_constant_override("outline_size", 4)
 	title.modulate = COL_ACCENT
 	title.position = Vector2(0, 8)
 	title.size = Vector2(210, 18)
