@@ -7,6 +7,10 @@ const _SafeArea := preload("res://scripts/ui/SafeArea.gd")
 const MenuKit := preload("res://scripts/ui/MenuKit.gd")
 const BOSS_SELECT_SCENE := "res://scenes/ui/BossSelect.tscn"
 const KEYART := "res://assets/sprites/ui/title_keyart.png"
+const STAGE_BG := "res://assets/sprites/ui/charselect_stage.png"
+## v0.65: centro de los charcos de luz del escenario (lienzo 398×224): cian / rojo.
+const POOL_MIKU := Vector2(113, 170)
+const POOL_TETO := Vector2(286, 170)
 
 var _picked := -1  # 0 Miku, 1 Teto
 
@@ -27,7 +31,17 @@ func _build_ui() -> void:
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
-	if MenuKit.add_fullscreen_art(self, KEYART, "MenuBG", 0.62) == null:
+	var stage := ArtKit.load_tex(STAGE_BG)
+	if stage:
+		# Fondo cubriendo (atenuado) + copia nítida 398×224 centrada: los charcos quedan bajo las idols.
+		MenuKit.add_fullscreen_art(self, STAGE_BG, "MenuBG", 0.5)
+		var st := TextureRect.new()
+		st.name = "StageBG"
+		st.texture = stage
+		st.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		st.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(st)
+	elif MenuKit.add_fullscreen_art(self, KEYART, "MenuBG", 0.62) == null:
 		var concert := ArtKit.menu_backdrop("res://assets/sprites/ui/menu_concert.png")
 		if concert:
 			concert.name = "MenuBG"
@@ -171,6 +185,11 @@ func _layout() -> void:
 		diff.size = Vector2(dw, fh)
 		diff.position = Vector2(area.position.x + (area.size.x - dw) * 0.5, fy)
 
+	var o := MenuKit.stage_origin(self)
+	var stg := get_node_or_null("StageBG") as Control
+	if stg:
+		stg.position = o
+		stg.size = MenuKit.STAGE
 	var top := band_bottom + 2.0
 	var h := fy - 4.0 - top
 	var w := floorf(area.size.x * 0.5) - 4.0
@@ -181,6 +200,24 @@ func _layout() -> void:
 		b.position = Vector2(area.position.x + (0.0 if i == 0 else area.size.x - w), top)
 		b.size = Vector2(w, h)
 		_layout_char_card(b, w, h, "Teto" if i == 1 else "Miku")
+		if stg:
+			# Idol de pie sobre su charco: pies en el centro del charco.
+			var pool: Vector2 = (POOL_TETO if i == 1 else POOL_MIKU) + o
+			var spr := b.get_node_or_null(("Teto" if i == 1 else "Miku") + "Swatch") as Control
+			if spr:
+				spr.position = pool - b.position - Vector2(spr.size.x * 0.5, spr.size.y - 4.0)
+			var spot := b.get_node_or_null("Spot") as Control
+			if spot:
+				spot.visible = false  # el charco del escenario ya es el foco
+				spot.set_meta("pool", true)
+			# nombre y estilo arriba de la tarjeta, la idol abajo sobre el charco
+			var who2 := "Teto" if i == 1 else "Miku"
+			var nl := b.get_node_or_null(who2 + "Name") as Control
+			var sl := b.get_node_or_null(who2 + "Sub") as Control
+			if nl:
+				nl.position = Vector2(0, 4)
+			if sl:
+				sl.position = Vector2(0, 19)
 	_refresh_pick()
 
 
@@ -189,7 +226,7 @@ func _layout_char_card(btn: Button, w: float, h: float, who: String) -> void:
 	var spr := btn.get_node_or_null(who + "Swatch") as Control
 	var text_h := 30.0
 	var avail := h - text_h
-	var div := 2.0 if avail >= 126.0 else 3.0
+	var div := 2.0 if avail >= 126.0 and get_node_or_null("StageBG") == null else 3.0
 	var ps := Vector2(270.0, 253.0) / div
 	if spr:
 		spr.size = ps
@@ -217,7 +254,7 @@ func _refresh_pick() -> void:
 		b.modulate = Color(1, 1, 1, 1) if on else Color(0.5, 0.5, 0.6, 1)
 		var spot := b.get_node_or_null("Spot") as CanvasItem
 		if spot:
-			spot.visible = on
+			spot.visible = on and not spot.has_meta("pool")
 
 
 func _focus_pick() -> void:

@@ -11,7 +11,7 @@ const MenuKit := preload("res://scripts/ui/MenuKit.gd")
 const SAVE_SELECT := "res://scenes/ui/SaveSelect.tscn"
 const SELECT_SCENE := "res://scenes/ui/CharacterSelect.tscn"
 const KEYART := "res://assets/sprites/ui/title_keyart.png"
-const VERSION_TAG := "v0.64"
+const VERSION_TAG := "v0.65"
 
 var _menu_open := false
 var _blink: Tween = null
@@ -74,25 +74,23 @@ func _build_ui() -> void:
 
 	var logo_px := ArtKit.load_tex("res://assets/sprites/ui/logo_stage_crash.png")
 	if logo_px:
-		var logo_word := ArtKit.make_texture_rect(logo_px, Vector2(264, 56), Vector2.ZERO)
+		var logo_word := ArtKit.make_texture_rect(logo_px, Vector2(148, 85), Vector2.ZERO)
 		logo_word.name = "PixelLogo"
 		logo_word.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		logo_word.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		add_child(logo_word)
 
-	# El PNG del logo pixel tiene una letra rota («V-ID L»): el título tipográfico manda hasta
-	# que haya logo nuevo; PixelLogo queda oculto.
-	var plw := get_node_or_null("PixelLogo") as CanvasItem
-	if plw:
-		plw.visible = false
+	# v0.65: logo nuevo (264×151, incluye «V-IDOL CHALLENGE»); el texto queda de respaldo.
 	var title := MenuKit.label("STAGE CRASH", 30, MenuKit.COL_CYAN, 6)
 	title.name = "Title"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.visible = logo_px == null
 	add_child(title)
 
 	var subtitle := MenuKit.label("V-IDOL CHALLENGE", 11, MenuKit.COL_PINK, 4)
 	subtitle.name = "Subtitle"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.visible = logo_px == null
 	add_child(subtitle)
 
 	var press := MenuKit.label("PULSA PARA EMPEZAR", 11, Color(1, 1, 1), 3)
@@ -198,10 +196,10 @@ func _layout() -> void:
 		shade.position = Vector2.ZERO
 		shade.size = Vector2(vp.x, area.position.y + 70.0)
 	var pl := get_node_or_null("PixelLogo") as Control
-	var logo_h := 46.0 if tight else 56.0
+	var logo_h := 66.0 if tight else 76.0
 	if pl and pl.visible:
-		pl.size = Vector2(logo_h * 132.0 / 28.0, logo_h)
-		pl.position = Vector2(area.position.x + (area.size.x - pl.size.x) * 0.5, area.position.y + 4.0)
+		pl.size = Vector2(roundf(logo_h * 264.0 / 151.0), logo_h)
+		pl.position = Vector2(roundf(area.position.x + (area.size.x - pl.size.x) * 0.5), area.position.y + 2.0)
 	var title := get_node_or_null("Title") as Label
 	if title:
 		title.position = Vector2(area.position.x, area.position.y + 4.0)
