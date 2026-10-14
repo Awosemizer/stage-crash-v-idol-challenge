@@ -1,6 +1,6 @@
 extends Area2D
 ## Speaker Drone (v0.61) — bocina voladora que flota en seno y patrulla un tramo corto.
-## HP 1. Solo daña por contacto. Arte provisional: Met-Beat cerrado teñido (falta hoja propia).
+## HP 1. Solo daña por contacto. Hoja propia v0.62: speaker_drone.png, 4 cuadros 20×20 (cono + propulsor).
 
 const HP_MAX := 1
 const CONTACT_DAMAGE := 2
@@ -31,10 +31,10 @@ func _ready() -> void:
 	col.shape = shp
 	add_child(col)
 	_vis = Sprite2D.new()
-	_vis.texture = load("res://assets/sprites/enemies/met_closed.png")
+	_vis.texture = load("res://assets/sprites/enemies/speaker_drone.png")
 	_vis.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_vis.scale = Vector2(0.8, 0.6)
-	_vis.flip_v = true  # cúpula hacia abajo: lee como bocina colgante
+	_vis.hframes = 4
+	_vis.position = Vector2(0, 2)
 	add_child(_vis)
 	body_entered.connect(_on_body_entered)
 
@@ -45,8 +45,9 @@ func _physics_process(delta: float) -> void:
 	_t += delta * SPEED
 	position = _home + Vector2(sin(_t * 0.5) * PATROL, sin(_t * 2.0) * AMP)
 	_flash = maxf(_flash - delta, 0.0)
-	_vis.modulate = Color(2, 2, 2) if _flash > 0.0 else tint
+	_vis.modulate = Color(2, 2, 2) if _flash > 0.0 else Color.WHITE.lerp(tint, 0.2)
 	_vis.flip_h = cos(_t * 0.5) < 0.0
+	_vis.frame = int(Time.get_ticks_msec() / 110) % 4
 
 
 func take_damage(amount: int) -> bool:

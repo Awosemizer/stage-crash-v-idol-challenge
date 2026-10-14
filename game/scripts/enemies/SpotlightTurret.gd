@@ -1,7 +1,7 @@
 extends Area2D
 ## Spotlight Turret (v0.61) — foco fijo en el suelo. Se ilumina 0.4 s (aviso) y dispara
 ## un perdigón recto hacia el lado del jugador. Solo es vulnerable con la lente abierta.
-## HP 2. Arte provisional: Met-Beat abierto/cerrado teñido (falta hoja propia).
+## HP 2. Hoja propia v0.62: spotlight_turret.png, 3 cuadros 22×24 (cerrado / aviso / abierto).
 
 const MetBeatShotScript := preload("res://scripts/enemies/MetBeatShot.gd")
 const HP_MAX := 2
@@ -42,7 +42,9 @@ func _ready() -> void:
 	add_child(_beam)
 	_vis = Sprite2D.new()
 	_vis.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_vis.scale = Vector2(0.7, 0.55)
+	_vis.texture = load("res://assets/sprites/enemies/spotlight_turret.png")
+	_vis.hframes = 3
+	_vis.position = Vector2(0, -12)
 	add_child(_vis)
 	_refresh()
 
@@ -74,15 +76,14 @@ func _physics_process(delta: float) -> void:
 
 func _refresh() -> void:
 	var st := _open_state()
-	_vis.texture = load("res://assets/sprites/enemies/met_open.png" if st == 2 else "res://assets/sprites/enemies/met_closed.png")
-	var h := float(_vis.texture.get_height()) if _vis.texture else 16.0
-	_vis.position = Vector2(0, -h * _vis.scale.y * 0.5)
+	_vis.frame = st
+	var ps := get_tree().get_nodes_in_group("player") if is_inside_tree() else []
+	if not ps.is_empty():
+		_vis.flip_h = (ps[0] as Node2D).global_position.x < global_position.x
 	if _flash > 0.0:
 		_vis.modulate = Color(2, 2, 2)
-	elif st == 1:
-		_vis.modulate = Color(1.6, 1.4, 0.5)
 	else:
-		_vis.modulate = tint
+		_vis.modulate = Color.WHITE.lerp(tint, 0.2)
 	_beam.color.a = 0.35 if st == 1 else (0.18 if st == 2 else 0.0)
 
 
