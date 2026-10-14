@@ -23,10 +23,10 @@ const COL_ARENA := Color(0.38, 0.3, 0.2, 1.0)
 const COL_GATE := Color(0.95, 0.65, 0.25, 1.0)
 const COL_METAL := Color(0.4, 0.38, 0.35, 1.0)
 
-const LEVEL_RIGHT := 3216.0
-const ARENA_LEFT := 2880.0
+const LEVEL_RIGHT := 3664.0
+const ARENA_LEFT := 3328.0
 const ARENA_FLOOR_Y := 176.0
-const GATE_X := 2864.0
+const GATE_X := 3312.0
 
 @onready var geometry: Node2D = $Geometry
 @onready var hazards: Node2D = $Hazards
@@ -121,24 +121,24 @@ func _build_course() -> void:
 	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
 	# and most have an upper path. Required rises <= 24px (optional catwalks 32), one wall-jump shaft with a mid foothold.
 	#   x0: start run
-	#   x320: bottomless gaps between raised islands
-	#   x768: spike trenches — low path jumps them, upper path catwalk
+	#   x320: subwoofer sends floor quake waves — hop the low crates / ride the catwalk; debris drops
+	#   x768: bottomless gaps between raised islands
 	#   x1216: wall-jump shaft 36px + mid foothold, secret in the right wall
 	#   x1664: collapsing decks bridge two wide pits
-	#   x2112: block stairs up and down, Met on the summit
-	#   x2560: corridor to the gate
+	#   x2112: spike trenches — low path jumps them, upper path catwalk
+	#   x2560: block stairs up and down, Met on the summit
+	#   x3008: corridor to the gate
 	var solids: Array = [
 		[-32, 0, 32, 224, COL_WALL],
 		[0, 176, 320, 48, COL_FLOOR],
-		[320, 176, 96, 48, COL_FLOOR],
-		[456, 160, 64, 64, COL_METAL],
-		[560, 144, 48, 80, COL_METAL],
-		[656, 176, 112, 48, COL_FLOOR],
-		[768, 176, 128, 48, COL_FLOOR],
-		[896, 208, 48, 16, COL_WALL],
-		[944, 176, 80, 48, COL_FLOOR],
-		[1024, 208, 48, 16, COL_WALL],
-		[1072, 176, 144, 48, COL_FLOOR],
+		[320, 176, 448, 48, COL_FLOOR],
+		[448, 160, 32, 16, COL_METAL],
+		[560, 160, 32, 16, COL_METAL],
+		[672, 160, 32, 16, COL_METAL],
+		[768, 176, 96, 48, COL_FLOOR],
+		[904, 152, 64, 72, COL_METAL],
+		[1008, 144, 48, 80, COL_METAL],
+		[1104, 176, 112, 48, COL_FLOOR],
 		[1216, 176, 448, 48, COL_FLOOR],
 		[1312, 40, 16, 104, COL_WALL],
 		[1328, 128, 10, 8, COL_METAL],
@@ -149,44 +149,55 @@ func _build_course() -> void:
 		[1664, 176, 128, 48, COL_FLOOR],
 		[1888, 176, 96, 48, COL_FLOOR],
 		[2080, 176, 32, 48, COL_FLOOR],
-		[2112, 176, 448, 48, COL_FLOOR],
-		[2176, 152, 64, 24, COL_FLOOR],
-		[2240, 128, 64, 48, COL_METAL],
-		[2304, 104, 64, 72, COL_FLOOR],
-		[2368, 128, 64, 48, COL_METAL],
-		[2432, 152, 64, 24, COL_FLOOR],
-		[2560, 176, 320, 48, COL_FLOOR],
+		[2112, 176, 128, 48, COL_FLOOR],
+		[2240, 208, 48, 16, COL_WALL],
+		[2288, 176, 80, 48, COL_FLOOR],
+		[2368, 208, 48, 16, COL_WALL],
+		[2416, 176, 144, 48, COL_FLOOR],
+		[2560, 176, 448, 48, COL_FLOOR],
+		[2624, 152, 64, 24, COL_FLOOR],
+		[2688, 152, 64, 24, COL_METAL],
+		[2752, 128, 64, 48, COL_FLOOR],
+		[2816, 104, 64, 72, COL_METAL],
+		[2880, 128, 64, 48, COL_FLOOR],
+		[3008, 176, 320, 48, COL_FLOOR],
 	]
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 	# upper path catwalks — one-way, jump up through them
 	var catwalks: Array = [
-		[816, 144, 56, 8, COL_METAL],
-		[880, 112, 208, 8, COL_METAL],
-		[1104, 144, 56, 8, COL_METAL],
+		[432, 112, 96, 8, COL_METAL],
+		[544, 112, 96, 8, COL_METAL],
 		[1492, 112, 48, 8, COL_METAL],
 		[1556, 144, 48, 8, COL_METAL],
 		[1912, 128, 48, 8, COL_METAL],
+		[2160, 144, 56, 8, COL_METAL],
+		[2224, 112, 208, 8, COL_METAL],
+		[2448, 144, 56, 8, COL_METAL],
 	]
 	for cw in catwalks:
 		_add_rect_platform(float(cw[0]), float(cw[1]), float(cw[2]), float(cw[3]), cw[4], true)
 	var spikes: Array = [
-		Vector2(904, 200),
-		Vector2(920, 200),
-		Vector2(936, 200),
-		Vector2(1032, 200),
-		Vector2(1048, 200),
-		Vector2(1064, 200),
+		Vector2(2248, 200),
+		Vector2(2264, 200),
+		Vector2(2280, 200),
+		Vector2(2376, 200),
+		Vector2(2392, 200),
+		Vector2(2408, 200),
 	]
 	for sp in spikes:
 		_add_spike(sp.x, sp.y)
 	_add_collapse(Vector2(1840, 166), Vector2(48, 12), 0.65, 0.9, 2.2)
 	_add_collapse(Vector2(2032, 166), Vector2(48, 12), 0.65, 0.9, 2.2)
+	var kit = preload("res://scripts/levels/StageKit.gd")
+	kit.quake(hazards, 756.0, 176.0, 2.6, 0.0, -1)
+	kit.drop(hazards, 520.0, 24.0, 176.0, 2.8, 0.9, "res://assets/sprites/fx/quake_drop.png", Color(1.0, 0.8, 0.6))
+	kit.drop(hazards, 632.0, 24.0, 176.0, 2.8, 2.3, "res://assets/sprites/fx/quake_drop.png", Color(1.0, 0.8, 0.6))
 	_build_secret_encore_torso()
 
 	var label := Label.new()
 	label.text = "JEFE →"
-	label.position = Vector2(2824, 136)
+	label.position = Vector2(3272, 136)
 	label.add_theme_font_size_override("font_size", 8)
 	label.modulate = Color(0.95, 0.7, 0.35)
 	geometry.add_child(label)
@@ -480,11 +491,15 @@ func _add_breakable(x: float, y: float, variant: int = 0) -> void:
 func _spawn_enemies() -> void:
 	# 1 Met per screen-ish, always on a floor top (y = floor).
 	_add_met(248.0, 176.0)
-	_add_met(728.0, 176.0)
-	_add_met(984.0, 176.0)
+	_add_met(380.0, 176.0)
+	_add_met(1176.0, 176.0)
 	_add_met(1636.0, 176.0)
-	_add_met(2336.0, 104.0)
-	_add_met(2720.0, 176.0)
+	_add_met(2328.0, 176.0)
+	_add_met(2848.0, 104.0)
+	_add_met(3168.0, 176.0)
+	# v0.61 common enemies: Speaker Drone (flies in a sine) / Spotlight Turret (fixed shooter)
+	var kit = preload("res://scripts/levels/StageKit.gd")
+	kit.drone(entities, 1874.0, 100.0, Color(1.0, 0.75, 0.45))
 
 
 func _add_met(x: float, floor_y: float) -> void:
@@ -521,12 +536,13 @@ func _add_spike(x: float, y: float) -> void:
 func _add_mid_checkpoints() -> void:
 	## v0.56: one checkpoint per section of the long bassquake course.
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(360.0, 176.0), "bassquake", "CK1")
+	CheckpointScript.place(parent_n, Vector2(352.0, 176.0), "bassquake", "CK1")
 	CheckpointScript.place(parent_n, Vector2(808.0, 176.0), "bassquake", "CK2")
 	CheckpointScript.place(parent_n, Vector2(1256.0, 176.0), "bassquake", "CK3")
 	CheckpointScript.place(parent_n, Vector2(1704.0, 176.0), "bassquake", "CK4")
-	CheckpointScript.place(parent_n, Vector2(2144.0, 176.0), "bassquake", "CK5")
-	CheckpointScript.place(parent_n, Vector2(2600.0, 176.0), "bassquake", "CK6")
+	CheckpointScript.place(parent_n, Vector2(2152.0, 176.0), "bassquake", "CK5")
+	CheckpointScript.place(parent_n, Vector2(2592.0, 176.0), "bassquake", "CK6")
+	CheckpointScript.place(parent_n, Vector2(3048.0, 176.0), "bassquake", "CK7")
 
 
 func _spawn_player() -> void:

@@ -3,7 +3,7 @@ extends Area2D
 
 signal collected(new_count: int)
 
-@export var display_name_es := "E-Tank"
+@export var display_name_es := "Tanque E"
 @export var bob_amp := 4.5
 @export var bob_speed := 4.2
 @export var toast_hint_es := "Tanque de energía · úsalo desde el HUD"
@@ -28,7 +28,7 @@ func _ready() -> void:
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
 	if label:
-		label.text = "E-TANK"
+		label.text = "TANQUE E"
 		label.add_theme_font_size_override("font_size", 6)
 		label.modulate = Color(0.55, 1.0, 1.0, 1.0)
 	if visual:
@@ -102,7 +102,7 @@ func _show_toast(count: int) -> void:
 	panel.size = Vector2(200, 44)
 	layer.add_child(panel)
 	var lbl := Label.new()
-	lbl.text = "¡E-TANK +1!"
+	lbl.text = "¡TANQUE E +1!"
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	lbl.add_theme_font_size_override("font_size", 11)
 	lbl.modulate = Color(0.45, 1.0, 1.0, 1.0)

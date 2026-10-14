@@ -168,7 +168,7 @@ func _build_ui() -> void:
 
 	var char_lbl := Label.new()
 	char_lbl.name = "CharLabel"
-	var diff_tag := " · HARD" if GameState.is_hard() else ""
+	var diff_tag := " · DIFÍCIL" if GameState.is_hard() else ""
 	char_lbl.text = GameState.get_character_display_name() + diff_tag
 	if GameState.is_hard():
 		char_lbl.modulate = Color(1.0, 0.55, 0.55, 1.0)
@@ -641,14 +641,14 @@ func _refresh_diff_label(btn: Button = null) -> void:
 	if b == null:
 		return
 	if GameState.is_hard():
-		b.text = "HARD ●"
+		b.text = "DIFÍCIL ●"
 		_SafeArea.style_button(b, Color(0.04, 0.04, 0.06, 0.96), Color(0.95, 0.35, 0.72, 1.0), 2)
 	else:
 		b.text = "Normal"
 		_SafeArea.style_button(b, Color(0.04, 0.04, 0.06, 0.96), Color(0.35, 0.9, 1.0, 1.0), 2)
 	var char_lbl = get_node_or_null("CharLabel") as Label
 	if char_lbl:
-		var diff_tag := " · HARD" if GameState.is_hard() else ""
+		var diff_tag := " · DIFÍCIL" if GameState.is_hard() else ""
 		char_lbl.text = GameState.get_character_display_name() + diff_tag
 		char_lbl.modulate = Color(1.0, 0.55, 0.55, 1.0) if GameState.is_hard() else GameState.get_portrait_color()
 	var hard_banner := get_node_or_null("HardBanner") as CanvasItem

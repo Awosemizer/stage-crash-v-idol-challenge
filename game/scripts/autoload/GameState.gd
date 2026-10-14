@@ -79,9 +79,9 @@ const ACH_NO_DAMAGE_BOSS := "no_damage_boss"
 const ACHIEVEMENT_DEFS := [
 	{"id": ACH_EIGHT_MASTERS, "title": "Ocho maestros", "desc": "Derrota a los 8 Robot Masters"},
 	{"id": ACH_ALL_ARMOR, "title": "Colección de armaduras", "desc": "Obtén todas las piezas Flight + Encore"},
-	{"id": ACH_ALL_SECRETS, "title": "Secretos al 100%", "desc": "Todas las armaduras y 4 Energy Tanks"},
-	{"id": ACH_CLEAR_MIKU, "title": "Clear con Miku", "desc": "Termina CORE-9 con Hatsune Miku"},
-	{"id": ACH_CLEAR_TETO, "title": "Clear con Teto", "desc": "Termina CORE-9 con Kasane Teto"},
+	{"id": ACH_ALL_SECRETS, "title": "Secretos al 100%", "desc": "Todas las armaduras y 4 tanques de energía"},
+	{"id": ACH_CLEAR_MIKU, "title": "Victoria con Miku", "desc": "Termina CORE-9 con Hatsune Miku"},
+	{"id": ACH_CLEAR_TETO, "title": "Victoria con Teto", "desc": "Termina CORE-9 con Kasane Teto"},
 	{"id": ACH_DEFEAT_CORE9, "title": "Núcleo apagado", "desc": "Derrota a CORE-9"},
 	{"id": ACH_NO_DAMAGE_BOSS, "title": "Sin rasguño", "desc": "Vence un jefe sin recibir daño"},
 ]
@@ -849,7 +849,7 @@ func has_all_armor_pieces() -> bool:
 
 
 func has_all_secrets_best_effort() -> bool:
-	## Best-effort: 6 piezas de armadura + 4 Energy Tanks.
+	## Best-effort: 6 piezas de armadura + 4 tanques de energía.
 	return has_all_armor_pieces() and energy_tanks >= MAX_ENERGY_TANKS
 
 

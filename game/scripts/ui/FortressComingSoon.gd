@@ -11,9 +11,9 @@ const HEART := "res://scenes/levels/LevelHeartCore9.tscn"
 
 ## Linear assault stages (id, display, scene).
 const STAGES: Array = [
-	{"id": "lobby", "name": "1 · Lobby Neon", "desc": "Midboss: Refrain Unit", "scene": LOBBY},
+	{"id": "lobby", "name": "1 · Lobby Neon", "desc": "Jefe intermedio: Refrain Unit", "scene": LOBBY},
 	{"id": "archive", "name": "2 · Voice Archive", "desc": "Sellos vocales", "scene": ARCHIVE},
-	{"id": "shaft", "name": "3 · Core Shaft", "desc": "Midboss: Overdub Titan", "scene": SHAFT},
+	{"id": "shaft", "name": "3 · Core Shaft", "desc": "Jefe intermedio: Overdub Titan", "scene": SHAFT},
 	{"id": "heart", "name": "4 · Heart CORE-9", "desc": "Jefe final", "scene": HEART},
 ]
 

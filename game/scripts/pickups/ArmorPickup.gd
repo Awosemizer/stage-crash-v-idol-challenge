@@ -8,7 +8,7 @@ signal collected(set_id: String, piece_id: String)
 @export var display_name_es := "Torso Stage Flight"
 @export var bob_amp := 3.0
 @export var bob_speed := 3.5
-@export var toast_hint_es := "Mantén Saltar en el aire → hover"
+@export var toast_hint_es := "Mantén Saltar en el aire → planeo"
 
 var _base_y := 0.0
 var _collected := false

@@ -64,21 +64,25 @@ func _build_course() -> void:
 	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
 	# and most have an upper path. Required rises <= 24px (optional catwalks 32), one wall-jump shaft with a mid foothold.
 	#   x0: start run
-	#   x320: spike trenches — low path jumps them, upper path catwalk
-	#   x768: metronome spikes on the beat (low path) / catwalk (upper path)
+	#   x320: metronome spikes on the beat (low path) / catwalk (upper path)
+	#   x768: pillars over a spike floor — low path is the spikes, hop the tops
 	#   x1216: wall-jump shaft 36px + mid foothold, secret in the right wall
-	#   x1664: pillars over a spike floor — low path is the spikes, hop the tops
-	#   x2112: block stairs up and down, Met on the summit
+	#   x1664: tempo stairs — beat spikes on alternating steps, hop on the off-beat
+	#   x2112: spike trenches — low path jumps them, upper path catwalk
 	#   x2560: corridor to the gate
 	var solids: Array = [
 		[-32, 0, 32, 224, COL_WALL],
 		[0, 176, 320, 48, COL_FLOOR],
-		[320, 176, 128, 48, COL_FLOOR],
-		[448, 208, 48, 16, COL_WALL],
-		[496, 176, 80, 48, COL_FLOOR],
-		[576, 208, 48, 16, COL_WALL],
-		[624, 176, 144, 48, COL_FLOOR],
-		[768, 176, 448, 48, COL_FLOOR],
+		[320, 176, 448, 48, COL_FLOOR],
+		[768, 176, 104, 48, COL_FLOOR],
+		[872, 208, 40, 16, COL_WALL],
+		[912, 160, 32, 64, COL_METAL],
+		[944, 208, 32, 16, COL_WALL],
+		[976, 144, 32, 80, COL_METAL],
+		[1008, 208, 32, 16, COL_WALL],
+		[1040, 160, 32, 64, COL_METAL],
+		[1072, 208, 48, 16, COL_WALL],
+		[1120, 176, 96, 48, COL_FLOOR],
 		[1216, 176, 448, 48, COL_FLOOR],
 		[1312, 40, 16, 104, COL_WALL],
 		[1328, 128, 10, 8, COL_METAL],
@@ -86,64 +90,65 @@ func _build_course() -> void:
 		[1412, 96, 16, 32, COL_WALL],
 		[1364, 128, 64, 48, COL_WALL],
 		[1428, 80, 48, 16, COL_FLOOR],
-		[1664, 176, 104, 48, COL_FLOOR],
-		[1768, 208, 40, 16, COL_WALL],
-		[1808, 160, 32, 64, COL_METAL],
-		[1840, 208, 32, 16, COL_WALL],
-		[1872, 144, 32, 80, COL_METAL],
-		[1904, 208, 32, 16, COL_WALL],
-		[1936, 160, 32, 64, COL_METAL],
-		[1968, 208, 48, 16, COL_WALL],
-		[2016, 176, 96, 48, COL_FLOOR],
-		[2112, 176, 448, 48, COL_FLOOR],
-		[2176, 152, 64, 24, COL_FLOOR],
-		[2240, 128, 64, 48, COL_METAL],
-		[2304, 104, 64, 72, COL_FLOOR],
-		[2368, 128, 64, 48, COL_METAL],
-		[2432, 152, 64, 24, COL_FLOOR],
+		[1664, 176, 448, 48, COL_FLOOR],
+		[1728, 152, 64, 24, COL_FLOOR],
+		[1792, 128, 64, 48, COL_METAL],
+		[1856, 104, 64, 72, COL_FLOOR],
+		[1920, 128, 64, 48, COL_METAL],
+		[1984, 152, 64, 24, COL_FLOOR],
+		[2112, 176, 128, 48, COL_FLOOR],
+		[2240, 208, 48, 16, COL_WALL],
+		[2288, 176, 80, 48, COL_FLOOR],
+		[2368, 208, 48, 16, COL_WALL],
+		[2416, 176, 144, 48, COL_FLOOR],
 		[2560, 176, 320, 48, COL_FLOOR],
 	]
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 	# upper path catwalks — one-way, jump up through them
 	var catwalks: Array = [
-		[368, 144, 56, 8, COL_METAL],
-		[432, 112, 208, 8, COL_METAL],
-		[656, 144, 56, 8, COL_METAL],
-		[824, 144, 48, 8, COL_METAL],
-		[888, 112, 184, 8, COL_METAL],
-		[1088, 144, 56, 8, COL_METAL],
+		[376, 144, 48, 8, COL_METAL],
+		[440, 112, 184, 8, COL_METAL],
+		[640, 144, 56, 8, COL_METAL],
+		[936, 112, 112, 8, COL_METAL],
 		[1492, 112, 48, 8, COL_METAL],
 		[1556, 144, 48, 8, COL_METAL],
-		[1832, 112, 112, 8, COL_METAL],
+		[2160, 144, 56, 8, COL_METAL],
+		[2224, 112, 208, 8, COL_METAL],
+		[2448, 144, 56, 8, COL_METAL],
 	]
 	for cw in catwalks:
 		_add_rect_platform(float(cw[0]), float(cw[1]), float(cw[2]), float(cw[3]), cw[4], true)
 	var spikes: Array = [
-		Vector2(456, 200),
-		Vector2(472, 200),
-		Vector2(488, 200),
-		Vector2(584, 200),
-		Vector2(600, 200),
-		Vector2(616, 200),
-		Vector2(1776, 200),
-		Vector2(1792, 200),
-		Vector2(1848, 200),
-		Vector2(1864, 200),
-		Vector2(1912, 200),
-		Vector2(1928, 200),
-		Vector2(1976, 200),
-		Vector2(1992, 200),
-		Vector2(2008, 200),
+		Vector2(880, 200),
+		Vector2(896, 200),
+		Vector2(952, 200),
+		Vector2(968, 200),
+		Vector2(1016, 200),
+		Vector2(1032, 200),
+		Vector2(1080, 200),
+		Vector2(1096, 200),
+		Vector2(1112, 200),
+		Vector2(2248, 200),
+		Vector2(2264, 200),
+		Vector2(2280, 200),
+		Vector2(2376, 200),
+		Vector2(2392, 200),
+		Vector2(2408, 200),
 	]
 	for sp in spikes:
 		_add_spike(sp.x, sp.y)
-	_add_metro_spike(Vector2(888, 168), 1.0, 0.35, 0.00)
-	_add_metro_spike(Vector2(916, 168), 1.0, 0.35, 0.50)
-	_add_metro_spike(Vector2(1000, 168), 1.0, 0.35, 0.15)
-	_add_metro_spike(Vector2(1028, 168), 1.0, 0.35, 0.65)
-	_add_metro_spike(Vector2(1112, 168), 1.0, 0.35, 0.30)
-	_add_metro_spike(Vector2(1140, 168), 1.0, 0.35, 0.80)
+	_add_metro_spike(Vector2(440, 168), 1.0, 0.35, 0.00)
+	_add_metro_spike(Vector2(468, 168), 1.0, 0.35, 0.50)
+	_add_metro_spike(Vector2(552, 168), 1.0, 0.35, 0.15)
+	_add_metro_spike(Vector2(580, 168), 1.0, 0.35, 0.65)
+	_add_metro_spike(Vector2(664, 168), 1.0, 0.35, 0.30)
+	_add_metro_spike(Vector2(692, 168), 1.0, 0.35, 0.80)
+	_add_metro_spike(Vector2(1768, 144), 1.2, 0.4, 0.00)
+	_add_metro_spike(Vector2(1832, 120), 1.2, 0.4, 0.60)
+	_add_metro_spike(Vector2(1896, 96), 1.2, 0.4, 0.00)
+	_add_metro_spike(Vector2(1960, 120), 1.2, 0.4, 0.60)
+	_add_metro_spike(Vector2(2024, 144), 1.2, 0.4, 0.00)
 	_build_secret_encore_legs()
 
 	var label := Label.new()
@@ -405,7 +410,7 @@ func _build_secret_encore_legs() -> void:
 	pickup.armor_set = "encore"
 	pickup.armor_piece = "legs"
 	pickup.display_name_es = "Piernas Encore Guard"
-	pickup.toast_hint_es = "Más i-frames al slide"
+	pickup.toast_hint_es = "Más invulnerabilidad al deslizarte"
 	if pickup.has_node("Glow"):
 		pickup.get_node("Glow").color = Color(0.85, 0.55, 0.25, 0.4)
 	if pickup.has_node("Visual"):
@@ -439,12 +444,14 @@ func _add_breakable(x: float, y: float, variant: int = 0) -> void:
 func _spawn_enemies() -> void:
 	# 1 Met per screen-ish, always on a floor top (y = floor).
 	_add_met(248.0, 176.0)
-	_add_met(536.0, 176.0)
-	_add_met(968.0, 112.0)
+	_add_met(520.0, 112.0)
+	_add_met(1184.0, 176.0)
 	_add_met(1636.0, 176.0)
-	_add_met(2080.0, 176.0)
-	_add_met(2336.0, 104.0)
+	_add_met(2328.0, 176.0)
 	_add_met(2720.0, 176.0)
+	# v0.61 common enemies: Speaker Drone (flies in a sine) / Spotlight Turret (fixed shooter)
+	var kit = preload("res://scripts/levels/StageKit.gd")
+	kit.drone(entities, 1888.0, 64.0, Color(1.0, 0.9, 0.55))
 
 
 func _add_met(x: float, floor_y: float) -> void:
@@ -481,11 +488,11 @@ func _add_spike(x: float, y: float) -> void:
 func _add_mid_checkpoints() -> void:
 	## v0.56: one checkpoint per section of the long metronome course.
 	var parent_n: Node = geometry if geometry else self
-	CheckpointScript.place(parent_n, Vector2(360.0, 176.0), "metronome", "CK1")
-	CheckpointScript.place(parent_n, Vector2(800.0, 176.0), "metronome", "CK2")
+	CheckpointScript.place(parent_n, Vector2(352.0, 176.0), "metronome", "CK1")
+	CheckpointScript.place(parent_n, Vector2(808.0, 176.0), "metronome", "CK2")
 	CheckpointScript.place(parent_n, Vector2(1256.0, 176.0), "metronome", "CK3")
-	CheckpointScript.place(parent_n, Vector2(1704.0, 176.0), "metronome", "CK4")
-	CheckpointScript.place(parent_n, Vector2(2144.0, 176.0), "metronome", "CK5")
+	CheckpointScript.place(parent_n, Vector2(1696.0, 176.0), "metronome", "CK4")
+	CheckpointScript.place(parent_n, Vector2(2152.0, 176.0), "metronome", "CK5")
 	CheckpointScript.place(parent_n, Vector2(2600.0, 176.0), "metronome", "CK6")
 
 

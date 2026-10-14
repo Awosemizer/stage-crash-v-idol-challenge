@@ -64,37 +64,36 @@ func _build_course() -> void:
 	# and most have an upper path. Required rises <= 24px (optional catwalks 32), one wall-jump shaft with a mid foothold.
 	#   x0: start run
 	#   x320: electric floor panels (low path) / catwalk (upper path)
-	#   x768: bottomless gaps between raised islands
-	#   x1216: wall-jump shaft 36px + mid foothold, secret in the right wall
-	#   x1664: spike trenches — low path jumps them, upper path catwalk
-	#   x2112: block stairs up and down, Met on the summit
+	#   x768: wall-jump shaft 36px + mid foothold, secret in the right wall
+	#   x1216: live-wire islands — each island is half electrified, stand on the dry half
+	#   x1664: block stairs up and down, Met on the summit
+	#   x2112: bottomless gaps between raised islands
 	#   x2560: corridor to the gate
 	var solids: Array = [
 		[-32, 0, 32, 224, COL_WALL],
 		[0, 176, 320, 48, COL_FLOOR],
 		[320, 176, 448, 48, COL_FLOOR],
-		[768, 176, 96, 48, COL_FLOOR],
-		[904, 160, 64, 64, COL_NEON],
-		[1008, 144, 48, 80, COL_NEON],
-		[1104, 176, 112, 48, COL_FLOOR],
-		[1216, 176, 448, 48, COL_FLOOR],
-		[1312, 40, 16, 104, COL_WALL],
-		[1328, 128, 10, 8, COL_NEON],
-		[1364, 80, 64, 16, COL_WALL],
-		[1412, 96, 16, 32, COL_WALL],
-		[1364, 128, 64, 48, COL_WALL],
-		[1428, 80, 48, 16, COL_FLOOR],
-		[1664, 176, 128, 48, COL_FLOOR],
-		[1792, 208, 48, 16, COL_WALL],
-		[1840, 176, 80, 48, COL_FLOOR],
-		[1920, 208, 48, 16, COL_WALL],
-		[1968, 176, 144, 48, COL_FLOOR],
-		[2112, 176, 448, 48, COL_FLOOR],
-		[2176, 152, 64, 24, COL_FLOOR],
-		[2240, 128, 64, 48, COL_NEON],
-		[2304, 104, 64, 72, COL_FLOOR],
-		[2368, 128, 64, 48, COL_NEON],
-		[2432, 152, 64, 24, COL_FLOOR],
+		[768, 176, 448, 48, COL_FLOOR],
+		[864, 40, 16, 104, COL_WALL],
+		[880, 128, 10, 8, COL_NEON],
+		[916, 80, 64, 16, COL_WALL],
+		[964, 96, 16, 32, COL_WALL],
+		[916, 128, 64, 48, COL_WALL],
+		[980, 80, 48, 16, COL_FLOOR],
+		[1216, 176, 96, 48, COL_FLOOR],
+		[1352, 160, 64, 64, COL_NEON],
+		[1448, 160, 64, 64, COL_NEON],
+		[1552, 176, 112, 48, COL_FLOOR],
+		[1664, 176, 448, 48, COL_FLOOR],
+		[1728, 152, 64, 24, COL_FLOOR],
+		[1792, 128, 64, 48, COL_NEON],
+		[1856, 104, 64, 72, COL_FLOOR],
+		[1920, 104, 64, 72, COL_NEON],
+		[1984, 128, 64, 48, COL_FLOOR],
+		[2112, 176, 96, 48, COL_FLOOR],
+		[2248, 160, 64, 64, COL_NEON],
+		[2352, 144, 48, 80, COL_NEON],
+		[2448, 176, 112, 48, COL_FLOOR],
 		[2560, 176, 320, 48, COL_FLOOR],
 	]
 	for s in solids:
@@ -105,27 +104,22 @@ func _build_course() -> void:
 		[432, 112, 96, 8, COL_NEON],
 		[544, 112, 96, 8, COL_NEON],
 		[656, 144, 56, 8, COL_NEON],
-		[1492, 112, 48, 8, COL_NEON],
-		[1556, 144, 48, 8, COL_NEON],
-		[1712, 144, 56, 8, COL_NEON],
-		[1776, 112, 208, 8, COL_NEON],
-		[2000, 144, 56, 8, COL_NEON],
+		[1044, 112, 48, 8, COL_NEON],
+		[1108, 144, 48, 8, COL_NEON],
+		[1328, 112, 208, 8, COL_NEON],
 	]
 	for cw in catwalks:
 		_add_rect_platform(float(cw[0]), float(cw[1]), float(cw[2]), float(cw[3]), cw[4], true)
 	var spikes: Array = [
-		Vector2(1800, 200),
-		Vector2(1816, 200),
-		Vector2(1832, 200),
-		Vector2(1928, 200),
-		Vector2(1944, 200),
-		Vector2(1960, 200),
 	]
 	for sp in spikes:
 		_add_spike(sp.x, sp.y)
 	_add_electric(472.0, 170.0, Vector2(56, 10), 0.00, 1.15)
 	_add_electric(584.0, 170.0, Vector2(56, 10), 0.35, 1.15)
 	_add_electric(696.0, 170.0, Vector2(56, 10), 0.70, 1.15)
+	_add_electric(1400.0, 155.0, Vector2(30, 10), 0.00, 1.3)
+	_add_electric(1496.0, 155.0, Vector2(30, 10), 0.40, 1.3)
+	_add_electric(1608.0, 170.0, Vector2(40, 10), 0.8, 1.3)
 	_build_secret_arms()
 
 	var label := Label.new()
@@ -388,10 +382,10 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 func _build_secret_arms() -> void:
 	## Alcoba secreta dentro de la pared derecha del pozo de wall-jump.
-	_seal_secret_rect(1364.0, 96.0, 1412.0, 128.0)
+	_seal_secret_rect(916.0, 96.0, 964.0, 128.0)
 	var pickup: Area2D = ArmorPickupScene.instantiate()
 	pickup.name = "FlightArmsPickup"
-	pickup.position = Vector2(1396.0, 110.0)
+	pickup.position = Vector2(948.0, 110.0)
 	pickup.armor_set = "flight"
 	pickup.armor_piece = "arms"
 	pickup.display_name_es = "Brazos Stage Flight"
@@ -427,11 +421,13 @@ func _spawn_enemies() -> void:
 	# 1 Met per screen-ish, always on a floor top (y = floor).
 	_add_met(248.0, 176.0)
 	_add_met(528.0, 112.0)
-	_add_met(1176.0, 176.0)
-	_add_met(1636.0, 176.0)
-	_add_met(1880.0, 176.0)
-	_add_met(2336.0, 104.0)
+	_add_met(1188.0, 176.0)
+	_add_met(1888.0, 104.0)
+	_add_met(2520.0, 176.0)
 	_add_met(2720.0, 176.0)
+	# v0.61 common enemies: Speaker Drone (flies in a sine) / Spotlight Turret (fixed shooter)
+	var kit = preload("res://scripts/levels/StageKit.gd")
+	kit.turret(entities, 1652.0, 176.0, Color(1.0, 0.55, 1.0))
 
 
 func _add_met(x: float, floor_y: float) -> void:
@@ -471,8 +467,8 @@ func _add_mid_checkpoints() -> void:
 	CheckpointScript.place(parent_n, Vector2(352.0, 176.0), "neon_volt", "CK1")
 	CheckpointScript.place(parent_n, Vector2(808.0, 176.0), "neon_volt", "CK2")
 	CheckpointScript.place(parent_n, Vector2(1256.0, 176.0), "neon_volt", "CK3")
-	CheckpointScript.place(parent_n, Vector2(1704.0, 176.0), "neon_volt", "CK4")
-	CheckpointScript.place(parent_n, Vector2(2144.0, 176.0), "neon_volt", "CK5")
+	CheckpointScript.place(parent_n, Vector2(1696.0, 176.0), "neon_volt", "CK4")
+	CheckpointScript.place(parent_n, Vector2(2152.0, 176.0), "neon_volt", "CK5")
 	CheckpointScript.place(parent_n, Vector2(2600.0, 176.0), "neon_volt", "CK6")
 
 

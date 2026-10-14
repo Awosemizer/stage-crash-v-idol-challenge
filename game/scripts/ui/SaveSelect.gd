@@ -161,7 +161,7 @@ func _make_slot_cell(slot: int, is_new: bool) -> Control:
 
 	var title := Label.new()
 	title.name = "SlotTitle"
-	title.text = "Slot %d" % (slot + 1)
+	title.text = "Ranura %d" % (slot + 1)
 	title.add_theme_font_size_override("font_size", 11)
 	title.modulate = Color(0.95, 0.95, 1.0, 1.0)
 	title.position = Vector2(8, 4)

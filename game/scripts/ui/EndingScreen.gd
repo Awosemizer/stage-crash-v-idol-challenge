@@ -28,7 +28,7 @@ func _prepare_lines() -> void:
 	var char_name := "Kasane Teto" if is_teto else "Hatsune Miku"
 	if is_teto:
 		_lines = PackedStringArray([
-			"STAGE CLEAR",
+			"¡ETAPA SUPERADA!",
 			"%s corta el último acorde." % char_name,
 			"SynthoCorp calla. El público — virtual o no — grita su nombre.",
 			"«No soy un eco. Soy el bis.»",
@@ -36,7 +36,7 @@ func _prepare_lines() -> void:
 		])
 	else:
 		_lines = PackedStringArray([
-			"STAGE CLEAR",
+			"¡ETAPA SUPERADA!",
 			"%s apaga el núcleo." % char_name,
 			"Las luces del escenario vuelven a ser solo luces. Ella sonríe.",
 			"«El show continúa… con nosotras.»",
@@ -57,7 +57,7 @@ func _build_ui() -> void:
 
 	var header := Label.new()
 	header.name = "Header"
-	header.text = "STAGE CLEAR"
+	header.text = "¡ETAPA SUPERADA!"
 	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	ArtKit.style_title_label(header, 16, Color(0.95, 0.6, 1.0, 1.0), 3)
 	header.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -159,7 +159,7 @@ func _show_line(i: int) -> void:
 			body.text = "…"
 	else:
 		if header:
-			header.text = "STAGE CLEAR"
+			header.text = "¡ETAPA SUPERADA!"
 		if body:
 			body.text = text
 	var nxt := get_node_or_null("NextButton") as Button

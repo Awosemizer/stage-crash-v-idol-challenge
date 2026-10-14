@@ -374,7 +374,7 @@ func _build_ui() -> void:
 
 	_etank_btn = Button.new()
 	_etank_btn.name = "EtankButton"
-	_etank_btn.text = "E-Tank"
+	_etank_btn.text = "Tanque E"
 	_etank_btn.add_theme_font_size_override("font_size", 11)
 	_etank_btn.process_mode = Node.PROCESS_MODE_ALWAYS
 	_etank_btn.focus_mode = Control.FOCUS_NONE
@@ -780,7 +780,7 @@ func _refresh_etank_btn() -> void:
 			var hp_now := int(p.get("hp")) if p.get("hp") != null else 0
 			var hp_max := int(p.get("max_hp")) if p.get("max_hp") != null else 28
 			full = hp_now <= 0 or hp_now >= hp_max
-	_etank_btn.text = "E-Tank ×%d · cura 28" % n
+	_etank_btn.text = "Tanque E ×%d · cura 28" % n
 	_etank_btn.disabled = n <= 0 or full
 
 
@@ -797,7 +797,7 @@ func _on_etank_pressed() -> void:
 		var n := 0
 		if gs != null and gs.has_method("get_energy_tanks"):
 			n = int(gs.get_energy_tanks())
-		_ammo_toast.text = "PV al máximo" if n > 0 else "Sin E-Tank"
+		_ammo_toast.text = "PV al máximo" if n > 0 else "Sin tanque E"
 	_refresh_etank_btn()
 
 
@@ -1025,7 +1025,7 @@ func _refresh_touch_opt_labels() -> void:
 	if _touch_size_btn:
 		_touch_size_btn.text = "Táctil %s" % sz
 	if _touch_op_btn:
-		_touch_op_btn.text = "Opac %d%%" % int(round(op * 100.0))
+		_touch_op_btn.text = "Opacidad %d%%" % int(round(op * 100.0))
 
 
 func _on_touch_size_pressed() -> void:

@@ -64,66 +64,63 @@ func _build_course() -> void:
 	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
 	# and most have an upper path. Required rises <= 24px (optional catwalks 32), one wall-jump shaft with a mid foothold.
 	#   x0: start run
-	#   x320: spike trenches — low path jumps them, upper path catwalk
-	#   x768: frame-skip pads over a pit (upper path) / ice pillar
-	#   x1216: wall-jump shaft 36px + mid foothold, secret in the right wall
-	#   x1664: bottomless gaps between raised islands
+	#   x320: frame-skip pads over a pit (upper path) / ice pillar
+	#   x768: bottomless gaps between raised islands
+	#   x1216: glitch icicles drop under the catwalk (shadows warn) / frame-skip ledge
+	#   x1664: wall-jump shaft 36px + mid foothold, secret in the right wall
 	#   x2112: block stairs up and down, Met on the summit
 	#   x2560: corridor to the gate
 	var solids: Array = [
 		[-32, 0, 32, 224, COL_WALL],
 		[0, 176, 320, 48, COL_FLOOR],
-		[320, 176, 128, 48, COL_FLOOR],
-		[448, 208, 48, 16, COL_WALL],
-		[496, 176, 80, 48, COL_FLOOR],
-		[576, 208, 48, 16, COL_WALL],
+		[320, 176, 112, 48, COL_FLOOR],
+		[508, 144, 40, 80, COL_ICE],
 		[624, 176, 144, 48, COL_FLOOR],
-		[768, 176, 112, 48, COL_FLOOR],
-		[956, 144, 40, 80, COL_ICE],
-		[1072, 176, 144, 48, COL_FLOOR],
-		[1216, 176, 448, 48, COL_FLOOR],
-		[1312, 40, 16, 104, COL_WALL],
-		[1328, 128, 10, 8, COL_ICE],
-		[1364, 80, 64, 16, COL_WALL],
-		[1412, 96, 16, 32, COL_WALL],
-		[1364, 128, 64, 48, COL_WALL],
-		[1428, 80, 48, 16, COL_FLOOR],
-		[1664, 176, 96, 48, COL_FLOOR],
-		[1800, 160, 64, 64, COL_ICE],
-		[1904, 144, 48, 80, COL_ICE],
-		[2000, 176, 112, 48, COL_FLOOR],
+		[768, 176, 96, 48, COL_FLOOR],
+		[904, 160, 64, 64, COL_ICE],
+		[1008, 160, 48, 64, COL_ICE],
+		[1104, 176, 112, 48, COL_FLOOR],
+		[1216, 176, 160, 48, COL_FLOOR],
+		[1376, 160, 128, 64, COL_ICE],
+		[1504, 176, 160, 48, COL_FLOOR],
+		[1664, 176, 448, 48, COL_FLOOR],
+		[1760, 40, 16, 104, COL_WALL],
+		[1776, 128, 10, 8, COL_ICE],
+		[1812, 80, 64, 16, COL_WALL],
+		[1860, 96, 16, 32, COL_WALL],
+		[1812, 128, 64, 48, COL_WALL],
+		[1876, 80, 48, 16, COL_FLOOR],
 		[2112, 176, 448, 48, COL_FLOOR],
 		[2176, 152, 64, 24, COL_FLOOR],
 		[2240, 128, 64, 48, COL_ICE],
 		[2304, 104, 64, 72, COL_FLOOR],
-		[2368, 128, 64, 48, COL_ICE],
-		[2432, 152, 64, 24, COL_FLOOR],
+		[2368, 80, 64, 96, COL_ICE],
+		[2432, 104, 64, 72, COL_FLOOR],
 		[2560, 176, 320, 48, COL_FLOOR],
 	]
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 	# upper path catwalks — one-way, jump up through them
 	var catwalks: Array = [
-		[368, 144, 56, 8, COL_ICE],
-		[432, 112, 208, 8, COL_ICE],
-		[656, 144, 56, 8, COL_ICE],
-		[1492, 112, 48, 8, COL_ICE],
-		[1556, 144, 48, 8, COL_ICE],
+		[1288, 112, 136, 8, COL_ICE],
+		[1464, 112, 136, 8, COL_ICE],
+		[1940, 112, 48, 8, COL_ICE],
+		[2004, 144, 48, 8, COL_ICE],
 	]
 	for cw in catwalks:
 		_add_rect_platform(float(cw[0]), float(cw[1]), float(cw[2]), float(cw[3]), cw[4], true)
 	var spikes: Array = [
-		Vector2(456, 200),
-		Vector2(472, 200),
-		Vector2(488, 200),
-		Vector2(584, 200),
-		Vector2(600, 200),
-		Vector2(616, 200),
 	]
 	for sp in spikes:
 		_add_spike(sp.x, sp.y)
-	_add_frame_skip(Vector2(912, 160), Vector2(912, 128), Vector2(56, 12), 1.6, 0.0)
-	_add_frame_skip(Vector2(1028, 160), Vector2(1028, 128), Vector2(56, 12), 1.6, 0.8)
+	_add_frame_skip(Vector2(464, 160), Vector2(464, 128), Vector2(56, 12), 1.6, 0.0)
+	_add_frame_skip(Vector2(580, 160), Vector2(580, 128), Vector2(56, 12), 1.6, 0.8)
+	var kit = preload("res://scripts/levels/StageKit.gd")
+	kit.drop(hazards, 1312.0, 120.0, 176.0, 2.2, 0.00, "res://assets/sprites/fx/ice_glitch.png", Color(0.7, 0.95, 1.0))
+	kit.drop(hazards, 1384.0, 120.0, 160.0, 2.2, 0.44, "res://assets/sprites/fx/ice_glitch.png", Color(0.7, 0.95, 1.0))
+	kit.drop(hazards, 1448.0, 120.0, 160.0, 2.2, 0.88, "res://assets/sprites/fx/ice_glitch.png", Color(0.7, 0.95, 1.0))
+	kit.drop(hazards, 1520.0, 120.0, 176.0, 2.2, 1.32, "res://assets/sprites/fx/ice_glitch.png", Color(0.7, 0.95, 1.0))
+	kit.drop(hazards, 1584.0, 120.0, 176.0, 2.2, 1.76, "res://assets/sprites/fx/ice_glitch.png", Color(0.7, 0.95, 1.0))
 	_build_secret_energy_tank()
 
 	var label := Label.new()
@@ -378,10 +375,10 @@ func _show_banner(text: String, color: Color, duration: float) -> void:
 
 func _build_secret_energy_tank() -> void:
 	## Alcoba secreta dentro de la pared derecha del pozo de wall-jump.
-	_seal_secret_rect(1364.0, 96.0, 1412.0, 128.0)
+	_seal_secret_rect(1812.0, 96.0, 1860.0, 128.0)
 	var pickup: Area2D = EnergyTankScene.instantiate()
 	pickup.name = "EnergyTankPickup"
-	pickup.position = Vector2(1396.0, 110.0)
+	pickup.position = Vector2(1844.0, 110.0)
 	pickup.z_index = -2  # detrás de los bloques: la alcoba no se ve
 	var _seal_lbl = pickup.get_node_or_null("Label")
 	if _seal_lbl: _seal_lbl.visible = false
@@ -411,12 +408,14 @@ func _add_breakable(x: float, y: float, variant: int = 0) -> void:
 func _spawn_enemies() -> void:
 	# 1 Met per screen-ish, always on a floor top (y = floor).
 	_add_met(248.0, 176.0)
-	_add_met(536.0, 176.0)
-	_add_met(1168.0, 176.0)
-	_add_met(1636.0, 176.0)
-	_add_met(2072.0, 176.0)
-	_add_met(2336.0, 104.0)
+	_add_met(720.0, 176.0)
+	_add_met(1176.0, 176.0)
+	_add_met(2084.0, 176.0)
+	_add_met(2400.0, 80.0)
 	_add_met(2720.0, 176.0)
+	# v0.61 common enemies: Speaker Drone (flies in a sine) / Spotlight Turret (fixed shooter)
+	var kit = preload("res://scripts/levels/StageKit.gd")
+	kit.drone(entities, 1436.0, 84.0, Color(0.6, 0.95, 1.0))
 
 
 func _add_met(x: float, floor_y: float) -> void:
@@ -455,7 +454,7 @@ func _add_mid_checkpoints() -> void:
 	var parent_n: Node = geometry if geometry else self
 	CheckpointScript.place(parent_n, Vector2(360.0, 176.0), "glitch_ice", "CK1")
 	CheckpointScript.place(parent_n, Vector2(808.0, 176.0), "glitch_ice", "CK2")
-	CheckpointScript.place(parent_n, Vector2(1256.0, 176.0), "glitch_ice", "CK3")
+	CheckpointScript.place(parent_n, Vector2(1248.0, 176.0), "glitch_ice", "CK3")
 	CheckpointScript.place(parent_n, Vector2(1704.0, 176.0), "glitch_ice", "CK4")
 	CheckpointScript.place(parent_n, Vector2(2144.0, 176.0), "glitch_ice", "CK5")
 	CheckpointScript.place(parent_n, Vector2(2600.0, 176.0), "glitch_ice", "CK6")

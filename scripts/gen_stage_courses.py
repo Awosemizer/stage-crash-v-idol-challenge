@@ -27,6 +27,9 @@ class Course:
         self.cks, self.gimmick, self.secret, self.notes = [], [], None, []
         self.want_secret = True
         self.seals = []
+        self.kit = []      # v0.61 StageKit calls (hazards parent)
+        self.foes = []     # v0.61 (kind, x, y)
+        self.variant = 0
 
     def floor(self, x, w, top=FY, col="COL_FLOOR"):
         self.solids.append((x, top, w, 224 - top, col))
@@ -79,8 +82,9 @@ def s_pits(c, x0):
     c.notes.append(f"{x0}: bottomless gaps between raised islands")
     c.ck(x0 + 40)
     c.floor(x0, 96)
-    c.floor(x0 + 136, 64, top=160, col="COL_ALT")
-    c.floor(x0 + 240, 48, top=144, col="COL_ALT")
+    a, b = [(160, 144), (160, 160), (152, 144), (160, 152)][c.variant % 4]
+    c.floor(x0 + 136, 64, top=a, col="COL_ALT")
+    c.floor(x0 + 240, 48, top=b, col="COL_ALT")
     c.floor(x0 + 336, 112)
     c.met(x0 + 408)
     return 448
@@ -112,9 +116,13 @@ def s_stairs(c, x0):
     c.ck(x0 + 32)
     c.floor(x0, 448)
     # v0.60: 24px steps (Teto's real apex is ~34px; 32px steps needed a perfect full jump).
-    for i, top in enumerate((152, 128, 104, 128, 152)):
+    pats = [(152, 128, 104, 128, 152), (152, 128, 104, 80, 104), (152, 152, 128, 104, 128),
+            (152, 128, 128, 104, 128), (152, 128, 104, 104, 128), (152, 128, 152, 128, 104),
+            (152, 128, 104, 128, 104), (128 + 24, 128, 104, 80, 128 - 24 + 24)]
+    tops = pats[c.variant % len(pats)]
+    for i, top in enumerate(tops):
         c.block(x0 + 64 + i * 64, top, 64, FY - top, "COL_FLOOR" if i % 2 == 0 else "COL_ALT")
-    c.met(x0 + 224, 104)
+    c.met(x0 + 64 + tops.index(min(tops)) * 64 + 32, min(tops))
     return 448
 
 
@@ -181,6 +189,7 @@ def g_collapse(c, x0):
     c.gimmick.append(f"_add_collapse(Vector2({x0 + 368}, 166), Vector2(48, 12), 0.65, 0.9, 2.2)")
     c.floor(x0 + 416, 32)
     c.cat(x0 + 248, 128, 48)
+    c.foes.append(("drone", x0 + 210, 100))
     return 448
 
 
@@ -253,30 +262,149 @@ def g_static(c, x0):
 
 
 def g_kiln(c, x0):
-    return s_pillars(c, x0)
+    w = s_pillars(c, x0)
+    c.notes[-1] = f"{x0}: kiln — pillars over spikes, a fire vent on each pillar top (timed hop)"
+    for i, px in enumerate((x0 + 160, x0 + 224, x0 + 288)):
+        c.kit.append(f"kit.fire_jet(hazards, {px}.0, {160 if i != 1 else 144}.0, 2.0, {0.65 * i:.2f}, 28.0)")
+    return w
+
+
+def g_firejets(c, x0):
+    c.notes.append(f"{x0}: fire vents on the floor beat in sequence (low path) / hot catwalk overhead")
+    c.ck(x0 + 32)
+    c.floor(x0, 448)
+    for i, vx in enumerate((x0 + 120, x0 + 184, x0 + 248, x0 + 312, x0 + 376)):
+        c.kit.append(f"kit.fire_jet(hazards, {vx}.0, 176.0, 1.8, {0.36 * i:.2f}, 40.0)")
+    c.cat(x0 + 64, 144, 40)
+    c.cat(x0 + 136, 112, 88)
+    c.cat(x0 + 264, 112, 88)
+    c.cat(x0 + 376, 144, 40)
+    c.foes.append(("turret", x0 + 424, FY))
+    return 448
+
+
+def g_icicles(c, x0):
+    c.notes.append(f"{x0}: glitch icicles drop under the catwalk (shadows warn) / frame-skip ledge")
+    c.ck(x0 + 32)
+    c.floor(x0, 160)
+    c.floor(x0 + 160, 128, top=160, col="COL_ALT")
+    c.floor(x0 + 288, 160)
+    for i, ix in enumerate((x0 + 96, x0 + 168, x0 + 232, x0 + 304, x0 + 368)):
+        fy = 160 if x0 + 160 <= ix < x0 + 288 else FY
+        c.kit.append(f"kit.drop(hazards, {ix}.0, 120.0, {fy}.0, 2.2, {0.44 * i:.2f}, \"res://assets/sprites/fx/ice_glitch.png\", Color(0.7, 0.95, 1.0))")
+    c.cat(x0 + 72, 112, 136)
+    c.cat(x0 + 248, 112, 136)
+    c.foes.append(("drone", x0 + 220, 84))
+    return 448
+
+
+def g_quake(c, x0):
+    c.notes.append(f"{x0}: subwoofer sends floor quake waves — hop the low crates / ride the catwalk; debris drops")
+    c.ck(x0 + 32)
+    c.floor(x0, 448)
+    c.block(x0 + 128, 160, 32, 16, "COL_ALT")
+    c.block(x0 + 240, 160, 32, 16, "COL_ALT")
+    c.block(x0 + 352, 160, 32, 16, "COL_ALT")
+    c.kit.append(f"kit.quake(hazards, {x0 + 436}.0, 176.0, 2.6, 0.0, -1)")
+    c.kit.append(f"kit.drop(hazards, {x0 + 200}.0, 24.0, 176.0, 2.8, 0.9, \"res://assets/sprites/fx/quake_drop.png\", Color(1.0, 0.8, 0.6))")
+    c.kit.append(f"kit.drop(hazards, {x0 + 312}.0, 24.0, 176.0, 2.8, 2.3, \"res://assets/sprites/fx/quake_drop.png\", Color(1.0, 0.8, 0.6))")
+    c.cat(x0 + 112, 112, 96)
+    c.cat(x0 + 224, 112, 96)
+    c.met(x0 + 60)
+    return 448
+
+
+def g_crosswind(c, x0):
+    c.notes.append(f"{x0}: crosswind bridge — pillars over a pit with alternating gusts, drone patrol")
+    c.ck(x0 + 40)
+    c.floor(x0, 96)
+    for i, (px, top) in enumerate(((x0 + 136, 160), (x0 + 208, 152), (x0 + 280, 160))):
+        c.floor(px, 32, top=top, col="COL_ALT")
+        c.gimmick.append(f"_add_wind({px - 20}.0, 120.0, Vector2({4.0 if i % 2 == 0 else -4.0}, -3.0), Vector2(40, 96))")
+    c.floor(x0 + 352, 96)
+    c.foes.append(("drone", x0 + 230, 92))
+    c.met(x0 + 420)
+    return 448
+
+
+def g_livewire(c, x0):
+    c.notes.append(f"{x0}: live-wire islands — each island is half electrified, stand on the dry half")
+    c.ck(x0 + 40)
+    c.floor(x0, 96)
+    for i, px in enumerate((x0 + 136, x0 + 232)):
+        c.floor(px, 64, top=160, col="COL_ALT")
+        c.gimmick.append(f"_add_electric({px + 48}.0, 155.0, Vector2(30, 10), {0.4 * i:.2f}, 1.3)")
+    c.floor(x0 + 336, 112)
+    c.gimmick.append(f"_add_electric({x0 + 392}.0, 170.0, Vector2(40, 10), 0.8, 1.3)")
+    c.cat(x0 + 112, 112, 208)
+    c.foes.append(("turret", x0 + 436, FY))
+    return 448
+
+
+def g_tempo(c, x0):
+    c.notes.append(f"{x0}: tempo stairs — beat spikes on alternating steps, hop on the off-beat")
+    c.ck(x0 + 32)
+    c.floor(x0, 448)
+    for i, top in enumerate((152, 128, 104, 128, 152)):
+        bx = x0 + 64 + i * 64
+        c.block(bx, top, 64, FY - top, "COL_FLOOR" if i % 2 == 0 else "COL_ALT")
+        c.gimmick.append(f"_add_metro_spike(Vector2({bx + 40}, {top - 8}), 1.2, 0.4, {0.6 * (i % 2):.2f})")
+    c.foes.append(("drone", x0 + 224, 64))
+    return 448
+
+
+def g_garden(c, x0):
+    c.notes.append(f"{x0}: petal garden — falling petals over low terraces, vine lift to the upper path")
+    c.ck(x0 + 32)
+    c.floor(x0, 448)
+    c.block(x0 + 96, 160, 96, 16, "COL_ALT")
+    c.block(x0 + 256, 152, 96, 24, "COL_ALT")
+    for px, py in ((x0 + 120, 36), (x0 + 200, 28), (x0 + 280, 40), (x0 + 360, 30)):
+        c.gimmick.append(f"_add_petal({px}.0, {py}.0)")
+    c.gimmick.append(f"_add_vine(Vector2({x0 + 220}, 136), Vector2({x0 + 220}, 112), Vector2(40, 12), 2.0, 0.0)")
+    c.cat(x0 + 248, 104, 104)
+    c.foes.append(("drone", x0 + 300, 80))
+    c.met(x0 + 410)
+    return 448
+
+
+def g_blackout(c, x0):
+    c.notes.append(f"{x0}: blackout hall — stealth Mets, static pockets and a spotlight that gives you away")
+    c.ck(x0 + 32)
+    c.floor(x0, 448)
+    for px, py in ((x0 + 128, 140), (x0 + 288, 136)):
+        c.gimmick.append(f"_add_static_pocket(Vector2({px}, {py}), 1.6)")
+    c.block(x0 + 192, 152, 48, 24, "COL_ALT")
+    c.met(x0 + 168, FY, ", true")
+    c.met(x0 + 340, FY, ", true")
+    c.foes.append(("turret", x0 + 216, 152))
+    return 448
 
 
 SECTIONS = dict(start=s_start, trench=s_trench, pits=s_pits, shaft=s_shaft, stairs=s_stairs,
                 pillars=s_pillars, preboss=s_preboss, frameskip=g_frameskip, collapse=g_collapse,
-                sealgate=s_sealgate, exit=s_exit, wind=g_wind, electric=g_electric, metro=g_metro, vines=g_vines, static=g_static, kiln=g_kiln)
+                sealgate=s_sealgate, exit=s_exit, wind=g_wind, electric=g_electric, metro=g_metro, vines=g_vines, static=g_static, kiln=g_kiln,
+                firejets=g_firejets, icicles=g_icicles, quake=g_quake, crosswind=g_crosswind,
+                livewire=g_livewire, tempo=g_tempo, garden=g_garden, blackout=g_blackout)
 
 STAGES = {
-    "Level01": dict(sid="beatfire", alt="COL_ACCENT",
-                    order=["start", "trench", "pits", "shaft", "stairs", "kiln", "preboss"]),
-    "LevelGlitchIce": dict(sid="glitch_ice", alt="COL_ICE",
-                           order=["start", "trench", "frameskip", "shaft", "pits", "stairs", "preboss"]),
-    "LevelBassquake": dict(sid="bassquake", alt="COL_METAL",
-                           order=["start", "pits", "trench", "shaft", "collapse", "stairs", "preboss"]),
-    "LevelEchoWind": dict(sid="echo_wind", alt="COL_TOWER",
-                          order=["start", "trench", "wind", "shaft", "stairs", "pits", "preboss"]),
-    "LevelNeonVolt": dict(sid="neon_volt", alt="COL_NEON",
-                          order=["start", "electric", "pits", "shaft", "trench", "stairs", "preboss"]),
-    "LevelMetronome": dict(sid="metronome", alt="COL_METAL",
-                           order=["start", "trench", "metro", "shaft", "pillars", "stairs", "preboss"]),
-    "LevelChorusBloom": dict(sid="chorus_bloom", alt="COL_VINE",
-                             order=["start", "pits", "vines", "shaft", "trench", "stairs", "preboss"]),
-    "LevelStaticShadow": dict(sid="static_shadow", alt="COL_METAL",
-                              order=["start", "trench", "static", "shaft", "pillars", "stairs", "preboss"]),
+    # v0.61: each stage has its own order, two themed sections and a geometry variant.
+    "Level01": dict(sid="beatfire", alt="COL_ACCENT", variant=0, tint="Color(1.0, 0.6, 0.35)",
+                    order=["start", "firejets", "trench", "shaft", "kiln", "stairs", "pits", "preboss"]),
+    "LevelGlitchIce": dict(sid="glitch_ice", alt="COL_ICE", variant=1, tint="Color(0.6, 0.95, 1.0)",
+                           order=["start", "frameskip", "pits", "icicles", "shaft", "stairs", "preboss"]),
+    "LevelBassquake": dict(sid="bassquake", alt="COL_METAL", variant=2, tint="Color(1.0, 0.75, 0.45)",
+                           order=["start", "quake", "pits", "shaft", "collapse", "trench", "stairs", "preboss"]),
+    "LevelEchoWind": dict(sid="echo_wind", alt="COL_TOWER", variant=3, tint="Color(0.75, 1.0, 0.85)",
+                          order=["start", "wind", "stairs", "shaft", "crosswind", "trench", "preboss"]),
+    "LevelNeonVolt": dict(sid="neon_volt", alt="COL_NEON", variant=4, tint="Color(1.0, 0.55, 1.0)",
+                          order=["start", "electric", "shaft", "livewire", "stairs", "pits", "preboss"]),
+    "LevelMetronome": dict(sid="metronome", alt="COL_METAL", variant=5, tint="Color(1.0, 0.9, 0.55)",
+                           order=["start", "metro", "pillars", "shaft", "tempo", "trench", "preboss"]),
+    "LevelChorusBloom": dict(sid="chorus_bloom", alt="COL_VINE", variant=6, tint="Color(1.0, 0.7, 0.85)",
+                             order=["start", "vines", "stairs", "shaft", "garden", "pits", "preboss"]),
+    "LevelStaticShadow": dict(sid="static_shadow", alt="COL_METAL", variant=7, tint="Color(0.75, 0.75, 1.0)",
+                              order=["start", "static", "pits", "shaft", "blackout", "pillars", "preboss"]),
     "LevelFortressLobby": dict(sid="fortress_lobby", alt="COL_NEON", secret=False,
                                order=["start", "trench", "shaft", "pits", "stairs", "preboss"]),
 }
@@ -292,6 +420,7 @@ def fmt(v):
 def build(name, cfg):
     c = Course(cfg["alt"])
     c.want_secret = cfg.get("secret", True)
+    c.variant = cfg.get("variant", 0)
     x = 0
     for sec in cfg["order"]:
         x += SECTIONS[sec](c, x)
@@ -353,6 +482,10 @@ def gen(name):
     lines.append("\t\t_add_spike(sp.x, sp.y)")
     for g in c.gimmick:
         lines.append(f"\t{g}")
+    if c.kit:
+        lines.append("\tvar kit = preload(\"res://scripts/levels/StageKit.gd\")")
+        for k in c.kit:
+            lines.append(f"\t{k}")
     if secret_call:
         lines.append(f"\t{secret_call.group(1)}")
     body = "\n".join(lines) + "\n"
@@ -369,6 +502,12 @@ def gen(name):
         if extra and "stealth" not in met_sig:
             extra = ""
         mlines.append(f"\t_add_met({fmt(mx)}.0, {fmt(my)}.0{extra})")
+    if c.foes:
+        tint = cfg.get("tint", "Color.WHITE")
+        mlines.append("\t# v0.61 common enemies: Speaker Drone (flies in a sine) / Spotlight Turret (fixed shooter)")
+        mlines.append("\tvar kit = preload(\"res://scripts/levels/StageKit.gd\")")
+        for (kind, fx, fy) in c.foes:
+            mlines.append(f"\tkit.{kind}(entities, {fmt(fx)}.0, {fmt(fy)}.0, {tint})")
     src = replace_func(src, "_spawn_enemies", "\n".join(mlines) + "\n")
 
     # checkpoints

@@ -63,23 +63,24 @@ func _build_course() -> void:
 	# v0.56 long course (scripts/gen_stage_courses.py). Every screen has a low path
 	# and most have an upper path. Required rises <= 24px (optional catwalks 32), one wall-jump shaft with a mid foothold.
 	#   x0: start run
-	#   x320: spike trenches — low path jumps them, upper path catwalk
-	#   x768: updraft over the first gap, light headwind over the second (wind adds every frame — keep it small)
+	#   x320: updraft over the first gap, light headwind over the second (wind adds every frame — keep it small)
+	#   x768: block stairs up and down, Met on the summit
 	#   x1216: wall-jump shaft 36px + mid foothold, secret in the right wall
-	#   x1664: block stairs up and down, Met on the summit
-	#   x2112: bottomless gaps between raised islands
+	#   x1664: crosswind bridge — pillars over a pit with alternating gusts, drone patrol
+	#   x2112: spike trenches — low path jumps them, upper path catwalk
 	#   x2560: corridor to the gate
 	var solids: Array = [
 		[-32, 0, 32, 224, COL_WALL],
 		[0, 176, 320, 48, COL_FLOOR],
-		[320, 176, 128, 48, COL_FLOOR],
-		[448, 208, 48, 16, COL_WALL],
-		[496, 176, 80, 48, COL_FLOOR],
-		[576, 208, 48, 16, COL_WALL],
-		[624, 176, 144, 48, COL_FLOOR],
-		[768, 176, 112, 48, COL_FLOOR],
-		[928, 176, 64, 48, COL_FLOOR],
-		[1040, 176, 176, 48, COL_FLOOR],
+		[320, 176, 112, 48, COL_FLOOR],
+		[480, 176, 64, 48, COL_FLOOR],
+		[592, 176, 176, 48, COL_FLOOR],
+		[768, 176, 448, 48, COL_FLOOR],
+		[832, 152, 64, 24, COL_FLOOR],
+		[896, 128, 64, 48, COL_TOWER],
+		[960, 128, 64, 48, COL_FLOOR],
+		[1024, 104, 64, 72, COL_TOWER],
+		[1088, 128, 64, 48, COL_FLOOR],
 		[1216, 176, 448, 48, COL_FLOOR],
 		[1312, 40, 16, 104, COL_WALL],
 		[1328, 128, 10, 8, COL_TOWER],
@@ -87,44 +88,47 @@ func _build_course() -> void:
 		[1412, 96, 16, 32, COL_WALL],
 		[1364, 128, 64, 48, COL_WALL],
 		[1428, 80, 48, 16, COL_FLOOR],
-		[1664, 176, 448, 48, COL_FLOOR],
-		[1728, 152, 64, 24, COL_FLOOR],
-		[1792, 128, 64, 48, COL_TOWER],
-		[1856, 104, 64, 72, COL_FLOOR],
-		[1920, 128, 64, 48, COL_TOWER],
-		[1984, 152, 64, 24, COL_FLOOR],
-		[2112, 176, 96, 48, COL_FLOOR],
-		[2248, 160, 64, 64, COL_TOWER],
-		[2352, 144, 48, 80, COL_TOWER],
-		[2448, 176, 112, 48, COL_FLOOR],
+		[1664, 176, 96, 48, COL_FLOOR],
+		[1800, 160, 32, 64, COL_TOWER],
+		[1872, 152, 32, 72, COL_TOWER],
+		[1944, 160, 32, 64, COL_TOWER],
+		[2016, 176, 96, 48, COL_FLOOR],
+		[2112, 176, 128, 48, COL_FLOOR],
+		[2240, 208, 48, 16, COL_WALL],
+		[2288, 176, 80, 48, COL_FLOOR],
+		[2368, 208, 48, 16, COL_WALL],
+		[2416, 176, 144, 48, COL_FLOOR],
 		[2560, 176, 320, 48, COL_FLOOR],
 	]
 	for s in solids:
 		_add_rect_platform(float(s[0]), float(s[1]), float(s[2]), float(s[3]), s[4])
 	# upper path catwalks — one-way, jump up through them
 	var catwalks: Array = [
-		[368, 144, 56, 8, COL_TOWER],
-		[432, 112, 208, 8, COL_TOWER],
-		[656, 144, 56, 8, COL_TOWER],
-		[832, 144, 48, 8, COL_TOWER],
-		[896, 112, 128, 8, COL_TOWER],
+		[384, 144, 48, 8, COL_TOWER],
+		[448, 112, 128, 8, COL_TOWER],
 		[1492, 112, 48, 8, COL_TOWER],
 		[1556, 144, 48, 8, COL_TOWER],
+		[2160, 144, 56, 8, COL_TOWER],
+		[2224, 112, 208, 8, COL_TOWER],
+		[2448, 144, 56, 8, COL_TOWER],
 	]
 	for cw in catwalks:
 		_add_rect_platform(float(cw[0]), float(cw[1]), float(cw[2]), float(cw[3]), cw[4], true)
 	var spikes: Array = [
-		Vector2(456, 200),
-		Vector2(472, 200),
-		Vector2(488, 200),
-		Vector2(584, 200),
-		Vector2(600, 200),
-		Vector2(616, 200),
+		Vector2(2248, 200),
+		Vector2(2264, 200),
+		Vector2(2280, 200),
+		Vector2(2376, 200),
+		Vector2(2392, 200),
+		Vector2(2408, 200),
 	]
 	for sp in spikes:
 		_add_spike(sp.x, sp.y)
-	_add_wind(904.0, 136.0, Vector2(6.0, -6.0), Vector2(48, 64))
-	_add_wind(1016.0, 136.0, Vector2(-6.0, 0.0), Vector2(48, 64))
+	_add_wind(456.0, 136.0, Vector2(6.0, -6.0), Vector2(48, 64))
+	_add_wind(568.0, 136.0, Vector2(-6.0, 0.0), Vector2(48, 64))
+	_add_wind(1780.0, 120.0, Vector2(4.0, -3.0), Vector2(40, 96))
+	_add_wind(1852.0, 120.0, Vector2(-4.0, -3.0), Vector2(40, 96))
+	_add_wind(1924.0, 120.0, Vector2(4.0, -3.0), Vector2(40, 96))
 	_build_secret_helmet()
 
 	var label := Label.new()
@@ -426,12 +430,15 @@ func _add_breakable(x: float, y: float, variant: int = 0) -> void:
 func _spawn_enemies() -> void:
 	# 1 Met per screen-ish, always on a floor top (y = floor).
 	_add_met(248.0, 176.0)
-	_add_met(536.0, 176.0)
-	_add_met(1188.0, 176.0)
+	_add_met(740.0, 176.0)
+	_add_met(1056.0, 104.0)
 	_add_met(1636.0, 176.0)
-	_add_met(1888.0, 104.0)
-	_add_met(2520.0, 176.0)
+	_add_met(2084.0, 176.0)
+	_add_met(2328.0, 176.0)
 	_add_met(2720.0, 176.0)
+	# v0.61 common enemies: Speaker Drone (flies in a sine) / Spotlight Turret (fixed shooter)
+	var kit = preload("res://scripts/levels/StageKit.gd")
+	kit.drone(entities, 1894.0, 92.0, Color(0.75, 1.0, 0.85))
 
 
 func _add_met(x: float, floor_y: float) -> void:
@@ -469,9 +476,9 @@ func _add_mid_checkpoints() -> void:
 	## v0.56: one checkpoint per section of the long echo_wind course.
 	var parent_n: Node = geometry if geometry else self
 	CheckpointScript.place(parent_n, Vector2(360.0, 176.0), "echo_wind", "CK1")
-	CheckpointScript.place(parent_n, Vector2(808.0, 176.0), "echo_wind", "CK2")
+	CheckpointScript.place(parent_n, Vector2(800.0, 176.0), "echo_wind", "CK2")
 	CheckpointScript.place(parent_n, Vector2(1256.0, 176.0), "echo_wind", "CK3")
-	CheckpointScript.place(parent_n, Vector2(1696.0, 176.0), "echo_wind", "CK4")
+	CheckpointScript.place(parent_n, Vector2(1704.0, 176.0), "echo_wind", "CK4")
 	CheckpointScript.place(parent_n, Vector2(2152.0, 176.0), "echo_wind", "CK5")
 	CheckpointScript.place(parent_n, Vector2(2600.0, 176.0), "echo_wind", "CK6")
 

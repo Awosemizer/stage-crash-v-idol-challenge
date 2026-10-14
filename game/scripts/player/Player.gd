@@ -1355,13 +1355,13 @@ func _do_wall_jump(wall_dir: int) -> void:
 func _maybe_tutorial_wall_jump() -> void:
 	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
 	if gs != null and gs.has_method("try_show_tutorial"):
-		gs.try_show_tutorial("wall_jump", "WALL JUMP", "Salta hacia la pared · toca Saltar otra vez")
+		gs.try_show_tutorial("wall_jump", "SALTO DE PARED", "Salta hacia la pared · toca Saltar otra vez")
 
 
 func _maybe_tutorial_slide() -> void:
 	var gs := get_tree().root.get_node_or_null("GameState") if get_tree() else null
 	if gs != null and gs.has_method("try_show_tutorial"):
-		gs.try_show_tutorial("slide", "SLIDE / DASH", "DASH bajo obstáculos · i-frames cortos")
+		gs.try_show_tutorial("slide", "DESLIZ / IMPULSO", "Deslízate bajo obstáculos · eres invulnerable un instante")
 
 func _holding_into_wall(wall_dir: int) -> bool:
 	## wall_dir -1 = wall on the left. Positive product means the stick pushes into it.
