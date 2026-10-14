@@ -144,6 +144,7 @@ func _build_ui() -> void:
 	_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_root)
 
+	_kit_dpad_next = true
 	_stick_base = _make_round_panel(Color(0.35, 0.9, 1.0, 1.0))
 	_stick_base.name = "StickBase"
 	_stick_base.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -193,6 +194,9 @@ func _build_ui() -> void:
 	_btn_wnext.gui_input.connect(_on_button_gui_input.bind("weapon_next", _btn_wnext))
 
 
+var _kit_dpad_next := false
+
+
 func _make_round_panel(col: Color) -> Panel:
 	## Hit rect is invisible. A thin ring is the only thing drawn.
 	var p := Panel.new()
@@ -210,6 +214,16 @@ func _make_round_panel(col: Color) -> Panel:
 	rs.border_color = Color(col.r, col.g, col.b, 0.95)
 	rs.set_corner_radius_all(64)
 	ring.add_theme_stylebox_override("panel", rs)
+	# v0.66: arte del kit (botón redondo / cruceta). Mismo tamaño y posición.
+	var tex_path := "res://assets/sprites/ui/kit/touch_round.png"
+	if _kit_dpad_next:
+		tex_path = "res://assets/sprites/ui/kit/dpad.png"
+		_kit_dpad_next = false
+	if ResourceLoader.exists(tex_path):
+		var ts := StyleBoxTexture.new()
+		ts.texture = load(tex_path)
+		ts.modulate_color = Color(1, 1, 1, 0.85) if col.r < 0.9 or col.g > 0.5 else Color(1.0, 0.7, 0.88, 0.85)
+		ring.add_theme_stylebox_override("panel", ts)
 	p.add_child(ring)
 	return p
 

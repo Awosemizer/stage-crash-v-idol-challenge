@@ -50,22 +50,103 @@ static func _box(bg: Color, border: Color, bw: int, glow := false) -> StyleBoxFl
 	return sb
 
 
+const KIT := "res://assets/sprites/ui/kit/"
+
+
+static func kit_box(name: String, m: int, cl := 10, ct := 3) -> StyleBox:
+	## v0.66: 9-slice del kit SNES (esquinas/remaches fijos, centro estirado).
+	var path := KIT + name + ".png"
+	if not ResourceLoader.exists(path):
+		return _box(Color(0.03, 0.02, 0.08, 0.9), COL_CYAN, 1)
+	var sb := StyleBoxTexture.new()
+	sb.texture = load(path)
+	sb.texture_margin_left = m
+	sb.texture_margin_right = m
+	sb.texture_margin_top = m
+	sb.texture_margin_bottom = m
+	sb.content_margin_left = cl
+	sb.content_margin_right = cl
+	sb.content_margin_top = ct
+	sb.content_margin_bottom = ct
+	return sb
+
+
 static func style_button(btn: Button, accent: Color, font_size := 11) -> void:
-	## Normal: placa oscura con filo de color. Foco/hover: placa clara + borde dorado con brillo.
-	btn.add_theme_stylebox_override("normal", _box(Color(0.03, 0.02, 0.08, 0.88), Color(accent.r, accent.g, accent.b, 0.85), 1))
-	btn.add_theme_stylebox_override("hover", _box(Color(0.12, 0.08, 0.22, 0.95), COL_GOLD, 2, true))
-	btn.add_theme_stylebox_override("focus", _box(Color(0.12, 0.08, 0.22, 0.0), COL_GOLD, 2, false))
-	btn.add_theme_stylebox_override("pressed", _box(Color(0.25, 0.18, 0.05, 0.95), COL_GOLD, 2, true))
-	btn.add_theme_stylebox_override("disabled", _box(Color(0.03, 0.03, 0.05, 0.7), Color(0.3, 0.3, 0.38, 0.6), 1))
+	## v0.66: placas metálicas con remaches (normal / seleccionado / desactivado).
+	var n := kit_box("btn_normal", 8)
+	var sel := kit_box("btn_selected", 8)
+	btn.add_theme_stylebox_override("normal", n)
+	btn.add_theme_stylebox_override("hover", sel)
+	btn.add_theme_stylebox_override("focus", sel)
+	btn.add_theme_stylebox_override("pressed", sel)
+	btn.add_theme_stylebox_override("disabled", kit_box("btn_disabled", 8))
 	btn.add_theme_font_size_override("font_size", font_size)
 	btn.add_theme_color_override("font_color", Color(0.95, 0.96, 1.0))
 	btn.add_theme_color_override("font_focus_color", COL_GOLD)
 	btn.add_theme_color_override("font_hover_color", COL_GOLD)
+	btn.add_theme_color_override("font_pressed_color", COL_GOLD)
+	btn.add_theme_color_override("font_disabled_color", Color(0.6, 0.62, 0.7))
 	btn.add_theme_color_override("font_outline_color", Color(0.02, 0.0, 0.06))
 	btn.add_theme_constant_override("outline_size", 3)
 	btn.focus_mode = Control.FOCUS_ALL
 	if not btn.focus_entered.is_connected(_focus_sfx):
 		btn.focus_entered.connect(_focus_sfx)
+	if btn.is_inside_tree():
+		attach_cursor(btn.get_tree().root)
+	elif not btn.tree_entered.is_connected(_attach_from.bind(btn)):
+		btn.tree_entered.connect(_attach_from.bind(btn), CONNECT_ONE_SHOT)
+
+
+static func _attach_from(btn: Control) -> void:
+	if is_instance_valid(btn) and btn.is_inside_tree():
+		attach_cursor(btn.get_tree().root)
+
+
+static func attach_cursor(root: Window) -> void:
+	## Cursor del kit que sigue al botón con foco (un solo nodo por ventana).
+	if root == null or root.has_meta("menu_cursor"):
+		return
+	var path := KIT + "cursor.png"
+	if not ResourceLoader.exists(path):
+		return
+	var layer := CanvasLayer.new()
+	layer.name = "MenuCursorLayer"
+	layer.layer = 120
+	var cur := TextureRect.new()
+	cur.name = "MenuCursor"
+	cur.texture = load(path)
+	cur.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	cur.visible = false
+	layer.add_child(cur)
+	root.set_meta("menu_cursor", true)
+	root.add_child.call_deferred(layer)
+	root.gui_focus_changed.connect(_on_focus.bind(cur))
+	cur.set_process(true)
+	var t := Timer.new()
+	t.wait_time = 0.05
+	t.autostart = true
+	layer.add_child(t)
+	t.timeout.connect(_track.bind(cur))
+
+
+static func _on_focus(c: Control, cur: TextureRect) -> void:
+	if is_instance_valid(cur):
+		cur.set_meta("target", c)
+		_track(cur)
+
+
+static func _track(cur: TextureRect) -> void:
+	if not is_instance_valid(cur):
+		return
+	var c = cur.get_meta("target") if cur.has_meta("target") else null
+	if c == null or not is_instance_valid(c) or not (c is Button) or not c.is_visible_in_tree():
+		cur.visible = false
+		return
+	var r: Rect2 = c.get_global_rect()
+	var xf: Transform2D = c.get_viewport().get_canvas_transform() if c.get_viewport() else Transform2D()
+	var bob := 1.0 if int(Time.get_ticks_msec() / 250) % 2 == 0 else 0.0
+	cur.position = xf * Vector2(r.position.x - cur.size.x - 1 - bob, r.position.y + (r.size.y - cur.size.y) * 0.5)
+	cur.visible = true
 
 
 static func _focus_sfx() -> void:
@@ -87,12 +168,9 @@ static func label(text: String, size: int, col: Color, outline := 3) -> Label:
 	return l
 
 
-static func panel_box(accent: Color) -> StyleBoxFlat:
-	## Marco común de paneles (pausa, arma obtenida, game over, datos…).
-	var sb := _box(Color(0.03, 0.02, 0.08, 0.94), accent, 2, true)
-	sb.content_margin_top = 6
-	sb.content_margin_bottom = 6
-	return sb
+static func panel_box(accent: Color) -> StyleBox:
+	## v0.66: marco de ventana del kit (pausa, game over, datos, opciones…).
+	return kit_box("window", 18, 14, 12)
 
 
 static func fade_in(parent: Node, secs := 0.25) -> void:

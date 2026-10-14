@@ -74,40 +74,14 @@ static func btn_h(available_column: float, count: int = 1, gap: float = 6.0, pre
 
 
 static func style_button(btn: Button, bg: Color, border: Color, radius: int = 4) -> void:
-	var normal := StyleBoxFlat.new()
-	normal.bg_color = bg
-	normal.set_border_width_all(1)
-	normal.border_color = border
-	normal.set_corner_radius_all(0)  # v0.64: esquinas rectas en todos los menús (look 16-bit)
-	normal.content_margin_left = 8
-	normal.content_margin_right = 8
-	normal.content_margin_top = 4
-	normal.content_margin_bottom = 4
-	var hover := normal.duplicate()
-	hover.bg_color = bg.lightened(0.15)
-	hover.border_color = border.lightened(0.12)
-	var pressed := normal.duplicate()
-	pressed.bg_color = bg.darkened(0.2)
-	var disabled := normal.duplicate()
-	disabled.bg_color = Color(0.12, 0.12, 0.16, 0.9)
-	disabled.border_color = Color(0.35, 0.35, 0.4, 0.7)
-	btn.add_theme_stylebox_override("normal", normal)
-	btn.add_theme_stylebox_override("hover", hover)
-	btn.add_theme_stylebox_override("pressed", pressed)
-	# v0.64: foco visible para mando/teclado — borde dorado con brillo, igual que MenuKit.
-	var focus := StyleBoxFlat.new()
-	focus.bg_color = Color(0, 0, 0, 0)
-	focus.set_border_width_all(2)
-	focus.border_color = Color(1.0, 0.86, 0.35)
-	hover.border_color = Color(1.0, 0.86, 0.35)
-	btn.add_theme_stylebox_override("focus", focus)
-	btn.add_theme_stylebox_override("disabled", disabled)
-	btn.add_theme_color_override("font_outline_color", Color(0.02, 0.0, 0.06))
+	## v0.66: delega en el kit SNES de MenuKit (mismo look en todos los botones).
+	var fsz: int = btn.get_theme_font_size("font_size") if btn.has_theme_font_size_override("font_size") else 10
+	preload("res://scripts/ui/MenuKit.gd").style_button(btn, border, fsz)
 	btn.add_theme_constant_override("outline_size", 2)
-	btn.add_theme_color_override("font_focus_color", Color(1.0, 0.86, 0.35))
+	if bg.a < 0:
+		pass
 
 
-## Center a fixed design-width cluster inside the safe content rect.
 static func center_x(design_w: float, area: Rect2 = Rect2()) -> float:
 	var a := area if area.size.x > 0.0 else content_rect()
 	return a.position.x + maxf((a.size.x - design_w) * 0.5, 0.0)

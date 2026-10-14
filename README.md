@@ -58,12 +58,15 @@ Demo completa **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.65.0-proto`
+- Versión demo: `0.66.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)
 
 ---
+
+## v0.66
+Kit de UI estilo SNES: botones y ventanas 9-slice con remaches, cursor junto al elemento enfocado, botones táctiles y cruceta con arte del kit, nueva key art del título (`scripts/menu_art_066.py`).
 
 ## Abrir el proyecto en Godot
 

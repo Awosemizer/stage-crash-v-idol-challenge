@@ -11,7 +11,7 @@ const MenuKit := preload("res://scripts/ui/MenuKit.gd")
 const SAVE_SELECT := "res://scenes/ui/SaveSelect.tscn"
 const SELECT_SCENE := "res://scenes/ui/CharacterSelect.tscn"
 const KEYART := "res://assets/sprites/ui/title_keyart.png"
-const VERSION_TAG := "v0.65"
+const VERSION_TAG := "v0.66"
 
 var _menu_open := false
 var _blink: Tween = null

@@ -119,7 +119,7 @@ func _show_win_then_ending() -> void:
 	sb.set_corner_radius_all(0)  # v0.64 marco 16-bit
 	sb.shadow_color = Color(sb.border_color.r, sb.border_color.g, sb.border_color.b, 0.35)
 	sb.shadow_size = 3
-	panel.add_theme_stylebox_override("panel", sb)
+	panel.add_theme_stylebox_override("panel", preload("res://scripts/ui/MenuKit.gd").panel_box(Color(0.35, 0.9, 1.0)))  # v0.66 kit
 	panel.size = Vector2(210, 100)
 	var vp := get_viewport().get_visible_rect().size
 	panel.position = Vector2((vp.x - 210.0) * 0.5, (vp.y - 100.0) * 0.5)

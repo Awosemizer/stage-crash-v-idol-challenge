@@ -312,7 +312,7 @@ func _show_win_banner() -> void:
 	sb.set_corner_radius_all(0)  # v0.64 marco 16-bit
 	sb.shadow_color = Color(sb.border_color.r, sb.border_color.g, sb.border_color.b, 0.35)
 	sb.shadow_size = 3
-	panel.add_theme_stylebox_override("panel", sb)
+	panel.add_theme_stylebox_override("panel", preload("res://scripts/ui/MenuKit.gd").panel_box(Color(0.35, 0.9, 1.0)))  # v0.66 kit
 	panel.size = Vector2(220, 100)
 	var vp := get_viewport().get_visible_rect().size
 	panel.position = Vector2((vp.x - 220.0) * 0.5, (vp.y - 100.0) * 0.5)
@@ -357,6 +357,7 @@ func _show_win_banner() -> void:
 	back_btn.add_theme_stylebox_override("normal", bn)
 	back_btn.add_theme_stylebox_override("hover", bh)
 	back_btn.add_theme_stylebox_override("pressed", bp)
+	preload("res://scripts/ui/MenuKit.gd").style_button(back_btn, Color(0.35, 0.9, 1.0), back_btn.get_theme_font_size("font_size"))  # v0.66 kit
 	back_btn.add_theme_stylebox_override("focus", bh)
 	back_btn.pressed.connect(_return_to_boss_select)
 	panel.add_child(back_btn)

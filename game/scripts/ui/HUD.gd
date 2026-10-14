@@ -451,14 +451,7 @@ func _build_ui() -> void:
 
 func _make_panel(col: Color) -> Panel:
 	var p := Panel.new()
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = col
-	sb.set_border_width_all(2)
-	sb.border_color = Color(0.35, 0.9, 1.0, 0.9)
-	sb.set_corner_radius_all(0)  # v0.64 marco 16-bit
-	sb.shadow_color = Color(sb.border_color.r, sb.border_color.g, sb.border_color.b, 0.35)
-	sb.shadow_size = 3
-	p.add_theme_stylebox_override("panel", sb)
+	p.add_theme_stylebox_override("panel", preload("res://scripts/ui/MenuKit.gd").panel_box(col))  # v0.66 kit
 	return p
 
 
