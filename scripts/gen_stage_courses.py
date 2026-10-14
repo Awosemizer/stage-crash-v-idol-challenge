@@ -291,7 +291,7 @@ def g_icicles(c, x0):
     c.floor(x0 + 288, 160)
     for i, ix in enumerate((x0 + 96, x0 + 168, x0 + 232, x0 + 304, x0 + 368)):
         fy = 160 if x0 + 160 <= ix < x0 + 288 else FY
-        c.kit.append(f"kit.drop(hazards, {ix}.0, 120.0, {fy}.0, 2.2, {0.44 * i:.2f}, \"res://assets/sprites/fx/ice_glitch.png\", Color(0.7, 0.95, 1.0))")
+        c.kit.append(f"kit.drop(hazards, {ix}.0, 120.0, {fy}.0, 2.2, {0.44 * i:.2f}, \"res://assets/sprites/hazards/icicle.png\", Color(0.7, 0.95, 1.0))")
     c.cat(x0 + 72, 112, 136)
     c.cat(x0 + 248, 112, 136)
     c.foes.append(("drone", x0 + 220, 84))
@@ -306,8 +306,8 @@ def g_quake(c, x0):
     c.block(x0 + 240, 160, 32, 16, "COL_ALT")
     c.block(x0 + 352, 160, 32, 16, "COL_ALT")
     c.kit.append(f"kit.quake(hazards, {x0 + 436}.0, 176.0, 2.6, 0.0, -1)")
-    c.kit.append(f"kit.drop(hazards, {x0 + 200}.0, 24.0, 176.0, 2.8, 0.9, \"res://assets/sprites/fx/quake_drop.png\", Color(1.0, 0.8, 0.6))")
-    c.kit.append(f"kit.drop(hazards, {x0 + 312}.0, 24.0, 176.0, 2.8, 2.3, \"res://assets/sprites/fx/quake_drop.png\", Color(1.0, 0.8, 0.6))")
+    c.kit.append(f"kit.drop(hazards, {x0 + 200}.0, 24.0, 176.0, 2.8, 0.9, \"res://assets/sprites/hazards/debris.png\", Color(1.0, 0.8, 0.6))")
+    c.kit.append(f"kit.drop(hazards, {x0 + 312}.0, 24.0, 176.0, 2.8, 2.3, \"res://assets/sprites/hazards/debris.png\", Color(1.0, 0.8, 0.6))")
     c.cat(x0 + 112, 112, 96)
     c.cat(x0 + 224, 112, 96)
     c.met(x0 + 60)

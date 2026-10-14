@@ -11,7 +11,7 @@ const WARN := 0.35
 
 var _t := 0.0
 var _col: CollisionShape2D
-var _grate: ColorRect
+var _grate: Sprite2D
 var _flames: Array = []
 
 
@@ -22,22 +22,22 @@ func _ready() -> void:
 	monitoring = true
 	monitorable = false
 	_t = phase_offset
-	_grate = ColorRect.new()
-	_grate.size = Vector2(16, 4)
-	_grate.position = Vector2(-8, -4)
-	_grate.color = Color(0.35, 0.12, 0.08)
-	_grate.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# v0.63: arte propio — rejilla 16×6 siempre visible, columna 12×40 ×3 cuadros.
+	var col_s := Sprite2D.new()
+	col_s.texture = load("res://assets/sprites/hazards/fire_column.png")
+	col_s.hframes = 3
+	col_s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	col_s.centered = false
+	col_s.offset = Vector2(-6, -40)
+	col_s.scale = Vector2(1.0, height / 40.0)
+	col_s.visible = false
+	add_child(col_s)
+	_flames.append(col_s)
+	_grate = Sprite2D.new()
+	_grate.texture = load("res://assets/sprites/hazards/fire_vent.png")
+	_grate.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_grate.position = Vector2(0, -3)
 	add_child(_grate)
-	var tex: Texture2D = load("res://assets/sprites/fx/fireball.png")
-	var n := int(ceil(height / 12.0))
-	for i in n:
-		var s := Sprite2D.new()
-		s.texture = tex
-		s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		s.position = Vector2(0, -8 - i * 12)
-		s.visible = false
-		add_child(s)
-		_flames.append(s)
 	var shp := RectangleShape2D.new()
 	shp.size = Vector2(10, height)
 	_col = CollisionShape2D.new()
@@ -62,19 +62,21 @@ func _physics_process(delta: float) -> void:
 	var st := _state()
 	_col.set_deferred("disabled", st != 2)
 	var tk := Time.get_ticks_msec()
-	for i in _flames.size():
-		var s: Sprite2D = _flames[i]
-		if st == 2:
-			s.visible = true
-			s.scale = Vector2(1.0 - 0.08 * i + 0.1 * sin(tk * 0.03 + i), 1.0)
-			s.modulate = Color(1, 1, 1, 1)
-		elif st == 1:
-			s.visible = i == 0
-			s.scale = Vector2(0.5, 0.5)
-			s.modulate = Color(1.2, 0.8, 0.3, 0.5 + 0.4 * absf(sin(tk * 0.04)))
-		else:
-			s.visible = false
-	_grate.color = Color(0.95, 0.55, 0.15) if st >= 1 else Color(0.35, 0.12, 0.08)
+	var s: Sprite2D = _flames[0]
+	if st == 2:
+		s.visible = true
+		s.frame = int(tk / 90) % 3
+		s.scale = Vector2(1.0, height / 40.0)
+		s.modulate = Color.WHITE
+	elif st == 1:
+		# aviso ámbar: llama baja y parpadeante
+		s.visible = true
+		s.frame = int(tk / 90) % 3
+		s.scale = Vector2(0.6, 0.25)
+		s.modulate = Color(1.2, 0.8, 0.3, 0.5 + 0.4 * absf(sin(tk * 0.04)))
+	else:
+		s.visible = false
+	_grate.modulate = Color(1.5, 1.1, 0.7) if st >= 1 else Color.WHITE
 	if st == 2:
 		for b in get_overlapping_bodies():
 			_hurt(b)

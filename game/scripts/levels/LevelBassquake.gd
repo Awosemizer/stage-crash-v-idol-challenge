@@ -191,8 +191,8 @@ func _build_course() -> void:
 	_add_collapse(Vector2(2032, 166), Vector2(48, 12), 0.65, 0.9, 2.2)
 	var kit = preload("res://scripts/levels/StageKit.gd")
 	kit.quake(hazards, 756.0, 176.0, 2.6, 0.0, -1)
-	kit.drop(hazards, 520.0, 24.0, 176.0, 2.8, 0.9, "res://assets/sprites/fx/quake_drop.png", Color(1.0, 0.8, 0.6))
-	kit.drop(hazards, 632.0, 24.0, 176.0, 2.8, 2.3, "res://assets/sprites/fx/quake_drop.png", Color(1.0, 0.8, 0.6))
+	kit.drop(hazards, 520.0, 24.0, 176.0, 2.8, 0.9, "res://assets/sprites/hazards/debris.png", Color(1.0, 0.8, 0.6))
+	kit.drop(hazards, 632.0, 24.0, 176.0, 2.8, 2.3, "res://assets/sprites/hazards/debris.png", Color(1.0, 0.8, 0.6))
 	_build_secret_encore_torso()
 
 	var label := Label.new()

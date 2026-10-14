@@ -1,5 +1,7 @@
 # Stage Crash: V-Idol Challenge
 
+**v0.63:** respiraderos y columnas de fuego, carámbanos, escombro y subwoofer con arte dibujado.
+
 **v0.62:** Speaker Drone y Spotlight Turret con hojas dibujadas.
 
 **v0.61 — pulido:** interfaz solo en español, cada etapa con dos tramos de su propio peligro (fuego, carámbanos, ondas sísmicas, viento cruzado, islas electrificadas, escalera a tempo, jardín de pétalos, sala a oscuras) y enemigos nuevos Speaker Drone y Spotlight Turret.
@@ -52,7 +54,7 @@ Demo completa **Mega Man–like** con Hatsune Miku × Kasane Teto.
 - Plataforma: **Android** (landscape, táctil + gamepad Bluetooth)
 - Idioma: **español**
 - Paquete: `com.luis.stagecrash.vidol`
-- Versión demo: `0.62.0-proto`
+- Versión demo: `0.63.0-proto`
 
 Documento de diseño completo: [DISENO.md](./DISENO.md)  
 Notas de export Android: [docs/ANDROID_EXPORT.md](./docs/ANDROID_EXPORT.md)
@@ -92,7 +94,7 @@ En Android: stick virtual + botones en pantalla (se ocultan si hay mando BT).
 
 Archivo listo (debug, un solo archivo, ~46 MB):
 
-**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.62 — enemigos con arte propio)
+**[build/StageCrash-debug.apk](./build/StageCrash-debug.apk)** (v0.63 — peligros con arte propio)
 
 1. Descarga el APK desde este repo (botón Raw / Download).
 2. En el teléfono: permite **orígenes desconocidos** / instalar apps desconocidas para el navegador o gestor de archivos.

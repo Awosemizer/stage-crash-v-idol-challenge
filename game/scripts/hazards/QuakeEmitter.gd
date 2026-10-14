@@ -11,24 +11,17 @@ const QuakeWaveScene := preload("res://scenes/hazards/QuakeWave.tscn")
 const WARN := 0.45
 
 var _t := 0.0
-var _box: ColorRect
-var _cone: ColorRect
+var _box: Sprite2D
 
 
 func _ready() -> void:
 	_t = phase_offset
-	_box = ColorRect.new()
-	_box.size = Vector2(16, 20)
-	_box.position = Vector2(-8, -20)
-	_box.color = Color(0.18, 0.14, 0.12)
-	_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_box = Sprite2D.new()  # v0.63: subwoofer 16×20 dibujado
+	_box.texture = load("res://assets/sprites/hazards/subwoofer.png")
+	_box.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_box.centered = false
+	_box.offset = Vector2(-8, -20)
 	add_child(_box)
-	_cone = ColorRect.new()
-	_cone.size = Vector2(8, 8)
-	_cone.position = Vector2(-4, -15)
-	_cone.color = Color(0.75, 0.45, 0.15)
-	_cone.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_cone)
 
 
 func _physics_process(delta: float) -> void:
@@ -37,11 +30,11 @@ func _physics_process(delta: float) -> void:
 	var c := fmod(_t, period)
 	if c > period - WARN:
 		var k := 1.0 + 0.35 * absf(sin(Time.get_ticks_msec() * 0.05))
-		_cone.scale = Vector2(k, k)
-		_cone.color = Color(1.0, 0.75, 0.25)
+		_box.scale = Vector2(k * 0.9 + 0.1, 1.0 + (k - 1.0) * 0.3)
+		_box.modulate = Color(1.3, 1.1, 0.8)
 	else:
-		_cone.scale = Vector2.ONE
-		_cone.color = Color(0.75, 0.45, 0.15)
+		_box.scale = Vector2.ONE
+		_box.modulate = Color.WHITE
 	if c < before:
 		var w: Area2D = QuakeWaveScene.instantiate()
 		w.lifetime = life

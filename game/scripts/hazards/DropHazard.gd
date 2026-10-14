@@ -56,8 +56,8 @@ func _spawn() -> void:
 	var s := Sprite2D.new()
 	s.texture = load(texture_path)
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	s.modulate = tint
-	s.rotation = PI * 0.5
+	# v0.63: icicle/debris tienen color propio (sin rotar, apenas teñidos)
+	s.modulate = Color.WHITE.lerp(tint, 0.2)
 	_drop.add_child(s)
 	_drop.position = Vector2(0, top_y - position.y)
 	_drop.body_entered.connect(_on_hit)
